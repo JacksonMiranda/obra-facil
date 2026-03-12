@@ -35,6 +35,7 @@ Para facilitar a navegação no repositório, consulte os documentos detalhados:
 * [🛠️ Especificação Técnica](docs/spec_tech.md) - Arquitetura, Backend e Frontend.
 * [🎨 Guia de UI/UX](docs/spec_ui.md) - Fluxo de telas e identidade visual.
 * [💡 Definição do Problema](docs/definicao_problema.md) - Contexto e impacto no mercado.
+* [stitch](https://stitch.withgoogle.com/projects/10387496590250121391) - Design do projeto
 
 ---
 
