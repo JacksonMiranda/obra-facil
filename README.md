@@ -39,14 +39,6 @@ Para facilitar a navegação no repositório, consulte os documentos detalhados:
 
 ---
 
-## 🛠️ Tecnologias Sugeridas
-* **Mobile:** React Native (iOS/Android)
-* **Backend:** Node.js + PostgreSQL
-* **APIs:** Google Maps API (Geolocalização)
-* **Cloud:** AWS ou Google Cloud
-
----
-
 ## 👥 Equipe
 Projeto desenvolvido como parte do trabalho final de Práticas de Implementação e Evolução de Software:
 - Alexander Cesar Luiz Costa
