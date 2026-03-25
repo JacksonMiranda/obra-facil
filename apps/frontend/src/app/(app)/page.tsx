@@ -34,7 +34,7 @@ export default async function HomePage() {
       <div className="px-4 pt-10 pb-4 bg-white">
         <div className="flex items-center justify-between mb-1">
           <div>
-            <p className="text-xs text-slate-400 font-medium">Bem-vindo ao</p>
+            <p className="text-xs text-slate-400 font-medium">Bem-vindo, {firstName}</p>
             <h1 className="text-2xl font-bold text-[#ec5b13]">Obra Fácil</h1>
           </div>
           <div className="relative">
