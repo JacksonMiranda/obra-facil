@@ -3,7 +3,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api/client';
-import { PageHeader } from '@/components/ui/PageHeader';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import Link from 'next/link';
 import type { OrderWithStore } from '@obrafacil/shared';
