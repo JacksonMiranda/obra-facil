@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useAuthSafe } from '@/lib/auth/client';
 import type { StoreOfferWithStore } from '@obrafacil/shared';
 import { StickyBottomCTA, PrimaryButton } from '@/components/ui/StickyBottomCTA';
 
@@ -23,7 +23,7 @@ export function CotacaoClient({
   const [selectedId, setSelectedId] = useState<string | null>(defaultSelectedId);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { getToken } = useAuth();
+  const { getToken } = useAuthSafe();
 
   const selectedOffer = offers.find((o) => o.id === selectedId);
   const cheapestPrice = Number(offers[0]?.total_price ?? 0);

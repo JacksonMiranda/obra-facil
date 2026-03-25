@@ -3,7 +3,7 @@
 // prd.md RFN-03: "3 melhores opções de lojas com menor valor global da cesta"
 // seed.sql: R$218.30 (melhor), R$243.50, R$263.30
 import { notFound, redirect } from 'next/navigation';
-import { auth } from '@clerk/nextjs/server';
+import { getAuth } from '@/lib/auth/server';
 import { api } from '@/lib/api/client';
 import { PageHeader } from '@/components/ui/PageHeader';
 import type { MaterialItem, StoreOfferWithStore } from '@obrafacil/shared';
@@ -14,7 +14,7 @@ export default async function CotacaoPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { userId } = await auth();
+  const { userId } = await getAuth();
   if (!userId) redirect('/sign-in');
 
   const { id } = await params;

@@ -1,7 +1,7 @@
 // INT-01 — Home / Dashboard (Visão Cliente)
 // spec_ui.md: "Flat Design, extremamente limpa, carrossel de Profissionais super bem avaliados"
 // prd.md RFN-01: profissionais ordenados por rating_avg desc
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { getAuth, getUser } from '@/lib/auth/server';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api/client';
 import { SearchBar } from '@/components/ui/SearchBar';
@@ -22,11 +22,11 @@ const QUICK_SERVICES = [
 ];
 
 export default async function HomePage() {
-  const { userId } = await auth();
+  const { userId } = await getAuth();
   if (!userId) redirect('/sign-in');
 
   const [user, professionals] = await Promise.all([
-    currentUser(),
+    getUser(),
     api.get<ProfessionalWithProfile[]>('/v1/professionals?limit=10').catch(() => []),
   ]);
 
@@ -165,7 +165,6 @@ export default async function HomePage() {
       <FAB
         icon="support_agent"
         variant="brand"
-        onClick={() => {}}
         ariaLabel="Suporte ou emergência"
         className="fixed bottom-24 right-4 shadow-lg"
       />

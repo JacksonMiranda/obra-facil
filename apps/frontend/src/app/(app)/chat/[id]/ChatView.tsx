@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useAuthSafe } from '@/lib/auth/client';
 
 type Profile = {
   id: string;
@@ -47,7 +47,7 @@ export function ChatView({
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
-  const { getToken } = useAuth();
+  const { getToken } = useAuthSafe();
 
   // Supabase Realtime subscription
   useEffect(() => {

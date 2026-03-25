@@ -1,6 +1,6 @@
 // Meus Pedidos — order history screen
 // seed.sql data: #88421 (a-caminho), #88390 (entregue)
-import { auth } from '@clerk/nextjs/server';
+import { getAuth } from '@/lib/auth/server';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api/client';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -17,7 +17,7 @@ const STATUS_MAP: Record<string, { label: string; variant: 'a-caminho' | 'entreg
 };
 
 export default async function PedidosPage() {
-  const { userId } = await auth();
+  const { userId } = await getAuth();
   if (!userId) redirect('/sign-in');
 
   const orders = await api.get<OrderWithStore[]>('/v1/orders').catch(() => []);

@@ -2,7 +2,8 @@
   "name": "obrafacil",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "vercel-build": "npm run build --workspace=frontend",

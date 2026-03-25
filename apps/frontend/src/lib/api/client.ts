@@ -1,7 +1,8 @@
 // HTTP API client — wraps fetch with Clerk Bearer token injection
 // All backend calls go through this client. Never call the backend directly.
 
-import { auth } from '@clerk/nextjs/server';
+import { getAuth } from '@/lib/auth/server';
+import { isClerkConfigured } from '@/lib/auth/mock';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
@@ -16,6 +17,10 @@ export type ApiError = {
 };
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
+  if (!isClerkConfigured()) {
+    return { Authorization: 'Bearer mock-token' };
+  }
+  const { auth } = await import('@clerk/nextjs/server');
   const { getToken } = await auth();
   const token = await getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};

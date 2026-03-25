@@ -2,7 +2,7 @@
 // spec_ui.md: "Foco na credibilidade. Topo: Foto+Nome; Meio: Nota+Especialidades; Rodapé: CTA fixado"
 // seed.sql: Ricardo Silva 4.9/128, José da Silva 4.9/142, Ana Rodrigues 4.7/89
 import { notFound, redirect } from 'next/navigation';
-import { auth } from '@clerk/nextjs/server';
+import { getAuth } from '@/lib/auth/server';
 import { api } from '@/lib/api/client';
 import { StarRating } from '@/components/ui/StarRating';
 import { StickyBottomCTA, PrimaryButton } from '@/components/ui/StickyBottomCTA';
@@ -14,7 +14,7 @@ export default async function ProfissionalPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { userId } = await auth();
+  const { userId } = await getAuth();
   if (!userId) redirect('/sign-in');
 
   const { id } = await params;

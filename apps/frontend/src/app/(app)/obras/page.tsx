@@ -1,6 +1,6 @@
 // Minhas Obras — work tracking screen
 // seed.sql data: Reforma Banheiro Social (65%), Pintura Fachada (agendada)
-import { auth } from '@clerk/nextjs/server';
+import { getAuth } from '@/lib/auth/server';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api/client';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -17,7 +17,7 @@ const OBRA_STATUS_MAP: Record<string, { label: string; variant: 'ativo' | 'agend
 };
 
 export default async function ObrasPage() {
-  const { userId } = await auth();
+  const { userId } = await getAuth();
   if (!userId) redirect('/sign-in');
 
   const works = await api.get<WorkWithProfessional[]>('/v1/works').catch(() => []);
