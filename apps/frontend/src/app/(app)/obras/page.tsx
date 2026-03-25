@@ -2,11 +2,10 @@
 // seed.sql data: Reforma Banheiro Social (65%), Pintura Fachada (agendada)
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { api } from '@/lib/api/client';
+import { createClient } from '@supabase/supabase-js';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import Link from 'next/link';
-import type { WorkWithProfessional } from '@obrafacil/shared';
 
 const OBRA_STATUS_MAP: Record<string, { label: string; variant: 'ativo' | 'agendado' | 'entregue' | 'cancelado' | 'pendente' | 'a-caminho' }> = {
   in_progress: { label: 'Ativo', variant: 'ativo' },
@@ -20,14 +19,25 @@ export default async function ObrasPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const works = await api.get<WorkWithProfessional[]>('/v1/works').catch(() => []);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
 
-  const inProgress = works.filter((w) => {
+  // Get all works (seeded data) — in production would filter by user profile
+  const { data: works } = await supabase
+    .from('works')
+    .select('*, professionals(*, profiles!inner(*))')
+    .order('created_at', { ascending: false });
+
+  const worksList = works ?? [];
+
+  const inProgress = worksList.filter((w) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const status = (w as any).status;
     return status === 'in_progress' || status === 'scheduled' || status === 'pending';
   });
-  const finished = works.filter((w) => {
+  const finished = worksList.filter((w) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const status = (w as any).status;
     return status === 'completed' || status === 'cancelled';
@@ -67,7 +77,7 @@ export default async function ObrasPage() {
         </div>
       </div>
 
-      {works.length === 0 ? (
+      {worksList.length === 0 ? (
         <div className="flex flex-col items-center justify-center pt-24 px-8 text-center">
           <span className="material-symbols-outlined text-5xl text-slate-200 mb-3">
             construction

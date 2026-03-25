@@ -2,10 +2,9 @@
 // seed.sql data: #88421 (a-caminho), #88390 (entregue)
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { api } from '@/lib/api/client';
+import { createClient } from '@supabase/supabase-js';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import Link from 'next/link';
-import type { OrderWithStore } from '@obrafacil/shared';
 
 const STATUS_MAP: Record<string, { label: string; variant: 'a-caminho' | 'entregue' | 'ativo' | 'agendado' | 'pendente' | 'cancelado' }> = {
   pending: { label: 'Pendente', variant: 'pendente' },
@@ -19,7 +18,17 @@ export default async function PedidosPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const orders = await api.get<OrderWithStore[]>('/v1/orders').catch(() => []);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+
+  // Get all orders (seeded data) — in production would filter by user profile
+  const { data } = await supabase
+    .from('orders')
+    .select('*, stores(id, name, logo_url)')
+    .order('created_at', { ascending: false });
+  const orders = data ?? [];
 
   return (
     <div className="pb-24 bg-[#f8f6f6] min-h-screen">
