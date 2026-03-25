@@ -3,12 +3,11 @@
 // prd.md RFN-01: profissionais ordenados por rating_avg desc
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { api } from '@/lib/api/client';
+import { createServerClient } from '@/lib/supabase/server';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { StarRating } from '@/components/ui/StarRating';
 import { FAB } from '@/components/ui/FAB';
 import Link from 'next/link';
-import type { ProfessionalWithProfile } from '@obrafacil/shared';
 
 const QUICK_SERVICES = [
   { icon: 'electrical_services', label: 'Reparos elétricos', color: 'bg-amber-50 text-amber-600' },
@@ -21,9 +20,14 @@ export default async function HomePage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const [user, professionals] = await Promise.all([
+  const supabase = await createServerClient();
+  const [user, { data: professionals }] = await Promise.all([
     currentUser(),
-    api.get<ProfessionalWithProfile[]>('/v1/professionals?limit=10').catch(() => []),
+    supabase
+      .from('professionals')
+      .select('*, profiles!inner(*)')
+      .order('rating_avg', { ascending: false })
+      .limit(10),
   ]);
 
   const firstName = user?.firstName ?? 'você';
@@ -88,10 +92,10 @@ export default async function HomePage() {
         </div>
 
         <div className="px-4 mt-3 flex flex-col gap-3">
-          {professionals.length === 0 && (
+          {(!professionals || professionals.length === 0) && (
             <p className="text-sm text-slate-400 py-4">Nenhum profissional encontrado.</p>
           )}
-          {professionals.map((pro: ProfessionalWithProfile) => {
+          {(professionals ?? []).map((pro) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const p = pro as any;
             return (
