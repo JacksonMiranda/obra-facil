@@ -72,7 +72,7 @@ export default async function PedidosPage() {
         <div className="px-4 mt-4">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Pedidos Recentes</p>
           <div className="flex flex-col gap-3">
-            {orders.map((order: OrderWithStore) => {
+            {orders.map((order: any) => {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const o = order as any;
               const status = STATUS_MAP[o.status] ?? { label: o.status, variant: 'pendente' };
