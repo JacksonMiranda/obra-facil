@@ -3,7 +3,7 @@
 // seed.sql: Ricardo Silva 4.9/128, José da Silva 4.9/142, Ana Rodrigues 4.7/89
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { StarRating } from '@/components/ui/StarRating';
 import { StickyBottomCTA, PrimaryButton } from '@/components/ui/StickyBottomCTA';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -17,7 +17,10 @@ export default async function ProfissionalPage({
   if (!userId) redirect('/sign-in');
 
   const { id } = await params;
-  const supabase = await createServerClient();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
   const { data: pro } = await supabase
     .from('professionals')
     .select('*, profiles!inner(*), reviews(*, profiles!reviews_reviewer_id_fkey(id, full_name, avatar_url))')

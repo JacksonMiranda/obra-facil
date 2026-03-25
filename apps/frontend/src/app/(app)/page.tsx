@@ -3,7 +3,7 @@
 // prd.md RFN-01: profissionais ordenados por rating_avg desc
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { StarRating } from '@/components/ui/StarRating';
 import { FAB } from '@/components/ui/FAB';
@@ -20,8 +20,11 @@ export default async function HomePage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const supabase = await createServerClient();
-  const [user, { data: professionals }] = await Promise.all([
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const [user, { data: professionals, error: profError }] = await Promise.all([
     currentUser(),
     supabase
       .from('professionals')
@@ -29,6 +32,10 @@ export default async function HomePage() {
       .order('rating_avg', { ascending: false })
       .limit(10),
   ]);
+
+  if (profError) {
+    console.error('Supabase error:', profError.message);
+  }
 
   const firstName = user?.firstName ?? 'você';
 
