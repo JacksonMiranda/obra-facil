@@ -48,13 +48,14 @@ Para facilitar a navegação no repositório, consulte os documentos detalhados:
 ---
 
 ## 👥 Equipe
-Projeto desenvolvido como parte do trabalho final de Design UX:
-- **Alisson Campos**
-- **Anderson Arruda**
-- **Marcelo Granzotto**
-- **Josénilo Silva**
+Projeto desenvolvido como parte do trabalho final de Práticas de Implementação e Evolução de Software:
+- Alexander Cesar Luiz Costa
+- Anderson Arruda
+- Jackson Jovino Miranda
+- Marcelo Granzoto
+- Renan Carlos Silva Braz Tafner
 
 ---
 <p align="center">
-Desenvolvido com foco na experiência do usuário e eficiência na construção civil. 🛠️
+Desenvolvido com foco na experiência do usuário e na eficiência na construção civil. 🛠️
 </p>
