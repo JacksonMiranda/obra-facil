@@ -90,7 +90,7 @@ export default async function ObrasPage() {
       ) : (
         <div className="px-4 mt-3 flex flex-col gap-4">
           {/* Show in-progress works first, then finished */}
-          {[...inProgress, ...finished].map((work: WorkWithProfessional) => {
+          {[...inProgress, ...finished].map((work: any) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const w = work as any;
             const status = OBRA_STATUS_MAP[w.status] ?? { label: w.status, variant: 'pendente' };
