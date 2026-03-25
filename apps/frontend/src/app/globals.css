@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Google Fonts — Inter per spec_ui.md */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-/* Material Symbols Outlined for icons */
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
-
 :root {
   --background: #f8f6f6;
   --foreground: #0f172a;
@@ -47,7 +42,7 @@ body {
 /* Mobile container — Mobile First per spec_ui.md */
 .mobile-container {
   max-width: 430px;
-  min-height: max(884px, 100dvh);
+  min-height: 100%;
   margin: 0 auto;
   position: relative;
 }

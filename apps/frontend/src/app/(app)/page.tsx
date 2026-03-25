@@ -165,7 +165,6 @@ export default async function HomePage() {
       <FAB
         icon="support_agent"
         variant="brand"
-        onClick={() => {}}
         ariaLabel="Suporte ou emergência"
         className="fixed bottom-24 right-4 shadow-lg"
       />
