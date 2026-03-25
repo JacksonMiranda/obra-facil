@@ -35,7 +35,7 @@ const config: Config = {
         full: "9999px",
       },
       minHeight: {
-        screen: "max(884px, 100dvh)",
+        screen: "100%",
       },
     },
   },
