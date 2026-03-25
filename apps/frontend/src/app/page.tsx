@@ -1,6 +1,12 @@
-import Image from "next/image";
+import { redirect } from 'next/navigation';
 
-export default function Home() {
+// Redirect root to the protected home dashboard (app)/()/page.tsx handles '/'
+// If unauthenticated, Clerk middleware will redirect to /sign-in first.
+export default function RootPage() {
+  redirect('/obras');
+}
+
+function _Unused() {
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
