@@ -12,6 +12,7 @@ export class ZodValidationPipe implements PipeTransform {
       const message = result.error.issues[0]?.message ?? 'Dados inválidos';
       throw new BadRequestException({ message, code: 'VALIDATION_ERROR' });
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return result.data;
   }
 }
