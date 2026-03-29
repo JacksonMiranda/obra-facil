@@ -1,0 +1,5 @@
+.vscode
+.env*
+!.env.example
+.claude
+.DS_Store
