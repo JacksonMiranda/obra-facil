@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@obrafacil/shared": ["packages/shared/src"]
+    }
+  },
+  "include": ["api/**/*.ts", "apps/backend/src/**/*.ts", "packages/shared/src/**/*.ts"],
+  "exclude": ["node_modules", "apps/frontend"]
+}

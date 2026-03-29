@@ -19,7 +19,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-slate-200 safe-area-pb">
+    <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-slate-100 safe-area-pb shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
       <div className="mobile-container mx-auto">
         <ul className="flex h-16">
           {tabs.map((tab) => {
@@ -32,7 +32,7 @@ export function BottomNav() {
                   href={tab.href}
                   className={`flex flex-col items-center justify-center h-full gap-0.5 transition-colors ${
                     isActive
-                      ? 'text-brand'
+                      ? 'text-[#ec5b13]'
                       : 'text-slate-400 hover:text-slate-600'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
@@ -43,7 +43,7 @@ export function BottomNav() {
                   >
                     {tab.icon}
                   </span>
-                  <span className={`text-[10px] font-medium leading-none ${isActive ? 'font-semibold' : ''}`}>
+                  <span className={`text-[10px] leading-none ${isActive ? 'font-bold' : 'font-medium'}`}>
                     {tab.label}
                   </span>
                 </Link>

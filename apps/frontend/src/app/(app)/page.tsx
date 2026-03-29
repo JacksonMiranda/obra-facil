@@ -3,43 +3,50 @@
 // prd.md RFN-01: profissionais ordenados por rating_avg desc
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { api } from '@/lib/api/client';
+import { createClient } from '@supabase/supabase-js';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { StarRating } from '@/components/ui/StarRating';
 import { FAB } from '@/components/ui/FAB';
 import Link from 'next/link';
-import type { ProfessionalWithProfile } from '@obrafacil/shared';
 
 const QUICK_SERVICES = [
-  { icon: 'electrical_services', label: 'Elétrica', color: 'bg-amber-50 text-amber-600' },
-  { icon: 'water_drop', label: 'Hidráulica', color: 'bg-blue-50 text-blue-600' },
-  { icon: 'format_paint', label: 'Pintura', color: 'bg-green-50 text-green-600' },
-  { icon: 'cleaning_services', label: 'Diarista', color: 'bg-purple-50 text-purple-600' },
-  { icon: 'handyman', label: 'Maridos', color: 'bg-orange-50 text-orange-600' },
-  { icon: 'roofing', label: 'Telhado', color: 'bg-red-50 text-red-600' },
-  { icon: 'flooring', label: 'Piso', color: 'bg-teal-50 text-teal-600' },
-  { icon: 'more_horiz', label: 'Ver todos', color: 'bg-slate-100 text-slate-600' },
+  { icon: 'electrical_services', label: 'Reparos elétricos', color: 'bg-amber-50 text-amber-600' },
+  { icon: 'water_drop', label: 'Instalações Hidráulicas', color: 'bg-blue-50 text-blue-600' },
+  { icon: 'format_paint', label: 'Pinturas', color: 'bg-green-50 text-green-600' },
+  { icon: 'cleaning_services', label: 'Diaristas', color: 'bg-purple-50 text-purple-600' },
 ];
 
 export default async function HomePage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const [user, professionals] = await Promise.all([
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const [user, { data: professionals, error: profError }] = await Promise.all([
     currentUser(),
-    api.get<ProfessionalWithProfile[]>('/v1/professionals?limit=10').catch(() => []),
+    supabase
+      .from('professionals')
+      .select('*, profiles!inner(*)')
+      .order('rating_avg', { ascending: false })
+      .limit(10),
   ]);
+
+  if (profError) {
+    console.error('Supabase error:', profError.message);
+  }
 
   const firstName = user?.firstName ?? 'você';
 
   return (
-    <div className="pb-4">
+    <div className="pb-24 bg-[#f8f6f6] min-h-screen">
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div className="px-4 pt-10 pb-4 bg-white">
         <div className="flex items-center justify-between mb-1">
           <div>
-            <p className="text-xs text-slate-400 font-medium">Bom dia,</p>
-            <h1 className="text-xl font-bold text-slate-900">{firstName} 👋</h1>
+            <p className="text-xs text-slate-400 font-medium">Bem-vindo, {firstName}</p>
+            <h1 className="text-2xl font-bold text-[#ec5b13]">Obra Fácil</h1>
           </div>
           <div className="relative">
             <span className="material-symbols-outlined text-slate-500 text-2xl">notifications</span>
@@ -53,25 +60,25 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* ── Quick service grid ──────────────────────────────────────── */}
+      {/* ── Quick service grid (2x2 cards) ───────────────────────── */}
       <div className="px-4 mt-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-900">Serviços</h2>
-          <Link href="/busca" className="text-xs font-medium text-trust">
-            Ver todos os serviços
+          <h2 className="text-base font-bold text-slate-900">Serviços</h2>
+          <Link href="/busca" className="text-xs font-semibold text-[#ec5b13]">
+            Ver todos →
           </Link>
         </div>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {QUICK_SERVICES.map(({ icon, label, color }) => (
             <Link
               key={label}
               href={`/busca?service=${encodeURIComponent(label)}`}
-              className="flex flex-col items-center gap-1.5"
+              className="flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm border border-slate-100 active:scale-[0.98] transition-transform"
             >
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color}`}>
-                <span className="material-symbols-outlined text-2xl">{icon}</span>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+                <span className="material-symbols-outlined text-xl">{icon}</span>
               </div>
-              <span className="text-[10px] font-medium text-slate-600 text-center leading-tight">
+              <span className="text-sm font-medium text-slate-800 leading-tight">
                 {label}
               </span>
             </Link>
@@ -79,85 +86,87 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* ── Professional cards carousel ─────────────────────────────── */}
+      {/* ── Professional cards — "Profissionais de elite" ──────────── */}
       {/* prd.md: "profissionais super bem avaliados perto de você" — social proof */}
       <div className="mt-6">
-        <div className="px-4 flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-slate-900">
-            Bem avaliados perto de você
+        <div className="px-4 mb-1">
+          <h2 className="text-base font-bold text-slate-900">
+            Profissionais de elite
           </h2>
-          <Link href="/busca" className="text-xs font-medium text-trust">
-            Ver todos
-          </Link>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Super bem avaliados perto de você
+          </p>
         </div>
 
-        {/* Horizontal scroll carousel — spec_ui.md: "carrossel de Cards" */}
-        <div className="flex gap-3 px-4 overflow-x-auto no-scrollbar pb-1">
-          {professionals.length === 0 && (
+        <div className="px-4 mt-3 flex flex-col gap-3">
+          {(!professionals || professionals.length === 0) && (
             <p className="text-sm text-slate-400 py-4">Nenhum profissional encontrado.</p>
           )}
-          {professionals.map((pro: ProfessionalWithProfile) => {
+          {(professionals ?? []).map((pro) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const p = pro as any;
             return (
-              <Link
+              <div
                 key={p.id}
-                href={`/profissional/${p.id}`}
-                className="flex-shrink-0 w-44 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden active:scale-[0.98] transition-transform"
+                className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden p-4"
               >
-                {/* Photo */}
-                <div className="h-28 bg-slate-100 relative">
-                  {p.profiles?.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.profiles.avatar_url}
-                      alt={p.profiles.full_name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="material-symbols-outlined text-4xl text-slate-300">person</span>
-                    </div>
-                  )}
-                  {p.is_verified && (
-                    <span className="absolute top-2 right-2 bg-trust text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                      ✓ Verificado
-                    </span>
-                  )}
-                </div>
-                {/* Info */}
-                <div className="p-3">
-                  <p className="text-xs font-semibold text-slate-900 truncate">
-                    {p.profiles?.full_name ?? 'Profissional'}
-                  </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <StarRating rating={p.rating_avg ?? 0} size="sm" />
-                    <span className="text-[10px] text-slate-400">({p.total_reviews ?? 0})</span>
+                <div className="flex items-center gap-3">
+                  {/* Avatar */}
+                  <div className="w-14 h-14 rounded-full bg-slate-100 overflow-hidden flex-shrink-0">
+                    {p.profiles?.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.profiles.avatar_url}
+                        alt={p.profiles.full_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="material-symbols-outlined text-2xl text-slate-300">person</span>
+                      </div>
+                    )}
                   </div>
-                  <p className="mt-1.5 text-[10px] font-semibold text-trust bg-blue-50 rounded-full px-2 py-0.5 inline-block">
-                    A partir de R${p.hourly_rate ?? '80'}/h
-                  </p>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-900 truncate">
+                      {p.profiles?.full_name ?? 'Profissional'}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {p.services?.[0]?.name ?? 'Especialista'}
+                    </p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <StarRating rating={p.rating_avg ?? 0} size="sm" />
+                      <span className="text-xs font-bold text-slate-700">{p.rating_avg ?? 0}</span>
+                      <span className="text-[10px] text-slate-400">({p.total_reviews ?? 0})</span>
+                    </div>
+                  </div>
                 </div>
-              </Link>
+                {/* Ver Perfil button */}
+                <Link
+                  href={`/profissional/${p.id}`}
+                  className="mt-3 block text-center text-sm font-semibold text-[#ec5b13] py-2 rounded-xl border border-[#ec5b13]/20 bg-orange-50 active:scale-[0.98] transition-transform"
+                >
+                  Ver Perfil
+                </Link>
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* ── Recent works section (social proof) ───────────────────── */}
-      <div className="mt-6 px-4">
-        <h2 className="text-sm font-semibold text-slate-900 mb-3">Obras recentes concluídas</h2>
-        <div className="bg-gradient-to-r from-trust to-blue-700 rounded-2xl p-5 text-white">
-          <p className="text-xs font-medium opacity-80">Esta semana na plataforma</p>
-          <p className="text-3xl font-bold mt-1">1.247</p>
-          <p className="text-xs opacity-80 mt-0.5">serviços concluídos com ⭐ 4.8+</p>
-          <Link
-            href="/busca"
-            className="mt-4 inline-flex items-center gap-1 text-xs font-semibold bg-white/20 rounded-full px-3 py-1.5"
-          >
-            Encontrar profissional
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </Link>
+      {/* ── Emergency banner (orange) ─────────────────────────────── */}
+      <div className="px-4 mt-6">
+        <div className="bg-[#ec5b13] rounded-2xl p-4 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-2xl text-white">emergency</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white">Atendimento de Emergência</p>
+            <p className="text-xs text-white/80 mt-0.5 leading-tight">
+              Canal direto para urgências elétricas e hidráulicas.
+            </p>
+          </div>
+          <span className="material-symbols-outlined text-white text-xl flex-shrink-0">chevron_right</span>
         </div>
       </div>
 
@@ -165,7 +174,6 @@ export default async function HomePage() {
       <FAB
         icon="support_agent"
         variant="brand"
-        onClick={() => {}}
         ariaLabel="Suporte ou emergência"
         className="fixed bottom-24 right-4 shadow-lg"
       />

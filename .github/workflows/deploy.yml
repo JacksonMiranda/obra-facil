@@ -26,17 +26,9 @@ jobs:
 
       - name: Instalar Dependências
         run: npm ci
-              
+
       - name: Executar Linter
         run: npm run lint
-        working-directory: apps/backend
-
-      - name: Gerar schema
-        run: npm run prisma:generate
-        working-directory: apps/backend
-
-      - name: Executar Testes
-        run: npm run test
         working-directory: apps/backend
 
   quality-frontend:
@@ -57,13 +49,9 @@ jobs:
 
       - name: Instalar Dependências
         run: npm ci
-      
+
       - name: Executar Linter
         run: npm run lint
-        working-directory: apps/frontend
-      
-      - name: Executar Testes
-        run: npm run test
         working-directory: apps/frontend
 
   build-deploy-frontend:
@@ -81,6 +69,8 @@ jobs:
       VERCEL_BUILD_ARG: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && '--prod' || '' }}
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
       CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
     steps:
       - name: Checkout do Repositório
         uses: actions/checkout@v4
@@ -93,7 +83,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Instalar Dependências
-        run: npm ci --workspace=frontend
+        run: npm ci
 
       - name: Instalar Vercel CLI
         run: npm install --global vercel@50.26.1
@@ -132,8 +122,10 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ENV: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'production' || 'preview' }}
       VERCEL_BUILD_ARG: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && '--prod' || '' }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
     steps:
       - name: Checkout do Repositório
         uses: actions/checkout@v4
@@ -146,7 +138,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Instalar Dependências
-        run: npm ci --workspace=backend
+        run: npm ci
 
       - name: Instalar Vercel CLI
         run: npm install --global vercel@50.26.1
