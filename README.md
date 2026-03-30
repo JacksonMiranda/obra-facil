@@ -39,16 +39,6 @@ Para facilitar a navegação no repositório, consulte os documentos detalhados:
 
 ---
 
-## 👥 Equipe
-Projeto desenvolvido como parte do trabalho final de Práticas de Implementação e Evolução de Software:
-- Alexander Cesar Luiz Costa
-- Anderson Arruda
-- Jackson Jovino Miranda
-- Marcelo Granzoto
-- Renan Carlos Silva Braz Tafner
-
----
-
 ## 🛠️ Stack Tecnológica
 
 | Camada | Tecnologia |
