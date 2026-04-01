@@ -1,5 +1,4 @@
-// Perfil do Usuário — dados do Clerk + logout
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
 import { SignOutButton } from '@clerk/nextjs';
 
@@ -10,7 +9,7 @@ export default async function PerfilPage() {
   const user = await currentUser();
   const name = user?.fullName ?? 'Usuário';
   const email = user?.emailAddresses?.[0]?.emailAddress ?? '';
-  const initials = name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
     <div className="pb-24 bg-[#f8f6f6] min-h-screen">
@@ -54,13 +53,20 @@ export default async function PerfilPage() {
           </button>
         </div>
 
-        {/* Logout */}
-        <SignOutButton>
-          <button className="w-full bg-white rounded-xl border border-red-100 shadow-sm px-4 py-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform">
+        {/* Logout condicional: Se for dev (bypass), exibe mock. Se for prod, renderiza Clerk auth puro */}
+        {process.env.NEXT_PUBLIC_DISABLE_CLERK_AUTH === 'true' ? (
+          <div className="w-full bg-white rounded-xl border border-red-100 shadow-sm px-4 py-3.5 flex items-center gap-3 cursor-pointer">
             <span className="material-symbols-outlined text-xl text-red-500">logout</span>
-            <span className="text-sm font-semibold text-red-500">Sair da Conta</span>
-          </button>
-        </SignOutButton>
+            <span className="text-sm font-semibold text-red-500">Sair da Conta (Modo Local)</span>
+          </div>
+        ) : (
+          <SignOutButton>
+            <button className="w-full bg-white rounded-xl border border-red-100 shadow-sm px-4 py-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform cursor-pointer">
+              <span className="material-symbols-outlined text-xl text-red-500">logout</span>
+              <span className="text-sm font-semibold text-red-500">Sair da Conta</span>
+            </button>
+          </SignOutButton>
+        )}
       </div>
 
       {/* Version */}

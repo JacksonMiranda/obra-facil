@@ -1,6 +1,6 @@
 # CI/CD — Obra Fácil
-# Runs on every push/PR: lint + typecheck + build + security audit
-# Deployment to Vercel is handled automatically via Vercel GitHub App (push to main → deploy)
+# Roda em todo push/PR: lint + typecheck + build + security audit
+# Deploy no Vercel é feito automaticamente pelo Vercel GitHub App (push em main → deploy)
 
 name: CI
 
@@ -8,7 +8,7 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   ci:
@@ -30,30 +30,30 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
+      - name: Lint backend
+        run: npm run lint:backend
+
+      - name: Lint frontend
         run: npm run lint:frontend
 
-      - name: Type-check
+      - name: Type-check frontend
         run: npx tsc --noEmit
         working-directory: apps/frontend
 
-      - name: Build
+      - name: Type-check backend
+        run: npx tsc --noEmit
+        working-directory: apps/backend
+
+      - name: Build frontend
         run: npm run build:frontend
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_API_URL: 'http://localhost:3001/api'
+          NEXT_PUBLIC_DISABLE_CLERK_AUTH: 'true'
+
+      - name: Build backend
+        run: npm run build:backend
 
       - name: Security audit
         run: npm audit --audit-level=high
         continue-on-error: true
-
-  # Supabase migration check (optional — enable when Supabase CLI is configured)
-  # db-check:
-  #   name: DB migration lint
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: supabase/setup-cli@v1
-  #     - run: supabase db lint --schema public

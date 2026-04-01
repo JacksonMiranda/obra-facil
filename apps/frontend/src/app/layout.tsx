@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { ClerkProvider } from '@clerk/nextjs';
+import { ClerkProviderClient } from '@/components/auth/ClerkProviderClient';
+import { isClerkConfigured } from '@/lib/env';
 import './globals.css';
 
 // Inter font — per spec_ui.md: "fontes robustas como Inter, pesos Medium/Semi-Bold"
@@ -27,6 +28,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const clerkConfigured = isClerkConfigured();
+
   return (
     <html lang="pt-BR" className={inter.variable}>
       <head>
@@ -37,7 +40,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-surface text-slate-900">
-        <ClerkProvider>{children}</ClerkProvider>
+        {clerkConfigured ? <ClerkProviderClient>{children}</ClerkProviderClient> : children}
       </body>
     </html>
   );

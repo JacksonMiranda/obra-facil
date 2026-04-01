@@ -1,7 +1,7 @@
 // Busca de Profissionais — accepts ?q= (text) and ?service= (category)
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { api } from '@/lib/api/client';
 import { StarRating } from '@/components/ui/StarRating';
 import { SearchBar } from '@/components/ui/SearchBar';
 import Link from 'next/link';
@@ -16,25 +16,13 @@ export default async function BuscaPage({
 
   const { q, service } = await searchParams;
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-
-  let query = supabase
-    .from('professionals')
-    .select('*, profiles!inner(*)')
-    .order('rating_avg', { ascending: false })
-    .limit(20);
-
-  if (q) {
-    query = query.ilike('profiles.full_name', `%${q}%`);
-  }
-  if (service) {
-    query = query.ilike('specialty', `%${service}%`);
-  }
-
-  const { data: professionals } = await query;
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (service) params.set('service', service);
+  const qs = params.toString();
+  const { professionals } = await api
+    .get<{ professionals: any[]; total: number }>(`/v1/professionals${qs ? '?' + qs : ''}`)
+    .catch(() => ({ professionals: [] as any[], total: 0 }));
 
   const title = q
     ? `Resultados para "${q}"`

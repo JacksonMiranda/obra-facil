@@ -28,7 +28,9 @@ export class MaterialListsController {
   @Get()
   findAll(@CurrentUser() profile: Profile) {
     if (profile.role !== 'professional') {
-      throw new ForbiddenException('Apenas profissionais têm listas de materiais');
+      throw new ForbiddenException(
+        'Apenas profissionais têm listas de materiais',
+      );
     }
     return this.service.findAllByProfessional(profile.id);
   }
@@ -48,7 +50,9 @@ export class MaterialListsController {
   @Post()
   create(@CurrentUser() profile: Profile, @Body() body: unknown) {
     if (profile.role !== 'professional') {
-      throw new ForbiddenException('Apenas profissionais podem criar listas de materiais');
+      throw new ForbiddenException(
+        'Apenas profissionais podem criar listas de materiais',
+      );
     }
     return this.service.create(profile.id, body);
   }
@@ -60,7 +64,9 @@ export class MaterialListsController {
     @Body() body: unknown,
   ) {
     if (profile.role !== 'professional') {
-      throw new ForbiddenException('Apenas profissionais podem adicionar itens');
+      throw new ForbiddenException(
+        'Apenas profissionais podem adicionar itens',
+      );
     }
     return this.service.addItem(profile.id, listId, body);
   }

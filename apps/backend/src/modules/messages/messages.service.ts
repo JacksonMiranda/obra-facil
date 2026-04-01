@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { MessagesRepository } from './messages.repository';
 import { ConversationsRepository } from '../conversations/conversations.repository';
 import { SendMessageSchema } from '@obrafacil/shared';
@@ -18,7 +22,10 @@ export class MessagesService {
   ): Promise<MessageWithSender[]> {
     const conversation = await this.conversationsRepo.findById(conversationId);
     if (!conversation) throw new NotFoundException('Conversa não encontrada');
-    if (conversation.client_id !== profileId && conversation.professional_id !== profileId) {
+    if (
+      conversation.client_id !== profileId &&
+      conversation.professional_id !== profileId
+    ) {
       throw new ForbiddenException('Acesso negado');
     }
     return this.messagesRepo.findByConversation(conversationId, limit);
@@ -27,10 +34,17 @@ export class MessagesService {
   async send(senderId: string, rawInput: unknown): Promise<Message> {
     const input = SendMessageSchema.parse(rawInput);
 
-    const conversation = await this.conversationsRepo.findById(input.conversationId);
+    const conversation = await this.conversationsRepo.findById(
+      input.conversationId,
+    );
     if (!conversation) throw new NotFoundException('Conversa não encontrada');
-    if (conversation.client_id !== senderId && conversation.professional_id !== senderId) {
-      throw new ForbiddenException('Acesso negado: você não faz parte desta conversa');
+    if (
+      conversation.client_id !== senderId &&
+      conversation.professional_id !== senderId
+    ) {
+      throw new ForbiddenException(
+        'Acesso negado: você não faz parte desta conversa',
+      );
     }
 
     return this.messagesRepo.create({

@@ -1,34 +1,14 @@
 // Mensagens — lista de conversas do usuário
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { api } from '@/lib/api/client';
 import Link from 'next/link';
 
 export default async function MensagensPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-
-  // Try to find user profile to list conversations
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('clerk_id', userId)
-    .single();
-
-  let conversations: any[] = [];
-  if (profile) {
-    const { data } = await supabase
-      .from('conversations')
-      .select('*, profiles!conversations_professional_id_fkey(full_name, avatar_url)')
-      .or(`client_id.eq.${profile.id},professional_id.eq.${profile.id}`)
-      .order('last_message_at', { ascending: false });
-    conversations = data ?? [];
-  }
+  const conversations: any[] = await api.get<any[]>('/v1/conversations').catch(() => []);
 
   return (
     <div className="pb-24 bg-[#f8f6f6] min-h-screen">
@@ -60,7 +40,7 @@ export default async function MensagensPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-900 truncate">
-                  {conv.profiles?.full_name ?? 'Conversa'}
+                  {conv.professional?.full_name ?? 'Conversa'}
                 </p>
                 <p className="text-[10px] text-slate-400">
                   {new Date(conv.last_message_at).toLocaleDateString('pt-BR')}

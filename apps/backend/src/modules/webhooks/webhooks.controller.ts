@@ -1,8 +1,15 @@
-﻿import { Controller, Post, Req, Logger, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+﻿import {
+  Controller,
+  Post,
+  Req,
+  Logger,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Webhook } from 'svix';
 import type { Request } from 'express';
-import { SupabaseService } from '../../supabase/supabase.service';
+import { DatabaseService } from '../../database/database.service';
 
 type ClerkWebhookEvent = {
   type: 'user.created' | 'user.updated' | 'user.deleted';
@@ -21,7 +28,7 @@ type ClerkWebhookEvent = {
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(private readonly db: DatabaseService) {}
 
   @Post('clerk')
   async handleClerkWebhook(@Req() req: Request) {
@@ -53,26 +60,43 @@ export class WebhooksController {
     }
 
     if (event.type === 'user.created' || event.type === 'user.updated') {
-      const { id, first_name, last_name, image_url, phone_numbers, public_metadata } = event.data;
-      const fullName = [first_name, last_name].filter(Boolean).join(' ') || 'Usuário';
+      const {
+        id,
+        first_name,
+        last_name,
+        image_url,
+        phone_numbers,
+        public_metadata,
+      } = event.data;
+      const fullName =
+        [first_name, last_name].filter(Boolean).join(' ') || 'Usuário';
       const phone = phone_numbers?.[0]?.phone_number ?? null;
-      const role = (public_metadata?.role as 'client' | 'professional' | 'store') ?? 'client';
+      const role =
+        (public_metadata?.role as 'client' | 'professional' | 'store') ??
+        'client';
 
-      const { error } = await this.supabase.adminClient
-        .from('profiles')
-        .upsert(
-          { clerk_id: id, full_name: fullName, avatar_url: image_url ?? null, phone, role },
-          { onConflict: 'clerk_id' },
+      try {
+        await this.db.query(
+          `INSERT INTO profiles (clerk_id, full_name, avatar_url, phone, role)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (clerk_id) DO UPDATE SET
+             full_name = EXCLUDED.full_name,
+             avatar_url = EXCLUDED.avatar_url,
+             phone = EXCLUDED.phone,
+             role = EXCLUDED.role,
+             updated_at = now()`,
+          [id, fullName, image_url ?? null, phone, role],
         );
-
-      if (error) {
-        this.logger.error('Supabase upsert error:', error);
+      } catch (err) {
+        this.logger.error('Database upsert error:', err);
         throw new InternalServerErrorException('Database error');
       }
     }
 
     if (event.type === 'user.deleted') {
-      await this.supabase.adminClient.from('profiles').delete().eq('clerk_id', event.data.id);
+      await this.db.query('DELETE FROM profiles WHERE clerk_id = $1', [
+        event.data.id,
+      ]);
     }
 
     return { received: true };

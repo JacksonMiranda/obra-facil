@@ -1,12 +1,10 @@
 'use client';
-// INT-03 — Chat Realtime UI (Client Component)
-// Uses Supabase Realtime for live messages per spec_tech.md "Supabase Realtime nos chats"
+// INT-03 — Chat UI (Client Component)
+// Uses polling every 3s for live messages (replaces Supabase Realtime)
 // spec_ui.md: "similar ao WhatsApp, Zero Curva de Aprendizado"
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { createBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
 
 type Profile = {
   id: string;
@@ -47,36 +45,34 @@ export function ChatView({
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
-  const { getToken } = useAuth();
 
-  // Supabase Realtime subscription
+  // Polling for new messages every 3 seconds
   useEffect(() => {
-    const supabase = createBrowserClient();
-
-    const channel = supabase
-      .channel(`conversation:${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload: { new: Record<string, unknown> }) => {
-          const newMsg = payload.new as unknown as Message;
-          // Avoid duplicating optimistic messages
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [...prev, newMsg];
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+    const poll = async () => {
+      try {
+        const res = await fetch(
+          `${apiUrl}/v1/conversations/${conversationId}/messages`,
+          { cache: 'no-store' },
+        );
+        if (!res.ok) return;
+        const envelope = (await res.json()) as { data: Message[] };
+        const fetched = envelope.data ?? [];
+        setMessages((prev) => {
+          // Merge: keep optimistic messages, add new server messages
+          const serverIds = new Set(fetched.map((m) => m.id));
+          const optimistics = prev.filter(
+            (m) => m.id.startsWith('optimistic-') && !serverIds.has(m.id),
+          );
+          return [...fetched, ...optimistics];
+        });
+      } catch {
+        // ignore poll errors silently
+      }
     };
+
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
   }, [conversationId]);
 
   // Auto-scroll to bottom on new messages
@@ -104,14 +100,11 @@ export function ChatView({
     setMessages((prev) => [...prev, optimistic]);
 
     try {
-      const token = await getToken();
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       const res = await fetch(`${apiUrl}/v1/conversations/${conversationId}/messages`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({ content }),
       });
 
@@ -123,7 +116,7 @@ export function ChatView({
     } finally {
       setSending(false);
     }
-  }, [inputValue, sending, conversationId, myProfileId, getToken]);
+  }, [inputValue, sending, conversationId, myProfileId]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

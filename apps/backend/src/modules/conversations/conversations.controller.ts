@@ -31,7 +31,10 @@ export class ConversationsController {
   async findOne(@CurrentUser() profile: Profile, @Param('id') id: string) {
     const conversation = await this.repo.findById(id);
     if (!conversation) throw new NotFoundException('Conversa não encontrada');
-    if (conversation.client_id !== profile.id && conversation.professional_id !== profile.id) {
+    if (
+      conversation.client_id !== profile.id &&
+      conversation.professional_id !== profile.id
+    ) {
       throw new ForbiddenException('Acesso negado');
     }
     return conversation;

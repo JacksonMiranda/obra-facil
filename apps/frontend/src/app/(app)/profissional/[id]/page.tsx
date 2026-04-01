@@ -2,11 +2,12 @@
 // spec_ui.md: "Foco na credibilidade. Topo: Foto+Nome; Meio: Nota+Especialidades; Rodapé: CTA fixado"
 // seed.sql: Ricardo Silva 4.9/128, José da Silva 4.9/142, Ana Rodrigues 4.7/89
 import { notFound, redirect } from 'next/navigation';
-import { auth } from '@clerk/nextjs/server';
-import { createClient } from '@supabase/supabase-js';
+import { auth } from '@/lib/auth-bypass';
+import { api } from '@/lib/api/client';
 import { StarRating } from '@/components/ui/StarRating';
-import { StickyBottomCTA, PrimaryButton } from '@/components/ui/StickyBottomCTA';
+import { StickyBottomCTA } from '@/components/ui/StickyBottomCTA';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { StartConversationButton } from '@/components/ui/StartConversationButton';
 
 export default async function ProfissionalPage({
   params,
@@ -17,15 +18,7 @@ export default async function ProfissionalPage({
   if (!userId) redirect('/sign-in');
 
   const { id } = await params;
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-  const { data: pro } = await supabase
-    .from('professionals')
-    .select('*, profiles!inner(*), reviews(*, profiles!reviews_reviewer_id_fkey(id, full_name, avatar_url))')
-    .eq('id', id)
-    .single();
+  const pro = await api.get<any>(`/v1/professionals/${id}`).catch(() => null);
 
   if (!pro) notFound();
 
@@ -33,10 +26,10 @@ export default async function ProfissionalPage({
   const p = pro as any;
   const profile = p.profiles;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const services: any[] = p.services ?? [];
+  const allReviews: any[] = p.reviews ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const reviews: any[] = (p.reviews ?? []).slice(0, 3);
-  const totalReviews = p.total_reviews ?? reviews.length;
+  const reviews: any[] = allReviews.slice(0, 3);
+  const totalReviews = allReviews.length;
 
   return (
     <div className="pb-32 bg-[#f8f6f6] min-h-screen">
@@ -62,9 +55,9 @@ export default async function ProfissionalPage({
 
         {/* ── Name + Profession ────────────────────────────────── */}
         <h1 className="text-xl font-bold text-slate-900 mt-3 text-center">{profile?.full_name}</h1>
-        {services.length > 0 && (
+        {p.specialty && (
           <p className="text-sm text-slate-500 uppercase tracking-wide mt-0.5 text-center">
-            {services.map((s) => s.name).join(' · ')}
+            {p.specialty}
           </p>
         )}
 
@@ -92,8 +85,8 @@ export default async function ProfissionalPage({
             {/* Jobs */}
             <div className="p-4 text-center">
               <p className="text-[10px] text-slate-400 uppercase tracking-wide font-medium">Trabalhos Realizados</p>
-              <p className="text-4xl font-black text-slate-900 mt-1">{p.total_jobs ?? 0}</p>
-              <p className="text-[10px] text-slate-400 mt-1">+{Math.floor((p.total_jobs ?? 0) * 0.1)} este mês</p>
+              <p className="text-4xl font-black text-slate-900 mt-1">{p.jobs_completed ?? 0}</p>
+              <p className="text-[10px] text-slate-400 mt-1">+{Math.floor((p.jobs_completed ?? 0) * 0.1)} este mês</p>
             </div>
           </div>
         </div>
@@ -148,19 +141,14 @@ export default async function ProfissionalPage({
         </div>
       )}
 
-      {/* ── Specialties chips ────────────────────────────────────── */}
-      {services.length > 0 && (
+      {/* ── Specialty chip ────────────────────────────────────────── */}
+      {p.specialty && (
         <div className="px-4 mt-5">
-          <h2 className="text-sm font-semibold text-slate-900 mb-2">Especialidades</h2>
+          <h2 className="text-sm font-semibold text-slate-900 mb-2">Especialidade</h2>
           <div className="flex flex-wrap gap-2">
-            {services.map((s) => (
-              <span
-                key={s.id}
-                className="text-xs font-medium text-[#1E40AF] bg-blue-50 px-3 py-1.5 rounded-full"
-              >
-                {s.name}
-              </span>
-            ))}
+            <span className="text-xs font-medium text-[#1E40AF] bg-blue-50 px-3 py-1.5 rounded-full">
+              {p.specialty}
+            </span>
           </div>
         </div>
       )}
@@ -175,12 +163,7 @@ export default async function ProfissionalPage({
 
       {/* ── CTA fixado no rodapé (spec_ui.md: "CTAs colados à margem inferior") ── */}
       <StickyBottomCTA>
-        <a href={`/chat?professional=${id}`} className="block">
-          <PrimaryButton variant="trust" className="w-full">
-            <span className="material-symbols-outlined text-xl">chat</span>
-            Conversar e Solicitar Visita
-          </PrimaryButton>
-        </a>
+        <StartConversationButton professionalId={id} />
       </StickyBottomCTA>
     </div>
   );

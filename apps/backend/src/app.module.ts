@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
-import { SupabaseModule } from './supabase/supabase.module';
+import { DatabaseModule } from './database/database.module';
 import { ProfessionalsModule } from './modules/professionals/professionals.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
 import { MessagesModule } from './modules/messages/messages.module';
@@ -15,7 +15,7 @@ import { HttpExceptionFilter } from './core/filters/http-exception.filter';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    SupabaseModule,
+    DatabaseModule,
     ProfessionalsModule,
     ConversationsModule,
     MessagesModule,

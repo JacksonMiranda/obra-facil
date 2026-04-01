@@ -2,13 +2,17 @@
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
 import { ProfessionalsService } from './professionals.service';
+import { ProfessionalsRepository } from './professionals.repository';
 
 @ApiTags('professionals')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
 @Controller('v1/professionals')
 export class ProfessionalsController {
-  constructor(private readonly service: ProfessionalsService) {}
+  constructor(
+    private readonly service: ProfessionalsService,
+    private readonly repo: ProfessionalsRepository,
+  ) {}
 
   @Get()
   search(@Query() query: Record<string, string>) {
@@ -17,6 +21,6 @@ export class ProfessionalsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.service.findById(id);
+    return this.repo.findByIdWithReviews(id);
   }
 }

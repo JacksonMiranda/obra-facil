@@ -1,4 +1,25 @@
 services:
+  db:
+    image: postgres:17-alpine
+    container_name: obrafacil-db
+    restart: always
+    environment:
+      POSTGRES_DB: obrafacil_db
+      POSTGRES_USER: obrafacil_user
+      POSTGRES_PASSWORD: obrafacil_pass
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U obrafacil_user -d obrafacil_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
   backend:
     build:
       context: .
@@ -8,13 +29,15 @@ services:
     environment:
       PORT: ${PORT:-3001}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
-      CLERK_WEBHOOK_SECRET: ${CLERK_WEBHOOK_SECRET}
+      DISABLE_CLERK_AUTH: "true"
+      DATABASE_URL: ${DATABASE_URL:-postgres://obrafacil_user:obrafacil_pass@db:5432/obrafacil_db}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-dummy}
+      CLERK_WEBHOOK_SECRET: ${CLERK_WEBHOOK_SECRET:-dummy}
     ports:
-      - "${PORT:-3001}:${PORT:-3001}"
+      - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - app-network
     healthcheck:
@@ -33,12 +56,13 @@ services:
     restart: always
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:3001/api}
+      NEXT_PUBLIC_DISABLE_CLERK_AUTH: "true"
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-dummy}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-dummy}
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
+    command: ["sh", "-c", "cd /app/apps/frontend && node /app/node_modules/.bin/next start -H 0.0.0.0 -p 3000"]
     depends_on:
       backend:
         condition: service_started
@@ -48,3 +72,6 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  pgdata:
