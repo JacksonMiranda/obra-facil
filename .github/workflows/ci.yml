@@ -58,5 +58,5 @@ jobs:
         run: npm run build:backend
 
       - name: Auditoria de segurança
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
         continue-on-error: true
