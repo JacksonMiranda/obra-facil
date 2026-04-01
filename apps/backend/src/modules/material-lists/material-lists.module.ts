@@ -6,6 +6,10 @@ import { StoreOffersRepository } from './store-offers.repository';
 
 @Module({
   controllers: [MaterialListsController],
-  providers: [MaterialListsService, MaterialListsRepository, StoreOffersRepository],
+  providers: [
+    MaterialListsService,
+    MaterialListsRepository,
+    StoreOffersRepository,
+  ],
 })
 export class MaterialListsModule {}

@@ -2,7 +2,7 @@
 // spec_ui.md: "comportamento similar ao WhatsApp, Zero Curva de Aprendizado"
 // prd.md RFN-02: histórico, fotos, áudio, aprovação de agendamento no mesmo chat
 import { notFound, redirect } from 'next/navigation';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@/lib/auth-bypass';
 import { api } from '@/lib/api/client';
 import { ChatView } from './ChatView';
 

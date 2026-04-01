@@ -1,17 +1,27 @@
 # Build stage
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+
+# Copia o projeto inteiro (o context do docker-compose é raiz)
 COPY . .
-RUN npm run build
+RUN npm ci
+
+# Builda as bibliotecas compartilhadas (essencial para o TS rootDir do NestJS)
+RUN npm run build --workspace=@obrafacil/shared
+
+# Builda a workspace específica
+RUN npm run build:backend
 
 # Production stage
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package*.json ./
-RUN npm ci --omit=dev
-COPY --from=builder /app/dist ./dist
+
+# Adiciona o curl necessário para o healthcheck do backend (docker-compose)
+RUN apk add --no-cache curl
+
+# Copia os dados
+COPY --from=builder /app ./
+
 EXPOSE 3001
-CMD ["node", "dist/main"]
+CMD ["npm", "run", "start:prod", "--workspace=backend"]

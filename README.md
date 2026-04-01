@@ -3,8 +3,8 @@
 > **Transformando a jornada de reforma e manutenção residencial em uma experiência simples, segura e integrada.**
 
 ![Status do Projeto](https://img.shields.io/badge/Status-Em%20Desenvolvimento-orange)
-![UI/UX](https://img.shields.io/badge/Design-UX%20Research-blue)
-![Tech](https://img.shields.io/badge/Stack-Next.js%20%7C%20NestJS%20%7C%20Supabase-green)
+![CI](https://github.com/lexcesar/obra-facil/actions/workflows/ci.yml/badge.svg)
+![Tech](https://img.shields.io/badge/Stack-Next.js%20%7C%20NestJS%20%7C%20PostgreSQL-green)
 
 O **Obra Fácil** é um marketplace inovador que conecta proprietários de imóveis a profissionais autônomos da construção civil. Diferente de soluções genéricas, integramos a contratação do serviço com a cotação de materiais em lojas parceiras, resolvendo a fragmentação do mercado de reformas.
 
@@ -31,10 +31,10 @@ Um usuário que busca agilidade e segurança, mas possui pouco tempo para pesqui
 ## 📂 Documentação do Projeto
 Para facilitar a navegação no repositório, consulte os documentos detalhados:
 
-* [📄 PRD (Requisitos)](docs/prd.md) - Visão geral e regras de negócio.
-* [🛠️ Especificação Técnica](docs/spec_tech.md) - Arquitetura, Backend e Frontend.
-* [🎨 Guia de UI/UX](docs/spec_ui.md) - Fluxo de telas e identidade visual.
-* [💡 Definição do Problema](docs/definicao_problema.md) - Contexto e impacto no mercado.
+* [📄 PRD (Requisitos)](docs/01-produto/prd.md) - Visão geral e regras de negócio.
+* [🛠️ Especificação Técnica](docs/02-arquitetura/spec_tech.md) - Arquitetura, Backend e Frontend.
+* [🎨 Guia de UI/UX](docs/03-design-ux/spec_ui.md) - Fluxo de telas e identidade visual.
+* [💡 Definição do Problema](docs/01-produto/definicao_problema.md) - Contexto e impacto no mercado.
 * [stitch](https://stitch.withgoogle.com/projects/10387496590250121391) - Design do projeto
 
 ---
@@ -45,7 +45,7 @@ Para facilitar a navegação no repositório, consulte os documentos detalhados:
 |---|---|
 | Frontend | Next.js 15, React 19, Tailwind CSS, TypeScript |
 | Backend | NestJS 11, TypeScript, Swagger |
-| Banco de Dados | PostgreSQL (Supabase) com RLS |
+| Banco de Dados | PostgreSQL 17 (Docker local / Supabase em produção) |
 | Autenticação | Clerk |
 | Deploy | Vercel (frontend + backend) |
 | CI/CD | GitHub Actions |
@@ -54,54 +54,63 @@ Para facilitar a navegação no repositório, consulte os documentos detalhados:
 
 ## ⚡ Setup Local
 
+> Guia completo: [docs/04-ambiente-e-processos/setup-local.md](docs/04-ambiente-e-processos/setup-local.md)
+
+**Pré-requisitos**: Node.js 20+, Docker Desktop
+
 ```bash
 # Clone o repositório
-git clone https://github.com/lexcesar/app-devai.git
-cd app-devai
+git clone https://github.com/lexcesar/obra-facil.git
+cd obra-facil
 
 # Instale as dependências
 npm install
 
-# Configure as variáveis de ambiente
-cp .env.example .env
-cp apps/frontend/.env.local.example apps/frontend/.env.local
+# Configure as variáveis de ambiente (valores padrão já funcionam)
 cp apps/backend/.env.example apps/backend/.env
-# Preencha os valores de Supabase e Clerk nos 3 arquivos
+cp apps/frontend/.env.local.example apps/frontend/.env.local
 
-# Rode o frontend
-npm run dev:frontend    # http://localhost:3000
-
-# Rode o backend (em outro terminal)
-npm run dev:backend     # http://localhost:3333
+# Suba o ambiente completo (DB + Backend + Frontend)
+npm run docker:up
 ```
 
-### Variáveis de Ambiente Necessárias
-
-| Variável | Onde obter |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk → API Keys |
-| `CLERK_SECRET_KEY` | Clerk → API Keys |
+Acesse: **http://localhost:3000** (frontend) | **http://localhost:3001/api/docs** (Swagger)
 
 ---
 
 ## 📂 Estrutura do Projeto
 
 ```
-app-devai/
+obra-facil/
 ├── apps/
 │   ├── frontend/          # Next.js 15 (App Router)
 │   └── backend/           # NestJS 11
 ├── packages/
 │   └── shared/            # Types, schemas Zod, interfaces
-├── supabase/
-│   ├── migrations/        # Schema SQL
-│   └── seed.sql           # Dados de teste
-├── docs/                  # Documentação do produto
-└── .github/workflows/     # CI/CD pipelines
+├── docker/
+│   ├── 01-schema.sql      # Schema do banco de dados
+│   └── 02-seed.sql        # Dados de exemplo
+├── docs/
+│   ├── 01-produto/        # PRD, personas, jornada, lean canvas
+│   ├── 02-arquitetura/    # Arquitetura técnica e spec
+│   ├── 03-design-ux/      # Design system, UI spec
+│   ├── 04-ambiente-e-processos/  # Setup local, fluxo git, variáveis
+│   └── 05-prompts-e-referencias/ # Prompts de IA e referências
+├── scripts/
+│   └── setup/             # Scripts de configuração e ferramentas
+└── .github/workflows/ # CI/CD pipelines
 ```
+
+### 📚 Documentação
+
+| Documento | Descrição |
+|---|---|
+| [docs/04-ambiente-e-processos/setup-local.md](docs/04-ambiente-e-processos/setup-local.md) | Como rodar o projeto localmente |
+| [docs/02-arquitetura/arquitetura.md](docs/02-arquitetura/arquitetura.md) | Arquitetura técnica detalhada |
+| [docs/04-ambiente-e-processos/variaveis-ambiente.md](docs/04-ambiente-e-processos/variaveis-ambiente.md) | Todas as variáveis de ambiente |
+| [docs/04-ambiente-e-processos/fluxo-git.md](docs/04-ambiente-e-processos/fluxo-git.md) | Convenções de branches e commits |
+| [docs/01-produto/prd.md](docs/01-produto/prd.md) | Product Requirements Document |
+| [docs/02-arquitetura/spec_tech.md](docs/02-arquitetura/spec_tech.md) | Especificação técnica |
 
 ---
 

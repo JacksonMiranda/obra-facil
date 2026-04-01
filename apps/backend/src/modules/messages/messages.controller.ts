@@ -26,7 +26,11 @@ export class MessagesController {
     @CurrentUser() profile: Profile,
     @Query('limit') limit?: string,
   ) {
-    return this.service.findByConversation(conversationId, profile.id, limit ? Number(limit) : 50);
+    return this.service.findByConversation(
+      conversationId,
+      profile.id,
+      limit ? Number(limit) : 50,
+    );
   }
 
   @Post()
@@ -35,6 +39,9 @@ export class MessagesController {
     @CurrentUser() profile: Profile,
     @Body() body: unknown,
   ) {
-    return this.service.send(profile.id, { ...(body as Record<string, unknown>), conversationId });
+    return this.service.send(profile.id, {
+      ...(body as Record<string, unknown>),
+      conversationId,
+    });
   }
 }

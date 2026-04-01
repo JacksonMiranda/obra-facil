@@ -1,50 +1,66 @@
 ﻿import { Injectable } from '@nestjs/common';
-import { SupabaseService } from '../../supabase/supabase.service';
+import { DatabaseService } from '../../database/database.service';
 import type { IConversationsRepository, Conversation } from '@obrafacil/shared';
 
 @Injectable()
 export class ConversationsRepository implements IConversationsRepository {
-  constructor(private readonly supabase: SupabaseService) {}
+  constructor(private readonly db: DatabaseService) {}
 
   async findAllByProfile(profileId: string): Promise<Conversation[]> {
-    const { data, error } = await this.supabase.client
-      .from('conversations')
-      .select('*')
-      .or(`client_id.eq.${profileId},professional_id.eq.${profileId}`)
-      .order('last_message_at', { ascending: false });
-    if (error) throw error;
-    return (data ?? []) as Conversation[];
+    const { rows } = await this.db.query(
+      `SELECT
+         c.id, c.client_id, c.professional_id, c.created_at, c.last_message_at,
+         json_build_object(
+           'id', pp.id, 'full_name', pp.full_name, 'avatar_url', pp.avatar_url,
+           'role', pp.role, 'clerk_id', pp.clerk_id
+         ) AS professional
+       FROM conversations c
+       INNER JOIN professionals prof ON prof.id = c.professional_id
+       INNER JOIN profiles pp ON pp.id = prof.profile_id
+       WHERE c.client_id = $1 OR c.professional_id = $1
+       ORDER BY c.last_message_at DESC`,
+      [profileId],
+    );
+    return rows as unknown as Conversation[];
   }
 
   async findById(id: string): Promise<Conversation | null> {
-    const { data, error } = await this.supabase.client
-      .from('conversations')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .select('*, client:profiles!conversations_client_id_fkey(*), professional:profiles!conversations_professional_id_fkey(*)' as any)
-      .eq('id', id)
-      .single();
-    if (error) return null;
-    return data as unknown as Conversation;
+    const { rows } = await this.db.query(
+      `SELECT
+         c.id, c.client_id, c.professional_id, c.created_at, c.last_message_at,
+         json_build_object(
+           'id', cp.id, 'full_name', cp.full_name, 'avatar_url', cp.avatar_url,
+           'role', cp.role, 'clerk_id', cp.clerk_id
+         ) AS client,
+         json_build_object(
+           'id', pp.id, 'full_name', pp.full_name, 'avatar_url', pp.avatar_url,
+           'role', pp.role, 'clerk_id', pp.clerk_id
+         ) AS professional
+       FROM conversations c
+       INNER JOIN profiles cp ON cp.id = c.client_id
+       INNER JOIN professionals prof ON prof.id = c.professional_id
+       INNER JOIN profiles pp ON pp.id = prof.profile_id
+       WHERE c.id = $1`,
+      [id],
+    );
+    return rows.length ? (rows[0] as unknown as Conversation) : null;
   }
 
-  async findOrCreate({ clientId, professionalId }: {
+  async findOrCreate({
+    clientId,
+    professionalId,
+  }: {
     clientId: string;
     professionalId: string;
   }): Promise<Conversation> {
-    const { data: existing } = await this.supabase.client
-      .from('conversations')
-      .select('*')
-      .eq('client_id', clientId)
-      .eq('professional_id', professionalId)
-      .single();
-    if (existing) return existing as Conversation;
-
-    const { data, error } = await this.supabase.client
-      .from('conversations')
-      .insert({ client_id: clientId, professional_id: professionalId })
-      .select()
-      .single();
-    if (error) throw error;
-    return data as Conversation;
+    const { rows } = await this.db.query(
+      `INSERT INTO conversations (client_id, professional_id)
+       VALUES ($1, $2)
+       ON CONFLICT (client_id, professional_id)
+         DO UPDATE SET last_message_at = conversations.last_message_at
+       RETURNING *`,
+      [clientId, professionalId],
+    );
+    return rows[0] as unknown as Conversation;
   }
 }

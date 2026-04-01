@@ -5,7 +5,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
 import type { StoreOfferWithStore } from '@obrafacil/shared';
 import { StickyBottomCTA, PrimaryButton } from '@/components/ui/StickyBottomCTA';
 
@@ -23,7 +22,6 @@ export function CotacaoClient({
   const [selectedId, setSelectedId] = useState<string | null>(defaultSelectedId);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { getToken } = useAuth();
 
   const selectedOffer = offers.find((o) => o.id === selectedId);
   const cheapestPrice = Number(offers[0]?.total_price ?? 0);
@@ -32,14 +30,10 @@ export function CotacaoClient({
     if (!selectedOffer) return;
     setLoading(true);
 
-    const token = await getToken();
     const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
     const res = await fetch(`${apiUrl}/v1/orders`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         storeId: selectedOffer.stores?.id,
         materialListId: listId,

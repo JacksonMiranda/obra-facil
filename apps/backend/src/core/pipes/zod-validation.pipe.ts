@@ -3,7 +3,6 @@ import type { ZodSchema } from 'zod';
 
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(private readonly schema: ZodSchema<any>) {}
 
   transform(value: unknown) {

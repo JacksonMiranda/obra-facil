@@ -14,8 +14,14 @@ export type SearchProfessionalsInput = z.infer<typeof SearchProfessionalsSchema>
 
 // ── Conversations ────────────────────────────────────────────────────────────
 
+// Accept any 8-4-4-4-12 UUID format (including non-RFC-4122 demo seed values)
+const uuidLike = z.string().regex(
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+  'Invalid UUID format',
+);
+
 export const OpenConversationSchema = z.object({
-  professionalProfileId: z.string().uuid(),
+  professionalProfileId: uuidLike,
 });
 
 export type OpenConversationInput = z.infer<typeof OpenConversationSchema>;

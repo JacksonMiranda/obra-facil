@@ -1,9 +1,9 @@
 // INT-01 — Home / Dashboard (Visão Cliente)
 // spec_ui.md: "Flat Design, extremamente limpa, carrossel de Profissionais super bem avaliados"
 // prd.md RFN-01: profissionais ordenados por rating_avg desc
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { api } from '@/lib/api/client';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { StarRating } from '@/components/ui/StarRating';
 import { FAB } from '@/components/ui/FAB';
@@ -20,22 +20,11 @@ export default async function HomePage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-  const [user, { data: professionals, error: profError }] = await Promise.all([
+  const [user, profResult] = await Promise.all([
     currentUser(),
-    supabase
-      .from('professionals')
-      .select('*, profiles!inner(*)')
-      .order('rating_avg', { ascending: false })
-      .limit(10),
+    api.get<{ professionals: any[]; total: number }>('/v1/professionals').catch(() => ({ professionals: [] as any[], total: 0 })),
   ]);
-
-  if (profError) {
-    console.error('Supabase error:', profError.message);
-  }
+  const professionals = profResult.professionals;
 
   const firstName = user?.firstName ?? 'você';
 
@@ -132,7 +121,7 @@ export default async function HomePage() {
                       {p.profiles?.full_name ?? 'Profissional'}
                     </p>
                     <p className="text-xs text-slate-400 truncate">
-                      {p.services?.[0]?.name ?? 'Especialista'}
+                      {p.specialty ?? 'Especialista'}
                     </p>
                     <div className="flex items-center gap-1 mt-1">
                       <StarRating rating={p.rating_avg ?? 0} size="sm" />

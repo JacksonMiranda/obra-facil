@@ -23,16 +23,16 @@
 
 ```
 apps/
-  backend/   ← NestJS 11 REST API (Supabase + Clerk)
-  frontend/  ← Next.js 15 (Tailwind CSS + Clerk + Supabase Realtime)
+  backend/   ← NestJS 11 REST API (PostgreSQL + Clerk)
+  frontend/  ← Next.js 15 (Tailwind CSS + Clerk)
 ```
 
 Backend follows the module pattern:
 ```
 src/
   core/        ← Guards, decorators, pipes, interceptors, filters
+  database/    ← DatabaseService (pg pool)
   modules/     ← Domain modules (professionals, orders, chats, ...)
-  supabase/    ← Database client (SupabaseService)
   main.ts
   app.module.ts
 ```
@@ -44,7 +44,6 @@ src/
   app/sign-in/ ← Auth routes
   components/  ← Reusable UI components
   lib/api/     ← HTTP client (server-side, uses Clerk token)
-  lib/supabase/ ← Supabase Realtime client (browser only)
 ```
 
 ---

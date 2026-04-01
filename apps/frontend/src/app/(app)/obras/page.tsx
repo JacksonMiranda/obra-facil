@@ -1,8 +1,8 @@
 // Minhas Obras — work tracking screen
 // seed.sql data: Reforma Banheiro Social (65%), Pintura Fachada (agendada)
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { api } from '@/lib/api/client';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import Link from 'next/link';
@@ -19,18 +19,7 @@ export default async function ObrasPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-
-  // Get all works (seeded data) — in production would filter by user profile
-  const { data: works } = await supabase
-    .from('works')
-    .select('*, professionals(*, profiles!inner(*))')
-    .order('created_at', { ascending: false });
-
-  const worksList = works ?? [];
+  const worksList: any[] = await api.get<any[]>('/v1/works').catch(() => []);
 
   const inProgress = worksList.filter((w) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

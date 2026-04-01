@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "main": "./dist/index.js",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc --outDir dist --declaration"
   },

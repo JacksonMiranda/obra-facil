@@ -1,9 +1,13 @@
 // HTTP API client — wraps fetch with Clerk Bearer token injection
 // All backend calls go through this client. Never call the backend directly.
 
-import { auth } from '@clerk/nextjs/server';
+import { auth } from '@/lib/auth-bypass';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333/api';
+// Server-side uses INTERNAL_API_URL (Docker service name); browser uses NEXT_PUBLIC_API_URL (baked at build)
+const API_URL =
+  typeof window === 'undefined'
+    ? (process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api')
+    : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api');
 
 export type ApiEnvelope<T> = {
   data: T;

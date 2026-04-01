@@ -205,13 +205,13 @@ alter table orders enable row level security;
 alter table works enable row level security;
 
 -- Helper function: get current user's profile id from JWT
-create or replace function auth.profile_id()
+create or replace function public.current_profile_id()
 returns uuid language sql stable as $$
   select id from profiles where clerk_id = auth.jwt() ->> 'sub'
 $$;
 
 -- Helper function: get current user's role
-create or replace function auth.user_role()
+create or replace function public.current_user_role()
 returns user_role language sql stable as $$
   select role from profiles where clerk_id = auth.jwt() ->> 'sub'
 $$;
@@ -226,9 +226,9 @@ create policy "profiles_update_own" on profiles for update
 -- professionals: readable by all, writable only by professional role
 create policy "professionals_read_all" on professionals for select using (true);
 create policy "professionals_insert_own" on professionals for insert
-  with check (profile_id = auth.profile_id());
+  with check (profile_id = public.current_profile_id());
 create policy "professionals_update_own" on professionals for update
-  using (profile_id = auth.profile_id());
+  using (profile_id = public.current_profile_id());
 
 -- services: public read
 create policy "services_read_all" on services for select using (true);
@@ -236,38 +236,38 @@ create policy "services_read_all" on services for select using (true);
 -- reviews: public read, clients write own
 create policy "reviews_read_all" on reviews for select using (true);
 create policy "reviews_insert_client" on reviews for insert
-  with check (reviewer_id = auth.profile_id());
+  with check (reviewer_id = public.current_profile_id());
 
 -- conversations: only participants can see
 create policy "conversations_select_participant" on conversations for select
   using (
-    client_id = auth.profile_id() or
+    client_id = public.current_profile_id() or
     professional_id in (
-      select id from professionals where profile_id = auth.profile_id()
+      select id from professionals where profile_id = public.current_profile_id()
     )
   );
 create policy "conversations_insert_client" on conversations for insert
-  with check (client_id = auth.profile_id());
+  with check (client_id = public.current_profile_id());
 
 -- messages: only conversation participants
 create policy "messages_select_participant" on messages for select
   using (
     conversation_id in (
       select id from conversations
-      where client_id = auth.profile_id()
+      where client_id = public.current_profile_id()
       or professional_id in (
-        select id from professionals where profile_id = auth.profile_id()
+        select id from professionals where profile_id = public.current_profile_id()
       )
     )
   );
 create policy "messages_insert_participant" on messages for insert
   with check (
-    sender_id = auth.profile_id() and
+    sender_id = public.current_profile_id() and
     conversation_id in (
       select id from conversations
-      where client_id = auth.profile_id()
+      where client_id = public.current_profile_id()
       or professional_id in (
-        select id from professionals where profile_id = auth.profile_id()
+        select id from professionals where profile_id = public.current_profile_id()
       )
     )
   );
@@ -277,17 +277,17 @@ create policy "material_lists_select_participant" on material_lists for select
   using (
     conversation_id in (
       select id from conversations
-      where client_id = auth.profile_id()
+      where client_id = public.current_profile_id()
       or professional_id in (
-        select id from professionals where profile_id = auth.profile_id()
+        select id from professionals where profile_id = public.current_profile_id()
       )
     )
   );
 create policy "material_lists_insert_professional" on material_lists for insert
   with check (
-    auth.user_role() = 'professional' and
+    public.current_user_role() = 'professional' and
     professional_id in (
-      select id from professionals where profile_id = auth.profile_id()
+      select id from professionals where profile_id = public.current_profile_id()
     )
   );
 
@@ -298,9 +298,9 @@ create policy "material_items_select" on material_items for select
       select id from material_lists
       where conversation_id in (
         select id from conversations
-        where client_id = auth.profile_id()
+        where client_id = public.current_profile_id()
         or professional_id in (
-          select id from professionals where profile_id = auth.profile_id()
+          select id from professionals where profile_id = public.current_profile_id()
         )
       )
     )
@@ -310,7 +310,7 @@ create policy "material_items_insert_professional" on material_items for insert
     material_list_id in (
       select id from material_lists
       where professional_id in (
-        select id from professionals where profile_id = auth.profile_id()
+        select id from professionals where profile_id = public.current_profile_id()
       )
     )
   );
@@ -318,7 +318,7 @@ create policy "material_items_insert_professional" on material_items for insert
 -- stores: public read
 create policy "stores_read_all" on stores for select using (true);
 create policy "stores_insert_own" on stores for insert
-  with check (profile_id = auth.profile_id());
+  with check (profile_id = public.current_profile_id());
 
 -- store_offers: client can see offers for their material lists
 create policy "store_offers_select_client" on store_offers for select
@@ -326,7 +326,7 @@ create policy "store_offers_select_client" on store_offers for select
     material_list_id in (
       select id from material_lists
       where conversation_id in (
-        select id from conversations where client_id = auth.profile_id()
+        select id from conversations where client_id = public.current_profile_id()
       )
     )
   );
@@ -334,22 +334,22 @@ create policy "store_offers_select_client" on store_offers for select
 create policy "store_offers_insert_own_store" on store_offers for insert
   with check (
     store_id in (
-      select id from stores where profile_id = auth.profile_id()
+      select id from stores where profile_id = public.current_profile_id()
     )
   );
 
 -- orders: only own orders
 create policy "orders_select_own" on orders for select
-  using (client_id = auth.profile_id());
+  using (client_id = public.current_profile_id());
 create policy "orders_insert_own" on orders for insert
-  with check (client_id = auth.profile_id());
+  with check (client_id = public.current_profile_id());
 
 -- works: only own works
 create policy "works_select_own" on works for select
   using (
-    client_id = auth.profile_id() or
+    client_id = public.current_profile_id() or
     professional_id in (
-      select id from professionals where profile_id = auth.profile_id()
+      select id from professionals where profile_id = public.current_profile_id()
     )
   );
 
