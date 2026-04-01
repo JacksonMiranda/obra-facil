@@ -19,5 +19,17 @@
     "lint:backend": "npm run lint --workspace=backend",
     "test": "npm test --workspace=backend",
     "vercel-build": "npm run build --workspace=@obrafacil/shared && npm run build --workspace=frontend"
+  },
+  "overrides": {
+    "@nestjs/core": {
+      "path-to-regexp": "8.4.2"
+    },
+    "@nestjs/platform-express": {
+      "path-to-regexp": "8.4.2"
+    },
+    "@nestjs/swagger": {
+      "path-to-regexp": "8.4.2"
+    },
+    "picomatch": "4.0.4"
   }
 }
