@@ -18,6 +18,9 @@ const tabs = [
 export function BottomNav() {
   const pathname = usePathname();
 
+  // Hide BottomNav on full-screen chat pages to avoid overlapping the input
+  if (pathname.startsWith('/chat/')) return null;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-slate-100 safe-area-pb shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
       <div className="mobile-container mx-auto">
