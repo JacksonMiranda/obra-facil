@@ -46,14 +46,14 @@ graph TD
     AuthPages -.->|Consome componentes| UIComponents
     
     %% Comunicação com API
-    ObrasPage -->|Fetch (Client/Server)| ApiClient
-    PedidosPage -->|Fetch (Client/Server)| ApiClient
-    ProfissionalPage -->|Fetch (Client/Server)| ApiClient
-    ChatPage -->|Fetch (Client/Server)| ApiClient
-    CotacaoPage -->|Fetch (Client/Server)| ApiClient
+    ObrasPage -->|"Fetch (Client/Server)"| ApiClient
+    PedidosPage -->|"Fetch (Client/Server)"| ApiClient
+    ProfissionalPage -->|"Fetch (Client/Server)"| ApiClient
+    ChatPage -->|"Fetch (Client/Server)"| ApiClient
+    CotacaoPage -->|"Fetch (Client/Server)"| ApiClient
     
     %% Cliente API falando com APIs externas
-    ApiClient -->|Req HTTPS c/ Token (Tipagem @obrafacil/shared)| BackendAPI
+    ApiClient -->|"Req HTTPS c/ Token (Tipagem @obrafacil/shared)"| BackendAPI
     
 ```
 
