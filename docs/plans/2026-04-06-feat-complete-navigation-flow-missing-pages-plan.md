@@ -1,7 +1,7 @@
 ---
 title: "feat: Complete Navigation Flow — Missing Pages & Dead-End Fixes"
 type: feat
-status: active
+status: completed
 date: 2026-04-06
 ---
 
@@ -166,13 +166,13 @@ Criar paginas de erro e loading no nivel `(app)` para que qualquer falha seja tr
 
 ## Acceptance Criteria
 
-- [ ] Nenhum botao/link visivel leva a lugar nenhum (0 dead-ends)
-- [ ] Todas as rotas do BottomNav funcionam e mostram conteudo
-- [ ] 404 e erros mostram pagina estilizada com navegacao de volta
-- [ ] Tabs de Pedidos e Obras sao interativas
-- [ ] Fluxo completo navegavel: Home → Busca → Profissional → Chat → Cotacao → Confirmacao → Pedidos
-- [ ] `npm run build` no frontend passa sem erros
-- [ ] Chat nao mostra BottomNav sobreposta ao input
+- [x] Nenhum botao/link visivel leva a lugar nenhum (0 dead-ends)
+- [x] Todas as rotas do BottomNav funcionam e mostram conteudo
+- [x] 404 e erros mostram pagina estilizada com navegacao de volta
+- [x] Tabs de Pedidos e Obras sao interativas
+- [x] Fluxo completo navegavel: Home → Busca → Profissional → Chat → Cotacao → Confirmacao → Pedidos
+- [x] `npm run build` no frontend passa sem erros
+- [x] Chat nao mostra BottomNav sobreposta ao input
 
 ## Technical Considerations
 
