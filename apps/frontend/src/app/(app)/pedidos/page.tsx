@@ -116,24 +116,36 @@ export default async function PedidosPage() {
                   {/* Action buttons */}
                   <div className="flex gap-2 mt-3">
                     {isShipped && (
-                      <button className="flex-1 text-center text-sm font-bold text-white bg-[#1E40AF] py-2.5 rounded-xl active:scale-[0.98] transition-transform">
+                      <Link
+                        href={`/pedidos/${o.id}`}
+                        className="flex-1 text-center text-sm font-bold text-white bg-trust py-2.5 rounded-xl active:scale-[0.98] transition-transform"
+                      >
                         Rastrear Entrega
-                      </button>
+                      </Link>
                     )}
                     {isDelivered && (
                       <>
-                        <button className="flex-1 text-center text-xs font-semibold text-slate-600 bg-white border border-slate-200 py-2.5 rounded-xl">
+                        <Link
+                          href={`/pedidos/${o.id}`}
+                          className="flex-1 text-center text-xs font-semibold text-slate-600 bg-white border border-slate-200 py-2.5 rounded-xl"
+                        >
                           Ver Detalhes
-                        </button>
-                        <button className="flex-1 text-center text-xs font-bold text-[#1E40AF] bg-blue-50 border border-[#1E40AF]/20 py-2.5 rounded-xl">
+                        </Link>
+                        <Link
+                          href="/"
+                          className="flex-1 text-center text-xs font-bold text-trust bg-blue-50 border border-trust/20 py-2.5 rounded-xl"
+                        >
                           Comprar Novamente
-                        </button>
+                        </Link>
                       </>
                     )}
                     {!isShipped && !isDelivered && (
-                      <button className="flex-1 text-center text-xs font-semibold text-slate-600 bg-white border border-slate-200 py-2.5 rounded-xl">
+                      <Link
+                        href={`/pedidos/${o.id}`}
+                        className="flex-1 text-center text-xs font-semibold text-slate-600 bg-white border border-slate-200 py-2.5 rounded-xl"
+                      >
                         Ver Detalhes
-                      </button>
+                      </Link>
                     )}
                   </div>
                 </div>
