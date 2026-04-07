@@ -21,6 +21,7 @@ export function CotacaoClient({
 }: CotacaoClientProps) {
   const [selectedId, setSelectedId] = useState<string | null>(defaultSelectedId);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const selectedOffer = offers.find((o) => o.id === selectedId);
@@ -29,23 +30,32 @@ export function CotacaoClient({
   const handleConfirm = async () => {
     if (!selectedOffer) return;
     setLoading(true);
+    setError(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
-    const res = await fetch(`${apiUrl}/v1/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        storeId: selectedOffer.stores?.id,
-        materialListId: listId,
-        totalAmount: selectedOffer.total_price,
-        deliveryAddress: '',
-      }),
-    });
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+      const res = await fetch(`${apiUrl}/v1/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeId: selectedOffer.stores?.id,
+          materialListId: listId,
+          totalAmount: selectedOffer.total_price,
+          deliveryAddress: '',
+        }),
+      });
 
-    setLoading(false);
-
-    if (res.ok) {
-      router.push('/pedidos');
+      if (res.ok) {
+        const envelope = await res.json().catch(() => ({}));
+        const orderId = envelope?.data?.id ?? envelope?.id ?? '';
+        router.push(`/pedidos/confirmacao?order=${orderId}`);
+      } else {
+        setError('Nao foi possivel confirmar o pedido. Tente novamente.');
+      }
+    } catch {
+      setError('Erro de conexao. Verifique sua internet e tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -166,7 +176,15 @@ export function CotacaoClient({
         </div>
       )}
 
-      {/* ── Sticky CTA — spec_ui.md: "Confirmar e Ir Para o Pagamento" ── */}
+      {/* Error feedback */}
+      {error && (
+        <div className="mx-4 mt-4 bg-error/10 border border-error/20 rounded-xl p-3 flex items-center gap-2">
+          <span className="material-symbols-outlined text-error text-lg">error</span>
+          <p className="text-xs text-error font-medium">{error}</p>
+        </div>
+      )}
+
+      {/* ── Sticky CTA ── */}
       <StickyBottomCTA>
         <PrimaryButton
           variant="savings"
@@ -179,7 +197,7 @@ export function CotacaoClient({
           ) : (
             <span className="material-symbols-outlined text-xl">shopping_cart_checkout</span>
           )}
-          {loading ? 'Processando...' : 'Confirmar e Ir Para o Pagamento'}
+          {loading ? 'Processando...' : 'Confirmar Pedido'}
         </PrimaryButton>
       </StickyBottomCTA>
     </>
