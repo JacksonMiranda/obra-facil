@@ -41,10 +41,10 @@ export default async function ObrasPage() {
             <span className="material-symbols-outlined text-[#1E40AF] text-xl">construction</span>
             <h1 className="text-lg font-bold text-slate-900">Minhas Obras</h1>
           </div>
-          <div className="relative">
+          <Link href="/perfil/notificacoes" className="relative" aria-label="Notificacoes">
             <span className="material-symbols-outlined text-slate-500 text-2xl">notifications</span>
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#1E40AF] rounded-full" />
-          </div>
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-trust rounded-full" />
+          </Link>
         </div>
 
         {/* ── Tabs ────────────────────────────────────────────── */}

@@ -37,10 +37,10 @@ export default async function HomePage() {
             <p className="text-xs text-slate-400 font-medium">Bem-vindo, {firstName}</p>
             <h1 className="text-2xl font-bold text-[#ec5b13]">Obra Fácil</h1>
           </div>
-          <div className="relative">
+          <Link href="/perfil/notificacoes" className="relative" aria-label="Notificacoes">
             <span className="material-symbols-outlined text-slate-500 text-2xl">notifications</span>
             <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-brand rounded-full" />
-          </div>
+          </Link>
         </div>
 
         {/* Search bar — spec_ui.md INT-01 */}
