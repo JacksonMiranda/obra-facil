@@ -12,11 +12,11 @@ graph TD
     AppModule --> Database[DatabaseModule]
     
     %% Detalhamento do Core
-    subgraph Core[Core - Camadas Transversais]
-        Filter[HttpExceptionFilter\n(Garante resp. {error, code})]
-        Interceptor[ResponseEnvelopeInterceptor\n(Garante resp. {data: T})]
-        Guard[ClerkAuthGuard\n(Protege endpoints com Token Bearer)]
-        Pipe[ZodValidationPipe / Decorators\n(Validação de Dados)]
+    subgraph Core["Core - Camadas Transversais"]
+        Filter["HttpExceptionFilter<br/>(Garante resp. {error, code})"]
+        Interceptor["ResponseEnvelopeInterceptor<br/>(Garante resp. {data: T})"]
+        Guard["ClerkAuthGuard<br/>(Protege endpoints com Token Bearer)"]
+        Pipe["ZodValidationPipe / Decorators<br/>(Validação de Dados)"]
     end
     
     Main -.->|Usa globalmente| Filter
@@ -24,11 +24,11 @@ graph TD
     Main -.->|Usa globalmente| Guard
     
     %% Biblioteca Compartilhada
-    Shared[( @obrafacil/shared )] -.->|Fornece Zod Schemas e Tipos| Pipe
+    Shared[("@obrafacil/shared")] -.->|Fornece Zod Schemas e Tipos| Pipe
     Shared -.->|Fornece Tipagem| Modulos_Dominio
     
     %% Módulos de Domínio
-    AppModule --> Modulos_Dominio[Módulos de Negócio]
+    AppModule --> Modulos_Dominio["Módulos de Negócio"]
 
     subgraph Modulos_Dominio[Módulos de Domínio REST]
         Prof[ProfessionalsModule]
@@ -41,8 +41,8 @@ graph TD
     end
 
     %% Exemplo de Fluxo Interno
-    subgraph Estrutura_Interna_Modulo [Estrutura Interna Padrão]
-        Controller[Domain Controller\n(Recebe HTTP)] -->|Injeta Serviço| Service[Domain Service\n(Regra de Negócio)]
+    subgraph Estrutura_Interna_Modulo ["Estrutura Interna Padrão"]
+        Controller["Domain Controller<br/>(Recebe HTTP)"] -->|Injeta Serviço| Service["Domain Service<br/>(Regra de Negócio)"]
         Service -->|Consulta BD| DbSvc[DatabaseService]
     end
 
