@@ -52,44 +52,55 @@ export default async function CotacaoPage({
 
       {/* ── Material items list ──────────────────────────────────── */}
       <div className="px-4 mt-5">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-sm font-semibold text-slate-900">
-            {list.title}
-          </h2>
-          <button className="text-xs text-trust font-medium">
-            Revisar / Editar itens
-          </button>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          {(list.material_items ?? []).map((item: MaterialItem, idx: number) => (
-            <div
-              key={String(item.id)}
-              className={`flex items-center gap-3 px-4 py-3 ${
-                idx < (list.material_items?.length ?? 0) - 1
-                  ? 'border-b border-slate-50'
-                  : ''
-              }`}
-            >
-              <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-sm text-slate-400">inventory_2</span>
+        <details className="group" open>
+          <summary className="flex items-center justify-between mb-2 cursor-pointer list-none">
+            <h2 className="text-sm font-semibold text-slate-900">
+              {list.title}
+            </h2>
+            <span className="text-xs text-trust font-medium flex items-center gap-1">
+              Revisar itens
+              <span className="material-symbols-outlined text-sm transition-transform group-open:rotate-180">expand_more</span>
+            </span>
+          </summary>
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            {(list.material_items ?? []).map((item: MaterialItem, idx: number) => (
+              <div
+                key={String(item.id)}
+                className={`flex items-center gap-3 px-4 py-3 ${
+                  idx < (list.material_items?.length ?? 0) - 1
+                    ? 'border-b border-slate-50'
+                    : ''
+                }`}
+              >
+                <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-sm text-slate-400">inventory_2</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-slate-900 truncate">{item.name}</p>
+                  <p className="text-[10px] text-slate-400">
+                    {item.quantity} {item.unit}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-slate-900 truncate">{item.name}</p>
-                <p className="text-[10px] text-slate-400">
-                  {item.quantity} {item.unit}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </details>
       </div>
 
       {/* ── Store offers (interactive client component) ──────────── */}
-      <CotacaoClient
-        listId={list.id}
-        offers={offers}
-        defaultSelectedId={bestOffer?.id ?? null}
-      />
+      {offers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center pt-16 px-8 text-center">
+          <span className="material-symbols-outlined text-5xl text-slate-200 mb-3">hourglass_empty</span>
+          <p className="text-sm font-semibold text-slate-500">Aguardando cotacoes das lojas...</p>
+          <p className="text-xs text-slate-400 mt-1">As melhores ofertas aparecerão aqui em breve.</p>
+        </div>
+      ) : (
+        <CotacaoClient
+          listId={list.id}
+          offers={offers}
+          defaultSelectedId={bestOffer?.id ?? null}
+        />
+      )}
     </div>
   );
 }
