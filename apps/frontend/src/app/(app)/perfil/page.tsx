@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
 import { SignOutButton } from '@clerk/nextjs';
+import Link from 'next/link';
 
 export default async function PerfilPage() {
   const { userId } = await auth();
@@ -34,23 +35,29 @@ export default async function PerfilPage() {
       {/* Menu items */}
       <div className="px-4 mt-4 flex flex-col gap-2">
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
-            <span className="material-symbols-outlined text-xl text-slate-400">settings</span>
-            <span className="text-sm font-medium text-slate-700">Configurações</span>
+          <Link href="/perfil/notificacoes" className="w-full flex items-center gap-3 px-4 py-3.5">
+            <span className="material-symbols-outlined text-xl text-slate-400">notifications</span>
+            <span className="text-sm font-medium text-slate-700">Notificacoes</span>
             <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
-          </button>
+          </Link>
           <div className="border-t border-slate-50" />
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
+          <Link href="/perfil/configuracoes" className="w-full flex items-center gap-3 px-4 py-3.5">
+            <span className="material-symbols-outlined text-xl text-slate-400">settings</span>
+            <span className="text-sm font-medium text-slate-700">Configuracoes</span>
+            <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
+          </Link>
+          <div className="border-t border-slate-50" />
+          <Link href="/perfil/ajuda" className="w-full flex items-center gap-3 px-4 py-3.5">
             <span className="material-symbols-outlined text-xl text-slate-400">help</span>
             <span className="text-sm font-medium text-slate-700">Ajuda e Suporte</span>
             <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
-          </button>
+          </Link>
           <div className="border-t border-slate-50" />
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
+          <Link href="/perfil/termos" className="w-full flex items-center gap-3 px-4 py-3.5">
             <span className="material-symbols-outlined text-xl text-slate-400">description</span>
             <span className="text-sm font-medium text-slate-700">Termos de Uso</span>
             <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
-          </button>
+          </Link>
         </div>
 
         {/* Logout condicional: Se for dev (bypass), exibe mock. Se for prod, renderiza Clerk auth puro */}
