@@ -28,8 +28,6 @@ export default async function ProfissionalPage({
   const profile = p.profiles;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allReviews: any[] = p.reviews ?? [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const reviews: any[] = allReviews.slice(0, 3);
   const totalReviews = allReviews.length;
 
   return (
