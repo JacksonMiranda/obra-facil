@@ -8,8 +8,8 @@ graph TD
     Main[main.ts] --> AppModule[AppModule]
     
     %% Módulos Base
-    AppModule --> Core[Core Layers]
-    AppModule --> Database[DatabaseModule]
+    AppModule --> Core["Core Layers"]
+    AppModule --> Database["DatabaseModule"]
     
     %% Detalhamento do Core
     subgraph Core["Core - Camadas Transversais"]
@@ -30,7 +30,7 @@ graph TD
     %% Módulos de Domínio
     AppModule --> Modulos_Dominio["Módulos de Negócio"]
 
-    subgraph Modulos_Dominio[Módulos de Domínio REST]
+    subgraph Modulos_Dominio["Módulos de Domínio REST"]
         Prof[ProfessionalsModule]
         Ord[OrdersModule]
         Conv[ConversationsModule]
@@ -42,16 +42,16 @@ graph TD
 
     %% Exemplo de Fluxo Interno
     subgraph Estrutura_Interna_Modulo ["Estrutura Interna Padrão"]
-        Controller["Domain Controller<br/>(Recebe HTTP)"] -->|Injeta Serviço| Service["Domain Service<br/>(Regra de Negócio)"]
-        Service -->|Consulta BD| DbSvc[DatabaseService]
+        Controller["Domain Controller<br/>(Recebe HTTP)"] -->|Injeta Servico| Service["Domain Service<br/>(Regra de Negócio)"]
+        Service -->|Consulta BD| DbSvc["DatabaseService"]
     end
 
     Modulos_Dominio -.-> Estrutura_Interna_Modulo
     Database -->|Exporta provedor| DbSvc
 
     %% Serviços Externos
-    DbSvc -->|pg pool (queries)| Postgres[(PostgreSQL)]
-    Guard -->|Verificação de Autenticação| Clerk[Clerk Auth API]
+    DbSvc -->|Acessa via pg pool| Postgres[("PostgreSQL")]
+    Guard -->|Verifica Autenticacao| Clerk["Clerk Auth API"]
 ```
 
 ### Detalhamento dos Componentes
