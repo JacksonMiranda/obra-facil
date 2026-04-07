@@ -42,9 +42,15 @@ export function ChatView({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   // Polling for new messages every 3 seconds
   useEffect(() => {
@@ -151,7 +157,15 @@ export function ChatView({
             {otherProfile.role === 'professional' ? 'Profissional' : 'Cliente'}
           </p>
         </div>
-        <button aria-label="Ver perfil" className="w-8 h-8 flex items-center justify-center">
+        <button
+          onClick={() => {
+            if (otherProfile.role === 'professional') {
+              router.push(`/profissional/${otherProfile.id}`);
+            }
+          }}
+          aria-label="Ver perfil"
+          className="w-8 h-8 flex items-center justify-center"
+        >
           <span className="material-symbols-outlined text-xl">info</span>
         </button>
       </div>
@@ -211,10 +225,18 @@ export function ChatView({
         </button>
       )}
 
+      {/* Toast */}
+      {toast && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-medium px-4 py-2 rounded-full shadow-lg z-30 animate-pulse">
+          {toast}
+        </div>
+      )}
+
       {/* ── Input bar ─────────────────────────────────────────────── */}
       <div className="bg-white border-t border-slate-200 px-3 py-3 pb-safe flex items-end gap-2">
         {/* Foto */}
         <button
+          onClick={() => showToast('Envio de fotos em breve!')}
           className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 flex-shrink-0"
           aria-label="Enviar Foto"
         >
@@ -250,8 +272,9 @@ export function ChatView({
           </button>
         ) : (
           <button
+            onClick={() => showToast('Envio de audio em breve!')}
             className="w-9 h-9 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 flex-shrink-0"
-            aria-label="Enviar Áudio"
+            aria-label="Enviar Audio"
           >
             <span className="material-symbols-outlined text-xl">mic</span>
           </button>

@@ -145,25 +145,30 @@ export default async function HomePage() {
 
       {/* ── Emergency banner (orange) ─────────────────────────────── */}
       <div className="px-4 mt-6">
-        <div className="bg-[#ec5b13] rounded-2xl p-4 flex items-center gap-4">
+        <Link
+          href="/perfil/ajuda"
+          className="bg-brand rounded-2xl p-4 flex items-center gap-4 active:scale-[0.98] transition-transform"
+          aria-label="Atendimento de Emergencia"
+        >
           <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-outlined text-2xl text-white">emergency</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white">Atendimento de Emergência</p>
+            <p className="text-sm font-bold text-white">Atendimento de Emergencia</p>
             <p className="text-xs text-white/80 mt-0.5 leading-tight">
-              Canal direto para urgências elétricas e hidráulicas.
+              Canal direto para urgencias eletricas e hidraulicas.
             </p>
           </div>
           <span className="material-symbols-outlined text-white text-xl flex-shrink-0">chevron_right</span>
-        </div>
+        </Link>
       </div>
 
       {/* ── FAB — support / emergency (spec_ui.md) ────────────────── */}
       <FAB
         icon="support_agent"
         variant="brand"
-        ariaLabel="Suporte ou emergência"
+        ariaLabel="Suporte ou emergencia"
+        href="/perfil/ajuda"
         className="fixed bottom-24 right-4 shadow-lg"
       />
     </div>

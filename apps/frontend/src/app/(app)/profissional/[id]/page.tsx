@@ -8,6 +8,7 @@ import { StarRating } from '@/components/ui/StarRating';
 import { StickyBottomCTA } from '@/components/ui/StickyBottomCTA';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StartConversationButton } from '@/components/ui/StartConversationButton';
+import { ShareButton, ReviewsSection } from './ProfissionalClient';
 
 export default async function ProfissionalPage({
   params,
@@ -94,52 +95,11 @@ export default async function ProfissionalPage({
 
       {/* ── Share button (centered) ────────────────────────────── */}
       <div className="flex justify-center mt-4">
-        <button
-          aria-label="Compartilhar Perfil"
-          className="flex items-center gap-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-full px-5 py-2 shadow-sm active:scale-[0.98] transition-transform"
-        >
-          <span className="material-symbols-outlined text-lg">share</span>
-          Compartilhar Perfil
-        </button>
+        <ShareButton name={profile?.full_name ?? 'Profissional'} url={`/profissional/${id}`} />
       </div>
 
       {/* ── Reviews section ──────────────────────────────────────── */}
-      {reviews.length > 0 && (
-        <div className="px-4 mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-slate-900">Reviews Recentes</h2>
-            <button className="text-xs font-semibold text-[#1E40AF]">
-              Ler todos os {totalReviews}
-            </button>
-          </div>
-          <div className="flex flex-col gap-3">
-            {reviews.map((r) => (
-              <div
-                key={r.id}
-                className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-[#1E40AF] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    {r.profiles?.full_name?.[0] ?? '?'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-slate-900 truncate">
-                      {r.profiles?.full_name ?? 'Cliente'}
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      {r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : ''}
-                    </p>
-                  </div>
-                  <StarRating rating={r.rating} size="sm" />
-                </div>
-                {r.comment && (
-                  <p className="text-xs text-slate-600 leading-relaxed mt-1">&ldquo;{r.comment}&rdquo;</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <ReviewsSection reviews={allReviews} totalReviews={totalReviews} />
 
       {/* ── Specialty chip ────────────────────────────────────────── */}
       {p.specialty && (
