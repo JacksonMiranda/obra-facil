@@ -44,13 +44,11 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
   async search({
     query,
     service,
-    city,
     limit = 20,
     offset = 0,
   }: {
     query?: string;
     service?: string;
-    city?: string;
     limit?: number;
     offset?: number;
   }): Promise<ProfessionalWithProfile[]> {
@@ -95,22 +93,22 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
   ): Promise<(ProfessionalWithProfile & { reviews: unknown[] }) | null> {
     const { rows } = await this.db.query(
       `SELECT ${PROF_JOIN_COLS},
-         COALESCE(
-           json_agg(
-             json_build_object(
-               'id', rv.id, 'rating', rv.rating, 'comment', rv.comment,
-               'created_at', rv.created_at,
-               'profiles', json_build_object('id', rp.id, 'full_name', rp.full_name, 'avatar_url', rp.avatar_url)
-             ) ORDER BY rv.created_at DESC
-           ) FILTER (WHERE rv.id IS NOT NULL),
-           '[]'
-         ) AS reviews
-       FROM professionals p
-       INNER JOIN profiles pr ON pr.id = p.profile_id
-       LEFT JOIN reviews rv ON rv.professional_id = p.id
-       LEFT JOIN profiles rp ON rp.id = rv.reviewer_id
-       WHERE p.id = $1
-       GROUP BY p.id, pr.id`,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'id', rv.id, 'rating', rv.rating, 'comment', rv.comment,
+                'created_at', rv.created_at,
+                'profiles', json_build_object('id', rp.id, 'full_name', rp.full_name, 'avatar_url', rp.avatar_url)
+              ) ORDER BY rv.created_at DESC
+            ) FILTER (WHERE rv.id IS NOT NULL),
+            '[]'
+          ) AS reviews
+        FROM professionals p
+        INNER JOIN profiles pr ON pr.id = p.profile_id
+        LEFT JOIN reviews rv ON rv.professional_id = p.id
+        LEFT JOIN profiles rp ON rp.id = rv.reviewer_id
+        WHERE p.id = $1
+        GROUP BY p.id, pr.id`,
       [id],
     );
     if (!rows.length) return null;
