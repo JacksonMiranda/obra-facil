@@ -44,7 +44,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
   async search({
     query,
     service,
-    city,
+    city: _city,
     limit = 20,
     offset = 0,
   }: {
