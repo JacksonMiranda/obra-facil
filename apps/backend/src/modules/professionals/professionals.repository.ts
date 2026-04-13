@@ -50,6 +50,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
   }: {
     query?: string;
     service?: string;
+    city?: string;
     limit?: number;
     offset?: number;
   }): Promise<ProfessionalWithProfile[]> {
