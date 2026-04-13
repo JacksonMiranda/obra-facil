@@ -39,13 +39,21 @@ jobs:
       - name: Lint frontend
         run: npm run lint:frontend
 
-      - name: Typecheck frontend
-        run: npx tsc --noEmit
-        working-directory: apps/frontend
-
       - name: Typecheck backend
         run: npx tsc --noEmit
         working-directory: apps/backend
+
+      - name: Typecheck frontend
+        # shared precisa estar buildado para os tipos resolverem
+        run: npx tsc --noEmit
+        working-directory: apps/frontend
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_placeholder
+          NEXT_PUBLIC_API_URL: 'http://localhost:3001/api'
+          NEXT_PUBLIC_DISABLE_CLERK_AUTH: 'true'
+
+      - name: Build backend
+        run: npm run build:backend
 
       - name: Build frontend
         run: npm run build:frontend
@@ -53,9 +61,7 @@ jobs:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_API_URL: 'http://localhost:3001/api'
           NEXT_PUBLIC_DISABLE_CLERK_AUTH: 'true'
-
-      - name: Build backend
-        run: npm run build:backend
+          DISABLE_CLERK_AUTH: 'true'
 
       - name: Auditoria de segurança
         run: npm audit --audit-level=critical
