@@ -1,4 +1,4 @@
-﻿import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import type {
   IProfessionalsRepository,
@@ -43,6 +43,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
 
   async search({
     query,
+    service,
     city,
     limit = 20,
     offset = 0,
@@ -53,15 +54,27 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     limit?: number;
     offset?: number;
   }): Promise<ProfessionalWithProfile[]> {
+    // Mapeamento de termos amigáveis (UI) para raízes comuns em 'specialty' ou 'bio'
+    let mappedService = service;
+    if (service) {
+      const s = service.toLowerCase();
+      if (s.includes('elétric')) mappedService = 'eletric';
+      else if (s.includes('hidráulica') || s.includes('encanador')) mappedService = 'encanad';
+      else if (s.includes('pintura')) mappedService = 'pintor';
+      else if (s.includes('diarista')) mappedService = 'diarista';
+      else if (s.includes('pedreiro')) mappedService = 'pedreir';
+      else if (s.includes('marceneiro')) mappedService = 'marceneir';
+    }
+
     const { rows } = await this.db.query(
       `SELECT ${PROF_JOIN_COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
-       WHERE ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%')
-         AND ($2::text IS NULL OR pr.full_name ILIKE '%' || $2 || '%')
+       WHERE ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%')
+         AND ($2::text IS NULL OR p.specialty ILIKE '%' || $2 || '%' OR p.bio ILIKE '%' || $2 || '%')
        ORDER BY p.rating_avg DESC
        LIMIT $3 OFFSET $4`,
-      [query ?? null, city ?? null, limit, offset],
+      [query ?? null, mappedService ?? null, limit, offset],
     );
     return rows.map(mapRow);
   }
