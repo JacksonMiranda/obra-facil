@@ -79,9 +79,32 @@ cp apps/frontend/.env.local.example apps/frontend/.env.local
 npm run docker:up
 ```
 
-Acesse: **http://localhost:3000** (frontend) | **http://localhost:3001/api/docs** (Swagger)
+Acesse:
 
-### 🔑 Perfis de teste (modo bypass)
+| Serviço | URL local | URL produção |
+|---|---|---|
+| Frontend (Next.js) | http://localhost:3000 | https://app-devai-frontend.vercel.app |
+| Backend API | http://localhost:3333/api | https://app-devai-backend.vercel.app/api |
+| **Swagger (OpenAPI)** | http://localhost:3333/api/docs | https://app-devai-backend.vercel.app/api/docs |
+| Health check | http://localhost:3333/api/health | https://app-devai-backend.vercel.app/api/health |
+
+### 📖 Swagger / OpenAPI
+
+O backend expõe toda a API em **Swagger UI** em `/api/docs` — útil pra explorar endpoints, ver schemas de request/response e testar chamadas diretamente pelo navegador.
+
+Principais grupos de endpoints documentados:
+- `professionals` — busca de profissionais, dashboard
+- `orders` — pedidos de materiais (isolados por cliente)
+- `works` — obras (iniciar, atualizar progresso, concluir)
+- `visits` — visitas técnicas (agendar, cancelar, concluir)
+- `material-lists` / `messages` / `conversations` — fluxo de cotação
+- `ai` — geração de cotação por IA
+- `health` — healthcheck
+- `webhooks` — integração Clerk
+
+---
+
+### 🔑 Perfis de teste (modo bypass — ambiente LOCAL)
 
 No ambiente local (`DISABLE_CLERK_AUTH=true`), o usuário logado é escolhido pela env `NEXT_PUBLIC_BYPASS_USER_CLERK_ID` no frontend ou pelo header `X-Dev-User-Id` no backend. Perfis disponíveis no seed:
 
@@ -90,6 +113,31 @@ No ambiente local (`DISABLE_CLERK_AUTH=true`), o usuário logado é escolhido pe
 | `demo_client_001` (default) | Carlos Alberto | client |
 | `demo_client_002` | Joana Mendes | client |
 | `demo_professional_001` | Ricardo Silva | professional |
+| `demo_professional_002` | José da Silva | professional |
+| `demo_professional_003` | Ana Rodrigues | professional |
+
+### 🧪 Credenciais de avaliação (ambiente de PRODUÇÃO)
+
+Em produção o Clerk está ativo e não usa bypass. Para avaliação pela banca, o time cria duas contas reais seguindo o processo abaixo.
+
+#### Como criar um usuário **cliente**
+1. Abrir https://app-devai-frontend.vercel.app/sign-up
+2. Cadastrar com email e senha (verificação por email do Clerk)
+3. O backend faz JIT provisioning (ou o webhook do Clerk) e cria um profile com `role='client'` automaticamente
+4. A conta já tem acesso a `/pedidos`, `/cotacao/ia`, `/busca`
+
+#### Como criar um usuário **profissional**
+1. Seguir os passos 1–3 acima (criar conta via sign-up)
+2. Entrar em https://dashboard.clerk.com → **Users** → selecionar o usuário
+3. Em **Public metadata**, definir:
+   ```json
+   { "role": "professional" }
+   ```
+4. Salvar. O webhook `user.updated` atualiza `profiles.role` no banco
+5. Deslogar e logar novamente
+6. A conta passa a ter acesso a `/profissional/dashboard` (com ações de iniciar/concluir obra e concluir/cancelar visitas)
+
+> **Observação para o time**: as credenciais reais (email/senha) não ficam versionadas neste repositório — são entregues à banca via canal seguro (chat do Canvas, etc.).
 
 ---
 
