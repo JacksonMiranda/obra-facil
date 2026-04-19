@@ -1,8 +1,8 @@
 # Definição de Requisitos do Produto (PRD)
 
 ## Descrição do produto
-**Problema** A jornada de contratação de serviços residenciais e compra de materiais de construção é extremamente descentralizada, gerando perda de tempo, insegurança na qualificação dos profissionais e custos elevados por falta de ferramentas de comparação.
-**Solução** Uma plataforma digital, o "Obra Fácil", que conecta em um só lugar clientes, profissionais avaliados da área e lojas de materiais de construção locais, facilitando o agendamento, comunicação e a cotação/compra de materiais.
+**Problema** A jornada de contratação de serviços residenciais é extremamente descentralizada, gerando perda de tempo, insegurança na qualificação dos profissionais e custos elevados por falta de ferramentas de comparação.
+**Solução** Uma plataforma digital, o "Obra Fácil", que conecta em um só lugar clientes e profissionais avaliados da área  facilitando o agendamento e comunicação
 Para o **Proprietário de imóvel sem conhecimento técnico (como o Carlos Alberto)**, a plataforma oferece ganho de tempo, segurança baseada em avaliações reais e economia com uma experiência fluida ("all-in-one").
 Nossos Diferenciais:
 - Conexão tripla nativa: Cliente, Profissional e Loja Local no mesmo ecossistema.
@@ -22,7 +22,6 @@ Nossos Diferenciais:
 
 ### Prestador de Serviços (Profissional)
 - Problemas: Dificuldade em achar novos clientes com recorrência, falta de organização de agenda.
-- Objetivos: Aumentar renda, gerenciar compromissos, agilizar envio de orçamentos e materiais.
 - Dados demográficos: 30-60 anos, área da construção, autônomo.
 - Motivações: Construir reputação digital consolidada.
 - Frustrações: Clientes pechinchando valores irreais ou fornecendo informações pela metade.
@@ -44,17 +43,17 @@ Critérios de Aceitação:
 - Os profissionais mais bem avaliados devem aparecer no topo (ordenamento nativo).
 - O sistema deve puxar localização GPS para os profissionais num raio de X km.
 
-### RFN-02 - Chat e Agendamento Integrado
+### RFN-02 - Chat e Agendamento Integrado (Implementação Futura)
 - Comunicação direta app-to-app contendo histórico para segurança e possibilidade de enviar fotos/áudio e propor datas.
 Critérios de Aceitação:
 - O cliente deve poder aprovar ou rejeitar o agendamento de visita/orçamento inicial através da mesma tela do Chat.
 
-### RFN-03 - Geração e Cotação de Lista de Materiais
+### RFN-03 - Geração e Cotação de Lista de Materiais (Implementação Futura)
 - O profissional compõe uma Lista Padrão de Material pelo app, que é disparada às lojas locais credenciadas. A loja (ou o sistema automatizado) retorna o valor, facilitando a decisão do cliente final.
 Critérios de Aceitação:
 - A interface deve exibir pelo menos as 3 melhores opções de lojas com menor valor global da "cesta de materiais".
 
-### RFN-04 - Pagamentos e *Checkout* Unificado
+### RFN-04 - Pagamentos e *Checkout* Unificado (Implementação Futura)
 - Check-out de finalização de obra + compra do material de construção em formato consolidado e parcelável.
 Critérios de Aceitação:
 - Integração funcional com Gateways para reter o *take-rate* e fazer a divisão (Lojista / Plataforma / Profissional).
