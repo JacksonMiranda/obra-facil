@@ -41,19 +41,32 @@ Para facilitar a navegação no repositório, consulte os documentos detalhados:
 
 ## 🛠️ Stack Tecnológica
 
-| Camada | Tecnologia |
-|---|---|
-| Frontend | Next.js 15, React 19, Tailwind CSS, TypeScript |
-| Backend | NestJS 11, TypeScript, Swagger |
-| Banco de Dados | PostgreSQL 17 (Docker local / Supabase em produção) |
-| Autenticação | Clerk |
-| **IA (NLP)** | **Anthropic Claude (Haiku 4.5)** para geração de lista de materiais |
-| **Observabilidade** | **nestjs-pino** (logs JSON estruturados, requestId, redact) + `/api/health` |
-| **Testes Backend** | Jest (unit) + Jest + supertest (e2e integração) |
-| **Testes Frontend** | Vitest + Testing Library (unit) + **Playwright** (e2e browser) |
-| **IaC** | Terraform (provider Vercel) em `infra/terraform/vercel/` |
-| Deploy | Vercel (frontend + backend) |
-| CI/CD | GitHub Actions |
+| Camada | Tecnologia | Detalhes |
+|---|---|---|
+| **Frontend** | Next.js 15, React 19 | Layout responsivo (Tailwind CSS), ES2020+ |
+| **Backend** | NestJS 11 | API RESTful protegida, TypeScript |
+| **Banco de Dados** | PostgreSQL 17 | Persistência relacional protegida |
+| **Autenticação** | Clerk | Autenticação externa & RBAC |
+| **IA (NLP)** | Claude 3.5 Haiku | Geração inteligente de lista de materiais |
+| **Observabilidade** | Pino / Winston | Logs estruturados, Correlação de RequestID |
+| **Infraestrutura** | Docker / Terraform | Containers OCI, IaC (Vercel/Supabase) |
+
+---
+
+## 🧱 Requisitos Não Funcionais (RNFs)
+
+O projeto foi concebido para atender a padrões rigorosos de engenharia de software, mapeados conforme os requisitos abaixo:
+
+| ID | Requisito | Implementação Técnica |
+|---|---|---|
+| **RNF-01** | Acessibilidade e Portabilidade | Frontend Next.js com Tailwind CSS (Mobile-First) e compilação para ES2020+. |
+| **RNF-02** | Segurança | Autenticação via **Clerk**, RBAC via Metadados, HTTPS forçado e DB encryption at-rest. |
+| **RNF-03** | Interoperabilidade | Funcionalidades expostas via **API RESTful** documentada com Swagger/OpenAPI. |
+| **RNF-04** | Observabilidade | Logs estruturados (Pino), Correlation IDs, Healthchecks e Auditoria em tempo real. |
+| **RNF-05** | Manutenibilidade | Suíte completa: Jest (Unit/E2E Backend), Vitest e Playwright (Frontend). |
+| **RNF-06** | Implantação e Portabilidade | Empacotamento **Docker (OCI)** e automação via **Terraform (IaC)** e GitHub Actions. |
+| **RNF-07** | Persistência | Uso de **PostgreSQL 17** com transações ACID e esquemas tipados via Prisma. |
+| **RNF-08** | Governança | Git (GitHub), Gestão de dependências (npm), Configuração via variáveis `.env`. |
 
 ---
 
@@ -146,13 +159,15 @@ Em produção o Clerk está ativo e não usa bypass. Para avaliação pela banca
 ```
 obra-facil/
 ├── apps/
-│   ├── frontend/          # Next.js 15 (App Router)
-│   └── backend/           # NestJS 11
+│   ├── frontend/          # Next.js 15 (App Router) + Dockerfile
+│   └── backend/           # NestJS 11 + Dockerfile
 ├── packages/
 │   └── shared/            # Types, schemas Zod, interfaces
+├── infra/                 # Infraestrutura como Código (IaC)
+│   └── terraform/         # Scripts Terraform (Provedor Vercel)
 ├── docker/
-│   ├── 01-schema.sql      # Schema do banco de dados
-│   └── 02-seed.sql        # Dados de exemplo
+│   ├── 01-schema.sql      # Schema do banco de dados (Infra de Dados)
+│   └── 02-seed.sql        # Dados de exemplo para testes
 ├── docs/
 │   ├── 01-produto/        # PRD, personas, jornada, lean canvas
 │   ├── 02-arquitetura/    # Arquitetura técnica e spec
@@ -160,8 +175,8 @@ obra-facil/
 │   ├── 04-ambiente-e-processos/  # Setup local, fluxo git, variáveis
 │   └── 05-prompts-e-referencias/ # Prompts de IA e referências
 ├── scripts/
-│   └── setup/             # Scripts de configuração e ferramentas
-└── .github/workflows/ # CI/CD pipelines
+│   └── setup/             # Scripts de configuração e automação
+└── .github/workflows/     # CI/CD (GitHub Actions)
 ```
 
 ### 📚 Documentação
