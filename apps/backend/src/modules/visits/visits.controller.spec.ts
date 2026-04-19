@@ -7,7 +7,6 @@ import { ForbiddenException } from '@nestjs/common';
 import type {
   Profile,
   ProfessionalWithProfile,
-  Visit,
   AvailabilitySlot,
   VisitWithProfessional,
   VisitWithClient,
@@ -142,9 +141,7 @@ describe('VisitsController', () => {
     });
 
     it('should find one visit by id', async () => {
-      service.findById.mockResolvedValue(
-        mockVisit as VisitWithProfessional & VisitWithClient,
-      );
+      service.findById.mockResolvedValue(mockVisit);
       const result = await controller.findOne('v1');
       expect(result).toEqual(mockVisit);
     });

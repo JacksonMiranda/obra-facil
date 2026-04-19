@@ -39,7 +39,9 @@ describe('OrdersRepository', () => {
   describe('findById', () => {
     it('should return order if found', async () => {
       const mockOrder = { id: 'order-1' };
-      db.query.mockResolvedValue({ rows: [mockOrder] } as unknown as QueryResult);
+      db.query.mockResolvedValue({
+        rows: [mockOrder],
+      } as unknown as QueryResult);
       const result = await repo.findById('order-1');
       expect(result).toEqual(mockOrder);
     });
@@ -54,7 +56,9 @@ describe('OrdersRepository', () => {
   describe('create', () => {
     it('should insert a new order', async () => {
       const mockOrder = { id: 'order-1' };
-      db.query.mockResolvedValue({ rows: [mockOrder] } as unknown as QueryResult);
+      db.query.mockResolvedValue({
+        rows: [mockOrder],
+      } as unknown as QueryResult);
       const input = {
         clientId: 'client-1',
         storeId: 'store-1',
