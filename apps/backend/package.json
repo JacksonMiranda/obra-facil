@@ -78,6 +78,9 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
+    "moduleNameMapper": {
+      "^@obrafacil/shared$": "<rootDir>/../../../packages/shared/src/index.ts"
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
