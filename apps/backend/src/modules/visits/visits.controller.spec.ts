@@ -43,7 +43,7 @@ describe('VisitsController', () => {
     profiles: mockProfile,
   };
 
-  const mockVisit: Visit = {
+  const mockVisit: VisitWithProfessional & VisitWithClient = {
     id: 'v1',
     client_id: 'client-1',
     professional_id: 'pro-1',
