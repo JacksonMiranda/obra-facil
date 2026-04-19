@@ -81,7 +81,9 @@ describe('ProfessionalsService', () => {
 
     it('should throw NotFoundException if not found', async () => {
       repo.findById.mockResolvedValue(null);
-      await expect(service.findById('unknown')).rejects.toThrow(NotFoundException);
+      await expect(service.findById('unknown')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

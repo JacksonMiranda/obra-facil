@@ -4,20 +4,32 @@ import { MaterialListsService } from './material-lists.service';
 import { StoreOffersRepository } from './store-offers.repository';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import type { Profile, MaterialList } from '@obrafacil/shared';
 
 describe('MaterialListsController', () => {
   let controller: MaterialListsController;
   let service: jest.Mocked<MaterialListsService>;
   let storeOffersRepo: jest.Mocked<StoreOffersRepository>;
 
-  const mockProfile = {
+  const mockProfile: Profile = {
     id: 'prof-1',
-    role: 'professional' as const,
-    name: 'Alex',
     clerk_id: 'clerk-1',
+    full_name: 'Alex',
+    avatar_url: null,
+    phone: null,
+    role: 'professional',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
-  const mockList = { id: 'list-1', professional_id: 'prof-1' };
+  const mockList: MaterialList = {
+    id: 'list-1',
+    conversation_id: 'conv-1',
+    professional_id: 'prof-1',
+    status: 'draft',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -51,14 +63,14 @@ describe('MaterialListsController', () => {
 
   describe('findAll', () => {
     it('should return all lists for professional', async () => {
-      service.findAllByProfessional.mockResolvedValue([mockList as any]);
-      const result = await controller.findAll(mockProfile as any);
+      service.findAllByProfessional.mockResolvedValue([mockList]);
+      const result = await controller.findAll(mockProfile);
       expect(result).toEqual([mockList]);
     });
 
     it('should throw ForbiddenException for clients', () => {
-      const clientProfile = { ...mockProfile, role: 'client' };
-      expect(() => controller.findAll(clientProfile as any)).toThrow(
+      const clientProfile = { ...mockProfile, role: 'client' as const };
+      expect(() => controller.findAll(clientProfile)).toThrow(
         ForbiddenException,
       );
     });
@@ -66,14 +78,14 @@ describe('MaterialListsController', () => {
 
   describe('findOne', () => {
     it('should return a list if found', async () => {
-      service.findById.mockResolvedValue(mockList as any);
-      const result = await controller.findOne(mockProfile as any, 'list-1');
+      service.findById.mockResolvedValue(mockList);
+      const result = await controller.findOne(mockProfile, 'list-1');
       expect(result).toEqual(mockList);
     });
 
     it('should throw NotFoundException if list not found', async () => {
       service.findById.mockResolvedValue(null);
-      await expect(controller.findOne(mockProfile as any, 'list-1')).rejects.toThrow(
+      await expect(controller.findOne(mockProfile, 'list-1')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -81,9 +93,9 @@ describe('MaterialListsController', () => {
 
   describe('create', () => {
     it('should delegate creation to service', async () => {
-      service.create.mockResolvedValue(mockList as any);
+      service.create.mockResolvedValue(mockList);
       const body = { conversationId: 'conv-1' };
-      const result = await controller.create(mockProfile as any, body);
+      const result = await controller.create(mockProfile, body);
       expect(result).toEqual(mockList);
       expect(service.create).toHaveBeenCalledWith(mockProfile.id, body);
     });
