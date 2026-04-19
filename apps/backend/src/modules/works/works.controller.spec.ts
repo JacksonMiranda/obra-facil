@@ -1,10 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { WorksController } from './works.controller';
 import { WorksRepository } from './works.repository';
 import { ProfessionalsRepository } from '../professionals/professionals.repository';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
-import type { Profile, WorkWithProfessional, ProfessionalWithProfile } from '@obrafacil/shared';
+import type {
+  Profile,
+  WorkWithProfessional,
+  ProfessionalWithProfile,
+} from '@obrafacil/shared';
 
 describe('WorksController', () => {
   let controller: WorksController;
@@ -22,6 +31,20 @@ describe('WorksController', () => {
     updated_at: new Date().toISOString(),
   };
 
+  const mockProfessional: ProfessionalWithProfile = {
+    id: 'prof-id',
+    profile_id: 'profile-id',
+    specialty: 'eletricista',
+    bio: null,
+    rating_avg: 5,
+    jobs_completed: 10,
+    is_verified: true,
+    latitude: null,
+    longitude: null,
+    created_at: new Date().toISOString(),
+    profiles: mockProfile,
+  };
+
   const mockWork: WorkWithProfessional = {
     id: 'work-id',
     client_id: 'profile-id',
@@ -35,21 +58,7 @@ describe('WorksController', () => {
     completed_at: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    professionals: {} as any,
-  };
-
-  const mockProfessional: ProfessionalWithProfile = {
-    id: 'prof-id',
-    profile_id: 'profile-id',
-    specialty: 'eletricista',
-    bio: null,
-    rating_avg: 5,
-    jobs_completed: 10,
-    is_verified: true,
-    latitude: null,
-    longitude: null,
-    created_at: new Date().toISOString(),
-    profiles: mockProfile,
+    professionals: mockProfessional,
   };
 
   beforeEach(async () => {
@@ -98,8 +107,12 @@ describe('WorksController', () => {
 
       const result = await controller.findAll(proProfile);
       expect(result).toEqual([mockWork]);
-      expect(professionalsRepo.findByProfileId).toHaveBeenCalledWith(proProfile.id);
-      expect(worksRepo.findAllByProfessional).toHaveBeenCalledWith(mockProfessional.id);
+      expect(professionalsRepo.findByProfileId).toHaveBeenCalledWith(
+        proProfile.id,
+      );
+      expect(worksRepo.findAllByProfessional).toHaveBeenCalledWith(
+        mockProfessional.id,
+      );
     });
 
     it('should return empty array if professional profile is not found', async () => {
@@ -120,7 +133,9 @@ describe('WorksController', () => {
 
     it('should throw NotFoundException if not found', async () => {
       worksRepo.findById.mockResolvedValue(null);
-      await expect(controller.findOne('unknown')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('unknown')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -129,21 +144,27 @@ describe('WorksController', () => {
       const proProfile = { ...mockProfile, role: 'professional' as const };
       worksRepo.findById.mockResolvedValue(mockWork);
       professionalsRepo.findByProfileId.mockResolvedValue(mockProfessional);
-      worksRepo.updateProgress.mockResolvedValue({ ...mockWork, progress_pct: 75 } as any);
-
-      const result = await controller.updateProgress('work-id', proProfile, { progressPct: 75 });
+      worksRepo.updateProgress.mockResolvedValue({
+        ...mockWork,
+        progress_pct: 75,
+      });
+      const result = await controller.updateProgress('work-id', proProfile, {
+        progressPct: 75,
+      });
       expect(result.progress_pct).toBe(75);
     });
 
     it('should throw BadRequestException if progressPct is invalid', async () => {
-      await expect(controller.updateProgress('id', mockProfile, { progressPct: 150 }))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        controller.updateProgress('id', mockProfile, { progressPct: 150 }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw ForbiddenException if user is not a professional', async () => {
       worksRepo.findById.mockResolvedValue(mockWork);
-      await expect(controller.updateProgress('work-id', mockProfile, { progressPct: 50 }))
-        .rejects.toThrow(ForbiddenException);
+      await expect(
+        controller.updateProgress('work-id', mockProfile, { progressPct: 50 }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -154,9 +175,11 @@ describe('WorksController', () => {
       const scheduledWork = { ...mockWork, status: 'scheduled' as const };
       worksRepo.findById.mockResolvedValue(scheduledWork);
       professionalsRepo.findByProfileId.mockResolvedValue(mockProfessional);
-      worksRepo.updateStatus.mockResolvedValue({ ...scheduledWork, status: 'active' } as any);
-
-      const result = await controller.start('work-id', proProfile);
+      worksRepo.updateStatus.mockResolvedValue({
+        ...scheduledWork,
+        status: 'active',
+      });
+      await controller.start('work-id', proProfile);
       expect(worksRepo.updateStatus).toHaveBeenCalledWith('work-id', 'active');
     });
 
@@ -164,16 +187,23 @@ describe('WorksController', () => {
       worksRepo.findById.mockResolvedValue(mockWork); // active
       professionalsRepo.findByProfileId.mockResolvedValue(mockProfessional);
 
-      await expect(controller.start('work-id', proProfile)).rejects.toThrow(ConflictException);
+      await expect(controller.start('work-id', proProfile)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should complete an active work', async () => {
       worksRepo.findById.mockResolvedValue(mockWork); // active
       professionalsRepo.findByProfileId.mockResolvedValue(mockProfessional);
-      worksRepo.updateStatus.mockResolvedValue({ ...mockWork, status: 'completed' } as any);
-
-      const result = await controller.complete('work-id', proProfile);
-      expect(worksRepo.updateStatus).toHaveBeenCalledWith('work-id', 'completed');
+      worksRepo.updateStatus.mockResolvedValue({
+        ...mockWork,
+        status: 'completed',
+      });
+      await controller.complete('work-id', proProfile);
+      expect(worksRepo.updateStatus).toHaveBeenCalledWith(
+        'work-id',
+        'completed',
+      );
     });
 
     it('should throw ConflictException when completing a non-active work', async () => {
@@ -181,7 +211,9 @@ describe('WorksController', () => {
       worksRepo.findById.mockResolvedValue(scheduledWork);
       professionalsRepo.findByProfileId.mockResolvedValue(mockProfessional);
 
-      await expect(controller.complete('work-id', proProfile)).rejects.toThrow(ConflictException);
+      await expect(controller.complete('work-id', proProfile)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 });
