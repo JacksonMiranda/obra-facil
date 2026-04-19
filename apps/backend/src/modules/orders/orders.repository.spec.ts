@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersRepository } from './orders.repository';
 import { DatabaseService } from '../../database/database.service';
+import { QueryResult } from 'pg';
 
 describe('OrdersRepository', () => {
   let repo: OrdersRepository;
@@ -25,7 +26,7 @@ describe('OrdersRepository', () => {
 
   describe('findAllByProfile', () => {
     it('should query orders with store info', async () => {
-      db.query.mockResolvedValue({ rows: [] } as any);
+      db.query.mockResolvedValue({ rows: [] } as unknown as QueryResult);
       const result = await repo.findAllByProfile('user-1');
       expect(result).toEqual([]);
       expect(db.query).toHaveBeenCalledWith(
@@ -38,13 +39,15 @@ describe('OrdersRepository', () => {
   describe('findById', () => {
     it('should return order if found', async () => {
       const mockOrder = { id: 'order-1' };
-      db.query.mockResolvedValue({ rows: [mockOrder] } as any);
+      db.query.mockResolvedValue({
+        rows: [mockOrder],
+      } as unknown as QueryResult);
       const result = await repo.findById('order-1');
       expect(result).toEqual(mockOrder);
     });
 
     it('should return null if not found', async () => {
-      db.query.mockResolvedValue({ rows: [] } as any);
+      db.query.mockResolvedValue({ rows: [] } as unknown as QueryResult);
       const result = await repo.findById('order-1');
       expect(result).toBeNull();
     });
@@ -53,7 +56,9 @@ describe('OrdersRepository', () => {
   describe('create', () => {
     it('should insert a new order', async () => {
       const mockOrder = { id: 'order-1' };
-      db.query.mockResolvedValue({ rows: [mockOrder] } as any);
+      db.query.mockResolvedValue({
+        rows: [mockOrder],
+      } as unknown as QueryResult);
       const input = {
         clientId: 'client-1',
         storeId: 'store-1',
