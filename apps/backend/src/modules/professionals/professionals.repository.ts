@@ -81,6 +81,10 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
       `SELECT ${COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
+       INNER JOIN account_roles ar
+         ON ar.profile_id = p.profile_id
+         AND ar.role = 'professional'
+         AND ar.is_active = true
        WHERE p.visibility_status = 'active'
          AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%')
          AND ($2::text IS NULL OR p.specialty ILIKE '%' || $2 || '%' OR p.bio ILIKE '%' || $2 || '%')
