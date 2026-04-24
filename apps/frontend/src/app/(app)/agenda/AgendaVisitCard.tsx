@@ -2,9 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthBypassEnabled, BYPASS_USER_CLERK_ID } from '@/lib/auth-bypass-config';
-import { DEV_USER_ID_HEADER, ACTING_AS_HEADER } from '@obrafacil/shared';
-import { getActingAs } from '@/lib/acting-as';
+import { useClientApi } from '@/lib/api/client-api';
 import { RejectModal } from './RejectModal';
 import type { VisitFull, UserRole } from '@obrafacil/shared';
 
@@ -27,47 +25,23 @@ export function AgendaVisitCard({ visit, actingAs }: AgendaVisitCardProps) {
   const [error, setError] = useState<string | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
-
-  const buildHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (isAuthBypassEnabled) headers[DEV_USER_ID_HEADER] = BYPASS_USER_CLERK_ID;
-    const actingAs = getActingAs();
-    if (actingAs) headers[ACTING_AS_HEADER] = actingAs;
-    return headers;
-  };
+  const api = useClientApi();
 
   const handleAccept = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiUrl}/v1/visits/${visit.id}/accept`, {
-        method: 'PATCH',
-        headers: buildHeaders(),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { error?: string };
-        setError(body.error ?? 'Erro ao aceitar visita');
-        return;
-      }
+      await api.patch(`/v1/visits/${visit.id}/accept`, {});
       router.refresh();
-    } catch {
-      setError('Erro de conexão');
+    } catch (err: unknown) {
+      setError((err as Error).message ?? 'Erro ao aceitar visita');
     } finally {
       setLoading(false);
     }
   };
 
   const handleReject = async (visitId: string, reason: string) => {
-    const res = await fetch(`${apiUrl}/v1/visits/${visitId}/reject`, {
-      method: 'PATCH',
-      headers: buildHeaders(),
-      body: JSON.stringify({ reason }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({})) as { error?: string };
-      throw new Error(body.error ?? 'Erro ao recusar visita');
-    }
+    await api.patch(`/v1/visits/${visitId}/reject`, { reason });
     setShowRejectModal(false);
     router.refresh();
   };
