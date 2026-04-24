@@ -81,9 +81,10 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
       `SELECT ${COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
-       WHERE ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%')
+       WHERE p.visibility_status = 'active'
+         AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%')
          AND ($2::text IS NULL OR p.specialty ILIKE '%' || $2 || '%' OR p.bio ILIKE '%' || $2 || '%')
-       ORDER BY p.rating_avg DESC
+       ORDER BY p.rating_avg DESC, p.published_at DESC
        LIMIT $3 OFFSET $4`,
       [query ?? null, mappedService ?? null, limit, offset],
     );
