@@ -173,7 +173,20 @@ export class ClerkAuthGuard implements CanActivate {
     if (!rows.length) {
       throw new UnauthorizedException('Falha ao provisionar perfil');
     }
-    return rows[0];
+    const profile = rows[0];
+
+    // Guarantee the 'client' role exists in account_roles for every user.
+    // Without this, users who only have 'professional' in account_roles lose
+    // access to the client role switch because getActiveRoles() returns a
+    // non-empty array and the fallback to profile.role no longer fires.
+    await this.db.query(
+      `INSERT INTO account_roles (profile_id, role, is_active, is_primary)
+       VALUES ($1, 'client', true, true)
+       ON CONFLICT (profile_id, role) DO NOTHING`,
+      [profile.id],
+    );
+
+    return profile;
   }
 
   private extractName(tokenPayload: Record<string, unknown>): string {
