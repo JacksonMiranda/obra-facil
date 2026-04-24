@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { DayPicker } from 'react-day-picker';
 import { ptBR } from 'date-fns/locale';
 import { TIMEZONE_OFFSET } from '@obrafacil/shared';
+import { useClientApi } from '@/lib/api/client-api';
 import 'react-day-picker/style.css';
 
 /** Locale-safe YYYY-MM-DD (avoids toISOString UTC shift in negative offsets) */
@@ -35,15 +36,13 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
 
   const timeSlotsRef = useRef<HTMLElement>(null);
   const addressRef = useRef<HTMLInputElement>(null);
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+  const api = useClientApi();
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${apiUrl}/v1/professionals/${professionalId}/availability`);
-        if (!res.ok) throw new Error();
-        const envelope = await res.json() as { data: AvailableDay[] };
-        setAvailability(envelope.data);
+        const data = await api.get<AvailableDay[]>(`/v1/professionals/${professionalId}/availability`);
+        setAvailability(data);
       } catch {
         setError('Não foi possível carregar a agenda.');
       } finally {
@@ -51,7 +50,7 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
       }
     }
     load();
-  }, [apiUrl, professionalId]);
+  }, [professionalId]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dates that have available slots
   const availableDates = new Set(availability.map((d) => d.date));
@@ -68,31 +67,22 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
     const scheduledAt = new Date(`${selectedDateStr}T${selectedTime}:00${TIMEZONE_OFFSET}`).toISOString();
 
     try {
-      const res = await fetch(`${apiUrl}/v1/visits`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          professionalId,
-          scheduledAt,
-          address: address || undefined,
-          notes: notes || undefined,
-        }),
+      await api.post('/v1/visits', {
+        professionalId,
+        scheduledAt,
+        address: address || undefined,
+        notes: notes || undefined,
       });
 
-      if (res.status === 409) {
+      router.push(`/agendar/confirmacao?profissional=${encodeURIComponent(professionalName)}&data=${selectedDateStr}&hora=${selectedTime}`);
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      if (status === 409) {
         setError('Este horário já foi reservado. Escolha outro.');
         setSelectedTime(null);
-        return;
-      }
-
-      if (!res.ok) {
+      } else {
         setError('Erro ao agendar. Tente novamente.');
-        return;
       }
-
-      router.push(`/agendar/confirmacao?profissional=${encodeURIComponent(professionalName)}&data=${selectedDateStr}&hora=${selectedTime}`);
-    } catch {
-      setError('Erro de conexão. Verifique sua internet.');
     } finally {
       setBooking(false);
     }
