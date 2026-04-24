@@ -1,11 +1,17 @@
 import { auth, currentUser } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { SignOutButton } from '@clerk/nextjs';
 import Link from 'next/link';
+import { ACTING_AS_COOKIE } from '@/lib/acting-as';
 
 export default async function PerfilPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
+
+  const cookieStore = await cookies();
+  const actingAs = cookieStore.get(ACTING_AS_COOKIE)?.value ?? 'client';
+  const isProfessional = actingAs === 'professional';
 
   const user = await currentUser();
   const name = user?.fullName ?? 'Usuário';
@@ -14,7 +20,7 @@ export default async function PerfilPage() {
 
   return (
     <div className="pb-24 bg-[#f8f6f6] min-h-screen">
-      <div className="px-4 pt-10 pb-6 bg-white">
+      <div className="px-4 pb-6 bg-white">
         <h1 className="text-lg font-bold text-slate-900 mb-6">Meu Perfil</h1>
 
         {/* Avatar + Name */}
@@ -46,12 +52,16 @@ export default async function PerfilPage() {
             <span className="text-sm font-medium text-slate-700">Configuracoes</span>
             <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
           </Link>
-          <div className="border-t border-slate-50" />
-          <Link href="/perfil/disponibilidade" className="w-full flex items-center gap-3 px-4 py-3.5">
-            <span className="material-symbols-outlined text-xl text-slate-400">calendar_month</span>
-            <span className="text-sm font-medium text-slate-700">Minha Disponibilidade</span>
-            <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
-          </Link>
+          {isProfessional && (
+            <>
+              <div className="border-t border-slate-50" />
+              <Link href="/perfil/disponibilidade" className="w-full flex items-center gap-3 px-4 py-3.5">
+                <span className="material-symbols-outlined text-xl text-slate-400">calendar_month</span>
+                <span className="text-sm font-medium text-slate-700">Minha Disponibilidade</span>
+                <span className="material-symbols-outlined text-slate-300 ml-auto">chevron_right</span>
+              </Link>
+            </>
+          )}
           <div className="border-t border-slate-50" />
           <Link href="/perfil/ajuda" className="w-full flex items-center gap-3 px-4 py-3.5">
             <span className="material-symbols-outlined text-xl text-slate-400">help</span>

@@ -13,7 +13,37 @@ export type MessageType = 'text' | 'image' | 'audio' | 'material_list';
 export type MaterialListStatus = 'draft' | 'sent' | 'quoted';
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered';
 export type WorkStatus = 'scheduled' | 'active' | 'completed';
-export type VisitStatus = 'confirmed' | 'completed' | 'cancelled';
+export type VisitStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rejected';
+
+/**
+ * Lifecycle status of a professional profile.
+ * - draft    — created but missing required fields; hidden from public listings
+ * - active   — all required fields present; visible in home/search/detail
+ * - inactive — explicitly deactivated by the user; hidden; data preserved
+ */
+export type ProfessionalVisibilityStatus = 'draft' | 'active' | 'inactive';
+
+/** An active role entry from account_roles table */
+export interface AccountRole {
+  id: string;
+  profile_id: string;
+  role: UserRole;
+  is_active: boolean;
+  is_primary: boolean;
+  activated_at: string;
+}
+
+/**
+ * Full account context attached to every authenticated request.
+ * - `profile`   — the profile row for this Clerk user
+ * - `roles`     — list of active roles for this account
+ * - `actingAs`  — resolved role from X-Acting-As header (or primary fallback)
+ */
+export interface AccountContext {
+  profile: Profile;
+  roles: UserRole[];
+  actingAs: UserRole;
+}
 
 export interface Database {
   public: {
@@ -53,6 +83,10 @@ export interface Database {
           is_verified: boolean;
           latitude: number | null;
           longitude: number | null;
+          visibility_status: ProfessionalVisibilityStatus;
+          display_name: string | null;
+          city: string | null;
+          published_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -65,6 +99,10 @@ export interface Database {
           is_verified?: boolean;
           latitude?: number | null;
           longitude?: number | null;
+          visibility_status?: ProfessionalVisibilityStatus;
+          display_name?: string | null;
+          city?: string | null;
+          published_at?: string | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['professionals']['Insert']>;
@@ -328,6 +366,7 @@ export interface Database {
         address: string | null;
         notes: string | null;
         cancelled_by: string | null;
+        rejection_reason: string | null;
         created_at: string;
         updated_at: string;
       };
@@ -340,6 +379,7 @@ export interface Database {
         address?: string | null;
         notes?: string | null;
         cancelled_by?: string | null;
+        rejection_reason?: string | null;
         created_at?: string;
         updated_at?: string;
       };
@@ -382,6 +422,22 @@ export type ProfessionalWithProfile = Professional & {
   profiles: Profile;
 };
 
+/** Returned by computeCompleteness() — which fields are missing for publication */
+export interface ProfessionalCompletenessResult {
+  complete: boolean;
+  missing: string[];
+}
+
+/** Response shape from activate/update professional endpoints */
+export interface ProfessionalActivationResult {
+  professionalId: string;
+  roles: UserRole[];
+  visibility_status: ProfessionalVisibilityStatus;
+  is_complete: boolean;
+  missing_fields: string[];
+  message: string;
+}
+
 export type ReviewWithReviewer = Review & {
   profiles: Pick<Profile, 'id' | 'full_name' | 'avatar_url'>;
 };
@@ -402,6 +458,12 @@ export type WorkWithProfessional = Work & {
   professionals: ProfessionalWithProfile;
 };
 
+/** Full work with both sides: professional data + client profile */
+export type WorkFull = Work & {
+  professionals: ProfessionalWithProfile;
+  client: Profile;
+};
+
 export type AvailabilitySlot = Database['public']['Tables']['availability_slots']['Row'];
 export type Visit = Database['public']['Tables']['visits']['Row'];
 
@@ -412,3 +474,31 @@ export type VisitWithProfessional = Visit & {
 export type VisitWithClient = Visit & {
   client: Profile;
 };
+
+/** Full visit with both sides: professional data + client profile */
+export type VisitFull = Visit & {
+  professionals: ProfessionalWithProfile;
+  client: Profile;
+};
+
+// ── Notifications ────────────────────────────────────────────────────────────
+
+export type NotificationType =
+  | 'visit_accepted'
+  | 'visit_rejected'
+  | 'visit_cancelled'
+  | 'visit_completed'
+  | 'work_started'
+  | 'work_completed'
+  | 'work_progress';
+
+export interface Notification {
+  id: string;
+  profile_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  link: string | null;
+  is_read: boolean;
+  created_at: string;
+}

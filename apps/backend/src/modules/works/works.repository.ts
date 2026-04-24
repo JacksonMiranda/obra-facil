@@ -1,12 +1,8 @@
 ﻿import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
-import type {
-  IWorksRepository,
-  Work,
-  WorkWithProfessional,
-} from '@obrafacil/shared';
+import type { IWorksRepository, Work, WorkFull } from '@obrafacil/shared';
 
-const WORKS_WITH_PROF = `
+const WORKS_WITH_FULL = `
   SELECT
     w.id, w.client_id, w.professional_id, w.title, w.status, w.progress_pct,
     w.next_step, w.photos, w.started_at, w.completed_at, w.created_at, w.updated_at,
@@ -16,43 +12,47 @@ const WORKS_WITH_PROF = `
       'is_verified', pr.is_verified, 'latitude', pr.latitude, 'longitude', pr.longitude,
       'created_at', pr.created_at,
       'profiles', json_build_object(
-        'id', p.id, 'clerk_id', p.clerk_id, 'full_name', p.full_name,
-        'avatar_url', p.avatar_url, 'phone', p.phone, 'role', p.role,
-        'created_at', p.created_at, 'updated_at', p.updated_at
+        'id', pp.id, 'clerk_id', pp.clerk_id, 'full_name', pp.full_name,
+        'avatar_url', pp.avatar_url, 'phone', pp.phone, 'role', pp.role,
+        'created_at', pp.created_at, 'updated_at', pp.updated_at
       )
-    ) AS professionals
+    ) AS professionals,
+    json_build_object(
+      'id', cp.id, 'clerk_id', cp.clerk_id, 'full_name', cp.full_name,
+      'avatar_url', cp.avatar_url, 'phone', cp.phone, 'role', cp.role,
+      'created_at', cp.created_at, 'updated_at', cp.updated_at
+    ) AS client
   FROM works w
   INNER JOIN professionals pr ON pr.id = w.professional_id
-  INNER JOIN profiles p ON p.id = pr.profile_id
+  INNER JOIN profiles pp ON pp.id = pr.profile_id
+  INNER JOIN profiles cp ON cp.id = w.client_id
 `;
 
 @Injectable()
 export class WorksRepository implements IWorksRepository {
   constructor(private readonly db: DatabaseService) {}
 
-  async findAllByClient(clientId: string): Promise<WorkWithProfessional[]> {
+  async findAllByClient(clientId: string): Promise<WorkFull[]> {
     const { rows } = await this.db.query(
-      `${WORKS_WITH_PROF} WHERE w.client_id = $1 ORDER BY w.created_at DESC`,
+      `${WORKS_WITH_FULL} WHERE w.client_id = $1 ORDER BY w.created_at DESC`,
       [clientId],
     );
-    return rows as unknown as WorkWithProfessional[];
+    return rows as unknown as WorkFull[];
   }
 
-  async findAllByProfessional(
-    professionalId: string,
-  ): Promise<WorkWithProfessional[]> {
+  async findAllByProfessional(professionalId: string): Promise<WorkFull[]> {
     const { rows } = await this.db.query(
-      `${WORKS_WITH_PROF} WHERE pr.id = $1 ORDER BY w.created_at DESC`,
+      `${WORKS_WITH_FULL} WHERE pr.id = $1 ORDER BY w.created_at DESC`,
       [professionalId],
     );
-    return rows as unknown as WorkWithProfessional[];
+    return rows as unknown as WorkFull[];
   }
 
-  async findById(id: string): Promise<WorkWithProfessional | null> {
-    const { rows } = await this.db.query(`${WORKS_WITH_PROF} WHERE w.id = $1`, [
+  async findById(id: string): Promise<WorkFull | null> {
+    const { rows } = await this.db.query(`${WORKS_WITH_FULL} WHERE w.id = $1`, [
       id,
     ]);
-    return rows.length ? (rows[0] as unknown as WorkWithProfessional) : null;
+    return rows.length ? (rows[0] as unknown as WorkFull) : null;
   }
 
   async updateProgress(id: string, progressPct: number): Promise<Work> {
@@ -70,7 +70,7 @@ export class WorksRepository implements IWorksRepository {
   ): Promise<Work> {
     const { rows } = await this.db.query(
       `UPDATE works
-         SET status = $1,
+         SET status = $1::work_status,
              started_at = CASE WHEN $1 = 'active' AND started_at IS NULL THEN now() ELSE started_at END,
              completed_at = CASE WHEN $1 = 'completed' THEN now() ELSE completed_at END,
              progress_pct = CASE WHEN $1 = 'completed' THEN 100 ELSE progress_pct END,

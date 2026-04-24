@@ -1,28 +1,30 @@
 'use client';
 
-// BottomNav — per spec_ui.md navigation flow
-// 5 tabs: Início, Pedidos, Obras, Mensagens, Perfil
-// Active tab: primary color (brand orange), inactive: slate
-
+// BottomNav — tabs condicionais por papel (actingAs)
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useRole } from '@/contexts/RoleContext';
 
-const tabs = [
-  { href: '/',           label: 'Início',    icon: 'home'              },
-  { href: '/pedidos',    label: 'Pedidos',   icon: 'receipt_long'      },
-  { href: '/obras',      label: 'Obras',     icon: 'construction'      },
-  { href: '/mensagens',  label: 'Mensagens', icon: 'chat_bubble'       },
-  { href: '/perfil',     label: 'Perfil',    icon: 'person'            },
+const CLIENT_TABS = [
+  { href: '/',             label: 'Início',       icon: 'home'       },
+  { href: '/solicitacoes', label: 'Solicitações', icon: 'assignment' },
+  { href: '/perfil',       label: 'Perfil',       icon: 'person'     },
+];
+
+const PROFESSIONAL_TABS = [
+  { href: '/',              label: 'Início',  icon: 'home'           },
+  { href: '/agenda',        label: 'Agenda',  icon: 'calendar_month' },
+  { href: '/meus-servicos', label: 'Serviços', icon: 'build'          },
+  { href: '/perfil',        label: 'Perfil',  icon: 'person'         },
 ];
 
 export function BottomNav() {
+  const { actingAs } = useRole();
   const pathname = usePathname();
-
-  // Hide BottomNav on full-screen chat pages to avoid overlapping the input
-  if (pathname.startsWith('/chat/')) return null;
+  const tabs = actingAs === 'professional' ? PROFESSIONAL_TABS : CLIENT_TABS;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-slate-100 safe-area-pb shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-slate-100 safe-area-pb shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
       <div className="mobile-container mx-auto">
         <ul className="flex h-16">
           {tabs.map((tab) => {

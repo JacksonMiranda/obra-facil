@@ -1,6 +1,10 @@
 import { auth } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
+import { api } from '@/lib/api/client';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ProfessionalActivation } from '@/components/perfil/ProfessionalActivation';
+import { RoleSelector } from '@/components/perfil/RoleSelector';
+import type { AccountContext } from '@obrafacil/shared';
 
 const SETTINGS = [
   { icon: 'notifications_active', label: 'Notificacoes Push', enabled: true },
@@ -12,11 +16,17 @@ export default async function ConfiguracoesPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
+  const account = await api.get<AccountContext>('/v1/account/me').catch(() => null);
+
   return (
     <div className="pb-24 bg-surface min-h-screen">
       <PageHeader title="Configuracoes" />
 
       <div className="px-4 mt-4">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-1 mb-2">
+          Preferencias
+        </h2>
+
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
           {SETTINGS.map((s, idx) => (
             <div key={s.label}>
@@ -36,8 +46,15 @@ export default async function ConfiguracoesPage() {
           ))}
         </div>
 
+        {account && <ProfessionalActivation roles={account.roles} />}
+
+        {account && (
+          <RoleSelector currentRole={account.actingAs} availableRoles={account.roles} />
+        )}
+
         <p className="text-[10px] text-slate-300 text-center mt-8">Obra Facil v1.0.0</p>
       </div>
     </div>
   );
 }
+

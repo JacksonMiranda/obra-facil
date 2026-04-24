@@ -31,10 +31,10 @@ export default async function BuscaPage({
       : 'Todos os profissionais';
 
   return (
-    <div className="pb-24 bg-[#f8f6f6] min-h-screen">
+    <div className="pb-24 md:pb-8 bg-[#f8f6f6] min-h-screen">
       {/* Header */}
-      <div className="px-4 pt-10 pb-4 bg-white">
-        <Link href="/" className="flex items-center gap-1 text-sm text-slate-400 mb-3">
+      <div className="px-4 md:px-8 md:pt-6 pb-4 bg-white">
+        <Link href="/" className="md:hidden flex items-center gap-1 text-sm text-slate-400 mb-3">
           <span className="material-symbols-outlined text-lg">arrow_back</span>
           Voltar
         </Link>
@@ -43,7 +43,7 @@ export default async function BuscaPage({
       </div>
 
       {/* Results */}
-      <div className="px-4 mt-4 flex flex-col gap-3">
+      <div className="px-4 md:px-8 mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         {(!professionals || professionals.length === 0) && (
           <div className="flex flex-col items-center justify-center pt-16 text-center">
             <span className="material-symbols-outlined text-5xl text-slate-200 mb-3">search_off</span>

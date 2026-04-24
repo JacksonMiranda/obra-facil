@@ -4,6 +4,7 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { randomUUID } from 'node:crypto';
 import { DatabaseModule } from './database/database.module';
+import { AuthorizationModule } from './core/authorization/authorization.module';
 import { ProfessionalsModule } from './modules/professionals/professionals.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
 import { MessagesModule } from './modules/messages/messages.module';
@@ -14,6 +15,9 @@ import { VisitsModule } from './modules/visits/visits.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { HealthModule } from './modules/health/health.module';
 import { AiModule } from './modules/ai/ai.module';
+import { AccountModule } from './modules/account/account.module';
+import { ServicesModule } from './modules/services/services.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ResponseEnvelopeInterceptor } from './core/interceptors/response-envelope.interceptor';
 import { HttpExceptionFilter } from './core/filters/http-exception.filter';
 
@@ -49,8 +53,11 @@ import { HttpExceptionFilter } from './core/filters/http-exception.filter';
       },
     }),
     DatabaseModule,
+    AuthorizationModule,
     HealthModule,
     AiModule,
+    AccountModule,
+    ServicesModule,
     ProfessionalsModule,
     ConversationsModule,
     MessagesModule,
@@ -58,6 +65,7 @@ import { HttpExceptionFilter } from './core/filters/http-exception.filter';
     OrdersModule,
     WorksModule,
     VisitsModule,
+    NotificationsModule,
     WebhooksModule,
   ],
   providers: [
