@@ -141,8 +141,8 @@ describe('ProfessionalActivation', () => {
         expect(screen.getByText('Perfil Profissional Ativo')).toBeInTheDocument();
       });
 
-      const meCall = mockFetch.mock.calls.find(([url]: [string]) =>
-        url.includes('/v1/professionals/me'),
+      const meCall = mockFetch.mock.calls.find((args) =>
+        (args[0] as string).includes('/v1/professionals/me'),
       );
       expect(meCall).toBeDefined();
       const [, options] = meCall as [string, RequestInit];
@@ -193,16 +193,16 @@ describe('ProfessionalActivation', () => {
       await userEvent.click(screen.getByText('Desativar perfil profissional'));
 
       await waitFor(() => {
-        const deactivateCall = mockFetch.mock.calls.find(([url]: [string]) =>
-          url.includes('/v1/account/roles/deactivate'),
+        const deactivateCall = mockFetch.mock.calls.find((args) =>
+          (args[0] as string).includes('/v1/account/roles/deactivate'),
         );
         expect(deactivateCall).toBeDefined();
         expect(mockRefresh).toHaveBeenCalled();
       });
 
       // Deactivate call must include Authorization header
-      const deactivateCall = mockFetch.mock.calls.find(([url]: [string]) =>
-        url.includes('/v1/account/roles/deactivate'),
+      const deactivateCall = mockFetch.mock.calls.find((args) =>
+        (args[0] as string).includes('/v1/account/roles/deactivate'),
       );
       const [, opts] = deactivateCall as [string, RequestInit];
       const authHeader = (opts.headers as Record<string, string>)['Authorization'];
