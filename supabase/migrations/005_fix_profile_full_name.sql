@@ -57,8 +57,7 @@ WHERE full_name = 'Usuário';
 -- the user logs in again and the guard fills in the real name.
 UPDATE professionals
 SET
-  visibility_status = 'draft',
-  updated_at        = now()
+  visibility_status = 'draft'
 WHERE profile_id IN (
   SELECT id FROM profiles WHERE full_name = ''
 )
