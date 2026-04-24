@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 import { useClientApi } from '@/lib/api/client-api';
+import { isAuthBypassEnabled } from '@/lib/auth-bypass-config';
 import type { Notification } from '@obrafacil/shared';
 
 function timeAgo(iso: string): string {
@@ -28,19 +30,23 @@ const TYPE_ICON: Record<string, string> = {
 export function NotificationBell() {
   const router = useRouter();
   const api = useClientApi();
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const { isLoaded } = isAuthBypassEnabled ? { isLoaded: true } : useAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Fetch unread count on mount and after close
+  // Wait for Clerk to hydrate before making authenticated requests.
+  // Without this guard, getToken() returns null on first render → 401.
   useEffect(() => {
+    if (!isLoaded) return;
     api.get<{ count: number }>('/v1/notifications/count')
       .then((res) => setUnreadCount(res.count))
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoaded]);
 
   // Close on outside click
   useEffect(() => {
