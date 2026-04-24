@@ -57,13 +57,21 @@ export class AvailabilityRepository implements IAvailabilityRepository {
     professionalId: string,
     slots: { weekday: number; start_time: string; end_time: string }[],
   ): Promise<AvailabilitySlot[]> {
-    // Deduplicate by (weekday, start_time) — last entry wins
+    // Normalize HH:MM:SS → HH:MM from incoming payload (frontend may retain
+    // the full format from a previous DB read), then deduplicate by (weekday, start_time).
+    const normalizeTime = (t: string) => t.slice(0, 5);
     const seen = new Map<
       string,
       { weekday: number; start_time: string; end_time: string }
     >();
     for (const slot of slots) {
-      seen.set(`${slot.weekday}:${slot.start_time}`, slot);
+      const st = normalizeTime(slot.start_time);
+      const et = normalizeTime(slot.end_time);
+      seen.set(`${slot.weekday}:${st}`, {
+        weekday: slot.weekday,
+        start_time: st,
+        end_time: et,
+      });
     }
     const uniqueSlots = Array.from(seen.values());
 
