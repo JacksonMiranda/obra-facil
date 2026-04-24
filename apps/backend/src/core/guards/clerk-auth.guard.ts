@@ -156,14 +156,17 @@ export class ClerkAuthGuard implements CanActivate {
     clerkUserId: string,
     tokenPayload: Record<string, unknown>,
   ): Promise<Profile> {
-    const existing = await this.findProfileByClerkId(clerkUserId);
-    if (existing) return existing;
-
     const fullName = this.extractName(tokenPayload);
     const { rows } = await this.db.query<Profile>(
       `INSERT INTO profiles (clerk_id, full_name, role)
        VALUES ($1, $2, 'client')
-       ON CONFLICT (clerk_id) DO UPDATE SET updated_at = now()
+       ON CONFLICT (clerk_id) DO UPDATE SET
+         full_name = CASE
+           WHEN profiles.full_name = 'Usuário' OR profiles.full_name = ''
+             THEN EXCLUDED.full_name
+           ELSE profiles.full_name
+         END,
+         updated_at = now()
        RETURNING *`,
       [clerkUserId, fullName],
     );
