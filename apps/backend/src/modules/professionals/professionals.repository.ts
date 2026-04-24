@@ -5,9 +5,12 @@ import type {
   ProfessionalWithProfile,
 } from '@obrafacil/shared';
 
-const PROF_JOIN_COLS = `
-  p.id, p.profile_id, p.specialty, p.bio, p.rating_avg, p.jobs_completed,
+// ── Column list for reads from the `professionals` table + profiles JOIN ─────
+const COLS = `
+  p.id, p.profile_id, p.specialty, p.bio,
+  p.rating_avg, p.jobs_completed,
   p.is_verified, p.latitude, p.longitude, p.created_at,
+  p.visibility_status, p.display_name, p.city, p.published_at,
   pr.id AS pr_id, pr.clerk_id, pr.full_name, pr.avatar_url,
   pr.phone, pr.role, pr.created_at AS pr_created_at, pr.updated_at AS pr_updated_at
 `;
@@ -18,11 +21,16 @@ function mapRow(row: Record<string, unknown>): ProfessionalWithProfile {
     profile_id: row.profile_id as string,
     specialty: row.specialty as string,
     bio: (row.bio as string | null) ?? null,
+    city: (row.city as string | null) ?? null,
+    display_name: (row.display_name as string | null) ?? null,
     rating_avg: Number(row.rating_avg),
     jobs_completed: Number(row.jobs_completed),
     is_verified: Boolean(row.is_verified),
     latitude: row.latitude != null ? Number(row.latitude) : null,
     longitude: row.longitude != null ? Number(row.longitude) : null,
+    visibility_status:
+      (row.visibility_status as 'draft' | 'active' | 'inactive') ?? 'draft',
+    published_at: (row.published_at as string | null) ?? null,
     created_at: String(row.created_at),
     profiles: {
       id: row.pr_id as string,
@@ -40,6 +48,8 @@ function mapRow(row: Record<string, unknown>): ProfessionalWithProfile {
 @Injectable()
 export class ProfessionalsRepository implements IProfessionalsRepository {
   constructor(private readonly db: DatabaseService) {}
+
+  // ── Public reads (use the view — eligibility already applied) ─────────────
 
   async search({
     query,
@@ -68,7 +78,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     }
 
     const { rows } = await this.db.query(
-      `SELECT ${PROF_JOIN_COLS}
+      `SELECT ${COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%')
@@ -80,9 +90,10 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     return rows.map(mapRow);
   }
 
+  /** Public detail. */
   async findById(id: string): Promise<ProfessionalWithProfile | null> {
     const { rows } = await this.db.query(
-      `SELECT ${PROF_JOIN_COLS}
+      `SELECT ${COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE p.id = $1`,
@@ -91,11 +102,12 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     return rows.length ? mapRow(rows[0]) : null;
   }
 
+  /** Public detail with reviews. */
   async findByIdWithReviews(
     id: string,
   ): Promise<(ProfessionalWithProfile & { reviews: unknown[] }) | null> {
     const { rows } = await this.db.query(
-      `SELECT ${PROF_JOIN_COLS},
+      `SELECT ${COLS},
           COALESCE(
             json_agg(
               json_build_object(
@@ -111,7 +123,11 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
         LEFT JOIN reviews rv ON rv.professional_id = p.id
         LEFT JOIN profiles rp ON rp.id = rv.reviewer_id
         WHERE p.id = $1
-        GROUP BY p.id, pr.id`,
+        GROUP BY p.id, p.profile_id, p.specialty, p.bio,
+                 p.rating_avg, p.jobs_completed, p.is_verified,
+                 p.latitude, p.longitude, p.created_at,
+                 pr.id, pr.clerk_id, pr.full_name, pr.avatar_url,
+                 pr.phone, pr.role, pr.created_at, pr.updated_at`,
       [id],
     );
     if (!rows.length) return null;
@@ -123,7 +139,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     clerkId: string,
   ): Promise<ProfessionalWithProfile | null> {
     const { rows } = await this.db.query(
-      `SELECT ${PROF_JOIN_COLS}
+      `SELECT ${COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE pr.clerk_id = $1`,
@@ -136,7 +152,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     profileId: string,
   ): Promise<ProfessionalWithProfile | null> {
     const { rows } = await this.db.query(
-      `SELECT ${PROF_JOIN_COLS}
+      `SELECT ${COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE p.profile_id = $1`,

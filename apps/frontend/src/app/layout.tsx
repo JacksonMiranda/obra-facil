@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: 'Obra Fácil — Profissionais de confiança perto de você',
   description:
     'Encontre profissionais qualificados, compare preços de materiais e gerencie suas obras em um só lugar.',
-  keywords: ['obras', 'profissionais', 'reforma', 'construção', 'materiais'],
+  keywords: ['solicitações', 'profissionais', 'reforma', 'construção', 'materiais'],
 };
 
 export const viewport = {

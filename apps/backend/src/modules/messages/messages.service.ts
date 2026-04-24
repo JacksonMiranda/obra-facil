@@ -22,9 +22,14 @@ export class MessagesService {
   ): Promise<MessageWithSender[]> {
     const conversation = await this.conversationsRepo.findById(conversationId);
     if (!conversation) throw new NotFoundException('Conversa não encontrada');
+    const professionalProfileId = (
+      (conversation as unknown as Record<string, unknown>).professional as
+        | Record<string, unknown>
+        | undefined
+    )?.id;
     if (
       conversation.client_id !== profileId &&
-      conversation.professional_id !== profileId
+      professionalProfileId !== profileId
     ) {
       throw new ForbiddenException('Acesso negado');
     }
@@ -38,9 +43,14 @@ export class MessagesService {
       input.conversationId,
     );
     if (!conversation) throw new NotFoundException('Conversa não encontrada');
+    const professionalProfileId = (
+      (conversation as unknown as Record<string, unknown>).professional as
+        | Record<string, unknown>
+        | undefined
+    )?.id;
     if (
       conversation.client_id !== senderId &&
-      conversation.professional_id !== senderId
+      professionalProfileId !== senderId
     ) {
       throw new ForbiddenException(
         'Acesso negado: você não faz parte desta conversa',

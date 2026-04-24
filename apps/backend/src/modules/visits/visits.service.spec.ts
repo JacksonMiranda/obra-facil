@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { VisitsService } from './visits.service';
+import { OwnershipService } from '../../core/authorization/ownership.service';
 import type { Profile } from '@obrafacil/shared';
 
 function makeProfile(overrides: Partial<Profile> = {}): Profile {
@@ -48,7 +49,11 @@ describe('VisitsService', () => {
       create: jest.fn(),
       updateStatus: jest.fn(),
     };
-    service = new VisitsService(availabilityRepo as never, visitsRepo as never);
+    service = new VisitsService(
+      availabilityRepo as never,
+      visitsRepo as never,
+      new OwnershipService(),
+    );
   });
 
   describe('findAll', () => {
@@ -71,14 +76,37 @@ describe('VisitsService', () => {
   });
 
   describe('findById', () => {
-    it('returns the visit when found', async () => {
-      visitsRepo.findById.mockResolvedValue({ id: 'v1' });
-      const r = await service.findById('v1');
-      expect(r).toEqual({ id: 'v1' });
+    const owner = makeProfile({ id: 'client-1', role: 'client' });
+    const stranger = makeProfile({ id: 'other-user', role: 'client' });
+    const visitData = {
+      id: 'v1',
+      client_id: 'client-1',
+      professionals: { profile_id: 'pro-profile' },
+    };
+
+    it('returns the visit when caller is the client', async () => {
+      visitsRepo.findById.mockResolvedValue(visitData);
+      const r = await service.findById('v1', owner);
+      expect(r).toEqual(visitData);
     });
-    it('throws NotFound when missing', async () => {
+    it('returns the visit when caller is the professional', async () => {
+      const proProfile = makeProfile({
+        id: 'pro-profile',
+        role: 'professional',
+      });
+      visitsRepo.findById.mockResolvedValue(visitData);
+      const r = await service.findById('v1', proProfile);
+      expect(r).toEqual(visitData);
+    });
+    it('throws NotFound when visit belongs to another user', async () => {
+      visitsRepo.findById.mockResolvedValue(visitData);
+      await expect(service.findById('v1', stranger)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+    it('throws NotFound when visit does not exist', async () => {
       visitsRepo.findById.mockResolvedValue(null);
-      await expect(service.findById('missing')).rejects.toBeInstanceOf(
+      await expect(service.findById('missing', owner)).rejects.toBeInstanceOf(
         NotFoundException,
       );
     });

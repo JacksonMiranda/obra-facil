@@ -17,7 +17,7 @@ export class ConversationsRepository implements IConversationsRepository {
        FROM conversations c
        INNER JOIN professionals prof ON prof.id = c.professional_id
        INNER JOIN profiles pp ON pp.id = prof.profile_id
-       WHERE c.client_id = $1 OR c.professional_id = $1
+       WHERE c.client_id = $1 OR prof.profile_id = $1
        ORDER BY c.last_message_at DESC`,
       [profileId],
     );

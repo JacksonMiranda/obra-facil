@@ -142,7 +142,7 @@ describe('VisitsController', () => {
 
     it('should find one visit by id', async () => {
       service.findById.mockResolvedValue(mockVisit);
-      const result = await controller.findOne('v1');
+      const result = await controller.findOne('v1', mockProfile);
       expect(result).toEqual(mockVisit);
     });
 

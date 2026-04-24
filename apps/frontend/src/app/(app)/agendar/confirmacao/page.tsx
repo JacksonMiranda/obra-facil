@@ -55,11 +55,11 @@ export default async function ConfirmacaoPage({
       {/* Actions */}
       <div className="flex flex-col gap-3 w-full max-w-sm">
         <Link
-          href="/obras"
+          href="/solicitacoes"
           className="w-full h-14 rounded-xl bg-trust text-white font-semibold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
         >
-          <span className="material-symbols-outlined text-xl">construction</span>
-          Ver Minhas Visitas
+          <span className="material-symbols-outlined text-xl">assignment</span>
+          Ver Minhas Solicitações
         </Link>
         <Link
           href="/"

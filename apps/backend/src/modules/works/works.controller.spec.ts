@@ -8,6 +8,7 @@ import {
 import { WorksController } from './works.controller';
 import { WorksRepository } from './works.repository';
 import { ProfessionalsRepository } from '../professionals/professionals.repository';
+import { OwnershipService } from '../../core/authorization/ownership.service';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
 import type {
   Profile,
@@ -81,6 +82,7 @@ describe('WorksController', () => {
             findByProfileId: jest.fn(),
           },
         },
+        OwnershipService,
       ],
     })
       .overrideGuard(ClerkAuthGuard)
@@ -125,15 +127,32 @@ describe('WorksController', () => {
   });
 
   describe('findOne', () => {
-    it('should return a work if found', async () => {
+    it('should return a work if caller is the client owner', async () => {
       worksRepo.findById.mockResolvedValue(mockWork);
-      const result = await controller.findOne('work-id');
+      // mockProfile.id === mockWork.client_id === 'profile-id'
+      const result = await controller.findOne('work-id', mockProfile);
       expect(result).toEqual(mockWork);
+    });
+
+    it('should return a work if caller is the professional', async () => {
+      const proProfile = { ...mockProfile, role: 'professional' as const };
+      worksRepo.findById.mockResolvedValue(mockWork);
+      // mockWork.professionals.profiles.id === 'profile-id' === proProfile.id
+      const result = await controller.findOne('work-id', proProfile);
+      expect(result).toEqual(mockWork);
+    });
+
+    it('should throw NotFoundException if work belongs to another user', async () => {
+      const stranger = { ...mockProfile, id: 'stranger-id' };
+      worksRepo.findById.mockResolvedValue(mockWork);
+      await expect(controller.findOne('work-id', stranger)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw NotFoundException if not found', async () => {
       worksRepo.findById.mockResolvedValue(null);
-      await expect(controller.findOne('unknown')).rejects.toThrow(
+      await expect(controller.findOne('unknown', mockProfile)).rejects.toThrow(
         NotFoundException,
       );
     });

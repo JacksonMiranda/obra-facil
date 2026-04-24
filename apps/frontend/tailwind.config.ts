@@ -11,17 +11,43 @@ const config: Config = {
     extend: {
       // Design System: Obra Fácil — per spec_ui.md "Diretrizes para IA"
       colors: {
-        // Semantic colors (spec_ui.md)
-        trust: "#1E40AF",      // Azul Escuro — segurança, CTAs primários
-        error: "#EF4444",      // Vermelho Soft — erros e alertas
-        savings: "#10B981",    // Verde Brando — economia, boas práticas
-        // Brand colors (Stitch prototypes)
-        brand: "#ec5b13",      // Laranja — identidade visual, header chat
-        "brand-light": "#fff4ed", // Laranja claro — backgrounds
-        // Neutral
-        surface: "#f8f6f6",    // Fundo neutro claro
+        // ── Legacy semantic tokens (spec_ui.md) — mantidos para compat ──
+        trust: "#1E40AF",
+        error: "#EF4444",
+        savings: "#10B981",
+        brand: "#ec5b13",
+        "brand-light": "#fff4ed",
+        surface: "#f8f6f6",
         "on-trust": "#ffffff",
         "on-brand": "#ffffff",
+        // ── Web design tokens (Stitch prototypes) ─────────────────────
+        primary: {
+          DEFAULT: "#00288e",
+          container: "#1e40af",
+          fixed: "#dde1ff",
+        },
+        secondary: {
+          DEFAULT: "#006c49",
+          container: "#6cf8bb",
+          fixed: "#6ffbbe",
+        },
+        tertiary: {
+          DEFAULT: "#70000c",
+          fixed: "#ffdad7",
+        },
+        "on-primary": "#ffffff",
+        "on-secondary": "#ffffff",
+        "on-primary-container": "#001d6d",
+        "on-secondary-container": "#002114",
+        "on-surface": "#191c1e",
+        "on-surface-variant": "#444653",
+        outline: "#757684",
+        "outline-variant": "#c4c6d6",
+        "surface-container-lowest": "#ffffff",
+        "surface-container-low": "#f2f4f6",
+        "surface-container": "#eceef0",
+        "surface-variant": "#e4e5f5",
+        scrim: "#000000",
       },
       fontFamily: {
         // per spec_ui.md: "fontes robustas como Inter, pesos Medium/Semi-bold"

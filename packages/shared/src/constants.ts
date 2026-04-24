@@ -9,3 +9,10 @@ export const TIMEZONE_OFFSET = '-03:00';
  * safe to be sent unconditionally by the frontend in bypass mode.
  */
 export const DEV_USER_ID_HEADER = 'X-Dev-User-Id';
+
+/**
+ * Header sent by the frontend to declare which role context the user is
+ * operating under when they have multiple active roles.
+ * Example: "X-Acting-As: professional"
+ */
+export const ACTING_AS_HEADER = 'X-Acting-As';

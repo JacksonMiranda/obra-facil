@@ -3,9 +3,9 @@ import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 
 const FAQ = [
-  { q: 'Como contratar um profissional?', a: 'Na tela inicial, busque pelo servico desejado, escolha um profissional bem avaliado e clique em "Solicitar Orcamento". Voce sera redirecionado para o chat onde pode combinar todos os detalhes.' },
-  { q: 'Como funciona a cotacao de materiais?', a: 'Apos o profissional avaliar o servico, ele envia uma lista de materiais pelo chat. O sistema busca automaticamente os melhores precos em lojas parceiras e voce escolhe a melhor oferta.' },
-  { q: 'Posso cancelar um pedido?', a: 'Sim. Acesse "Meus Pedidos", selecione o pedido desejado e clique em "Cancelar Pedido". Pedidos ja enviados nao podem ser cancelados.' },
+  { q: 'Como contratar um profissional?', a: 'Na tela inicial, busque pelo servico desejado, escolha um profissional bem avaliado e clique em "Solicitar Orcamento" ou "Agendar Visita". O profissional entrara em contato para combinar os detalhes.' },
+  { q: 'Como funciona a cotacao de materiais?', a: 'Apos o profissional avaliar o servico, o sistema busca automaticamente os melhores precos em lojas parceiras e voce escolhe a melhor oferta diretamente na plataforma.' },
+  { q: 'Como acompanhar minhas solicitacoes?', a: 'Acesse "Solicitacoes" no menu principal para ver o andamento de todos os seus servicos contratados, incluindo o progresso e o profissional responsavel.' },
   { q: 'Como avaliar um profissional?', a: 'Apos a conclusao do servico, voce recebera uma notificacao para avaliar o profissional. A avaliacao ajuda outros usuarios a encontrarem bons profissionais.' },
 ];
 

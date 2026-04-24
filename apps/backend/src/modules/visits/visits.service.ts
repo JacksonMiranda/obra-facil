@@ -4,7 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { OwnershipService } from '../../core/authorization/ownership.service';
 import { AvailabilityRepository, VisitsRepository } from './visits.repository';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   SetAvailabilitySchema,
   BookVisitSchema,
@@ -13,9 +15,9 @@ import {
 import type {
   AvailabilitySlot,
   Visit,
-  VisitWithProfessional,
-  VisitWithClient,
+  VisitFull,
   Profile,
+  UserRole,
 } from '@obrafacil/shared';
 
 @Injectable()
@@ -23,6 +25,8 @@ export class VisitsService {
   constructor(
     private readonly availabilityRepo: AvailabilityRepository,
     private readonly visitsRepo: VisitsRepository,
+    private readonly ownershipService: OwnershipService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // ── Availability ──────────────────────────────────────────────────────────
@@ -115,17 +119,27 @@ export class VisitsService {
 
   // ── Visits ────────────────────────────────────────────────────────────────
 
-  async findAll(
-    profile: Profile,
-  ): Promise<VisitWithProfessional[] | VisitWithClient[]> {
-    return profile.role === 'professional'
-      ? this.visitsRepo.findAllByProfessional(profile.id)
-      : this.visitsRepo.findAllByClient(profile.id);
+  async findAll(profileId: string, actingAs: UserRole): Promise<VisitFull[]> {
+    return actingAs === 'professional'
+      ? this.visitsRepo.findAllByProfessional(profileId)
+      : this.visitsRepo.findAllByClient(profileId);
   }
 
-  async findById(id: string) {
+  async findById(id: string, profile: Profile) {
     const visit = await this.visitsRepo.findById(id);
+    // Return 404 for both "not found" and "not authorized" to avoid leaking existence
     if (!visit) throw new NotFoundException('Visita não encontrada');
+    if (
+      !this.ownershipService.canReadVisit(
+        profile.id,
+        visit as unknown as {
+          client_id: string;
+          professionals?: { profile_id?: string } | null;
+        },
+      )
+    ) {
+      throw new NotFoundException('Visita não encontrada');
+    }
     return visit;
   }
 
@@ -155,15 +169,36 @@ export class VisitsService {
   async cancel(id: string, profile: Profile): Promise<Visit> {
     const visit = await this.visitsRepo.findById(id);
     if (!visit) throw new NotFoundException('Visita não encontrada');
-    if (visit.status !== 'confirmed') {
+    if (!['pending', 'confirmed'].includes(visit.status)) {
       throw new ConflictException(
-        'Apenas visitas confirmadas podem ser canceladas',
+        'Apenas visitas pendentes ou confirmadas podem ser canceladas',
       );
     }
-    return this.visitsRepo.updateStatus(id, 'cancelled', profile.id);
+    const result = await this.visitsRepo.updateStatus(
+      id,
+      'cancelled',
+      profile.id,
+    );
+    // Notify the other party
+    const visitFull = visit as unknown as VisitFull;
+    const professionalProfileId = visitFull.professionals?.profile_id;
+    const isClient = profile.id === visit.client_id;
+    const recipientId = isClient ? professionalProfileId : visit.client_id;
+    if (recipientId) {
+      await this.notificationsService.notify({
+        profileId: recipientId,
+        type: 'visit_cancelled',
+        title: 'Visita cancelada',
+        message: isClient
+          ? 'O cliente cancelou a visita técnica agendada.'
+          : 'O profissional cancelou a visita técnica agendada.',
+        link: `/agenda`,
+      });
+    }
+    return result;
   }
 
-  async complete(id: string, profile: Profile): Promise<Visit> {
+  async complete(id: string, actingAs: UserRole): Promise<Visit> {
     const visit = await this.visitsRepo.findById(id);
     if (!visit) throw new NotFoundException('Visita não encontrada');
     if (visit.status !== 'confirmed') {
@@ -172,11 +207,80 @@ export class VisitsService {
       );
     }
     // Only professional can mark as complete
-    if (profile.role !== 'professional') {
+    if (actingAs !== 'professional') {
       throw new ForbiddenException(
         'Apenas o profissional pode concluir a visita',
       );
     }
-    return this.visitsRepo.updateStatus(id, 'completed');
+    const result = await this.visitsRepo.updateStatus(id, 'completed');
+    await this.notificationsService.notify({
+      profileId: visit.client_id,
+      type: 'visit_completed',
+      title: 'Visita concluída',
+      message: 'O profissional marcou a visita técnica como concluída.',
+      link: `/agenda`,
+    });
+    return result;
+  }
+
+  async accept(id: string, profile: Profile): Promise<Visit> {
+    const visit = await this.visitsRepo.findById(id);
+    if (!visit) throw new NotFoundException('Visita não encontrada');
+    if (visit.status !== 'pending') {
+      throw new ConflictException('Apenas visitas pendentes podem ser aceitas');
+    }
+    // Ensure the professional owns this visit
+    const professional = (
+      visit as unknown as { professionals?: { profile_id?: string } | null }
+    ).professionals;
+    if (!professional || professional.profile_id !== profile.id) {
+      throw new ForbiddenException(
+        'Você não tem permissão para aceitar esta visita',
+      );
+    }
+    const result = await this.visitsRepo.updateStatus(id, 'confirmed');
+    await this.notificationsService.notify({
+      profileId: visit.client_id,
+      type: 'visit_accepted',
+      title: 'Visita confirmada!',
+      message: 'O profissional aceitou sua solicitação de visita técnica.',
+      link: `/agenda`,
+    });
+    return result;
+  }
+
+  async reject(id: string, profile: Profile, reason?: string): Promise<Visit> {
+    const visit = await this.visitsRepo.findById(id);
+    if (!visit) throw new NotFoundException('Visita não encontrada');
+    if (visit.status !== 'pending') {
+      throw new ConflictException(
+        'Apenas visitas pendentes podem ser recusadas',
+      );
+    }
+    // Ensure the professional owns this visit
+    const professional = (
+      visit as unknown as { professionals?: { profile_id?: string } | null }
+    ).professionals;
+    if (!professional || professional.profile_id !== profile.id) {
+      throw new ForbiddenException(
+        'Você não tem permissão para recusar esta visita',
+      );
+    }
+    const result = await this.visitsRepo.updateStatus(
+      id,
+      'rejected',
+      undefined,
+      reason,
+    );
+    await this.notificationsService.notify({
+      profileId: visit.client_id,
+      type: 'visit_rejected',
+      title: 'Visita não aceita',
+      message: reason
+        ? `O profissional recusou a visita: ${reason}`
+        : 'O profissional não pôde aceitar a visita técnica solicitada.',
+      link: `/agenda`,
+    });
+    return result;
   }
 }

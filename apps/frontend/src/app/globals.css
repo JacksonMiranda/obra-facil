@@ -3,12 +3,25 @@
 @tailwind utilities;
 
 :root {
+  /* Legacy tokens */
   --background: #f8f6f6;
   --foreground: #0f172a;
   --trust: #1E40AF;
   --brand: #ec5b13;
   --savings: #10B981;
   --error: #EF4444;
+  /* Web design tokens (Stitch) */
+  --primary: #00288e;
+  --primary-container: #1e40af;
+  --primary-fixed: #dde1ff;
+  --secondary: #006c49;
+  --secondary-container: #6cf8bb;
+  --on-primary: #ffffff;
+  --on-surface: #191c1e;
+  --on-surface-variant: #444653;
+  --outline: #757684;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f2f4f6;
 }
 
 body {
@@ -39,12 +52,21 @@ body {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* Mobile container — Mobile First per spec_ui.md */
+/* Mobile container — Mobile First per spec_ui.md.
+   On desktop (md+) the AppShell takes over with SideNav + full-width main,
+   so mobile-container becomes transparent (no max-width constraint). */
 .mobile-container {
   max-width: 430px;
   min-height: 100%;
   margin: 0 auto;
   position: relative;
+}
+
+@media (min-width: 768px) {
+  .mobile-container {
+    max-width: none;
+    margin: 0;
+  }
 }
 
 /* Hide scrollbar for carousel */

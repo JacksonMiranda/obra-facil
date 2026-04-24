@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { OwnershipService } from '../../core/authorization/ownership.service';
 import { MaterialListsRepository } from './material-lists.repository';
 import {
   CreateMaterialListSchema,
@@ -12,14 +13,23 @@ import type { MaterialList, MaterialItem } from '@obrafacil/shared';
 
 @Injectable()
 export class MaterialListsService {
-  constructor(private readonly repo: MaterialListsRepository) {}
+  constructor(
+    private readonly repo: MaterialListsRepository,
+    private readonly ownershipService: OwnershipService,
+  ) {}
 
   async findAllByProfessional(professionalId: string): Promise<MaterialList[]> {
     return this.repo.findAllByProfessional(professionalId);
   }
 
-  async findById(id: string): Promise<MaterialList | null> {
-    return this.repo.findById(id);
+  async findById(id: string, callerProfileId: string): Promise<MaterialList> {
+    const list = await this.repo.findById(id);
+    // Return 404 for both "not found" and "not authorized" to avoid leaking existence
+    if (!list) throw new NotFoundException('Lista não encontrada');
+    if (!this.ownershipService.canReadMaterialList(callerProfileId, list)) {
+      throw new NotFoundException('Lista não encontrada');
+    }
+    return list;
   }
 
   async create(
@@ -45,10 +55,7 @@ export class MaterialListsService {
 
     const list = await this.repo.findById(input.materialListId);
     if (!list) throw new NotFoundException('Lista não encontrada');
-    if (
-      (list as MaterialList & { professional_id: string }).professional_id !==
-      professionalId
-    ) {
+    if (list.professional_id !== professionalId) {
       throw new ForbiddenException('Acesso negado');
     }
 
