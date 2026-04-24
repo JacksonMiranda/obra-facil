@@ -2,28 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthBypassEnabled, BYPASS_USER_CLERK_ID } from '@/lib/auth-bypass-config';
-import { getActingAs } from '@/lib/acting-as';
-import { DEV_USER_ID_HEADER, ACTING_AS_HEADER } from '@obrafacil/shared';
+import { useClientApi } from '@/lib/api/client-api';
 import type { Notification } from '@obrafacil/shared';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
-
-function buildHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (isAuthBypassEnabled) headers[DEV_USER_ID_HEADER] = BYPASS_USER_CLERK_ID;
-  const actingAs = getActingAs();
-  if (actingAs) headers[ACTING_AS_HEADER] = actingAs;
-  return headers;
-}
-
-async function apiFetch(path: string, options: RequestInit = {}): Promise<void> {
-  await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: buildHeaders(),
-    cache: 'no-store',
-  });
-}
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -52,12 +32,13 @@ interface Props {
 
 export function NotificationsListClient({ initialNotifications }: Props) {
   const router = useRouter();
+  const api = useClientApi();
   const [notifications, setNotifications] =
     useState<Notification[]>(initialNotifications);
 
   async function handleClick(notif: Notification) {
     if (!notif.is_read) {
-      await apiFetch(`/v1/notifications/${notif.id}/read`, { method: 'PATCH' }).catch(() => {});
+      await api.patch(`/v1/notifications/${notif.id}/read`, {}).catch(() => {});
       setNotifications((prev) =>
         prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n)),
       );
@@ -68,7 +49,7 @@ export function NotificationsListClient({ initialNotifications }: Props) {
   }
 
   async function handleMarkAllRead() {
-    await apiFetch('/v1/notifications/read-all', { method: 'PATCH' }).catch(() => {});
+    await api.patch('/v1/notifications/read-all', {}).catch(() => {});
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   }
 

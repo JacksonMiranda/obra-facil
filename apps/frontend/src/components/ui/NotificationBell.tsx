@@ -2,31 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { isAuthBypassEnabled, BYPASS_USER_CLERK_ID } from '@/lib/auth-bypass-config';
-import { getActingAs } from '@/lib/acting-as';
-import { DEV_USER_ID_HEADER, ACTING_AS_HEADER } from '@obrafacil/shared';
+import { useClientApi } from '@/lib/api/client-api';
 import type { Notification } from '@obrafacil/shared';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
-
-function buildHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (isAuthBypassEnabled) headers[DEV_USER_ID_HEADER] = BYPASS_USER_CLERK_ID;
-  const actingAs = getActingAs();
-  if (actingAs) headers[ACTING_AS_HEADER] = actingAs;
-  return headers;
-}
-
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: { ...buildHeaders(), ...(options.headers as Record<string, string> | undefined) },
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const json = await res.json() as { data: T };
-  return json.data;
-}
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -50,6 +27,7 @@ const TYPE_ICON: Record<string, string> = {
 
 export function NotificationBell() {
   const router = useRouter();
+  const api = useClientApi();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -58,9 +36,10 @@ export function NotificationBell() {
 
   // Fetch unread count on mount and after close
   useEffect(() => {
-    apiFetch<{ count: number }>('/v1/notifications/count')
+    api.get<{ count: number }>('/v1/notifications/count')
       .then((res) => setUnreadCount(res.count))
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Close on outside click
@@ -83,7 +62,7 @@ export function NotificationBell() {
     setLoading(true);
     setOpen(true);
     try {
-      const data = await apiFetch<Notification[]>('/v1/notifications');
+      const data = await api.get<Notification[]>('/v1/notifications');
       setNotifications(data);
       const unread = data.filter((n) => !n.is_read).length;
       setUnreadCount(unread);
@@ -98,7 +77,7 @@ export function NotificationBell() {
     setOpen(false);
     // Mark as read
     if (!notif.is_read) {
-      await apiFetch(`/v1/notifications/${notif.id}/read`, { method: 'PATCH' })
+      await api.patch(`/v1/notifications/${notif.id}/read`, {})
         .catch(() => {});
       setNotifications((prev) =>
         prev.map((n) => (n.id === notif.id ? { ...n, is_read: true } : n)),
@@ -111,7 +90,7 @@ export function NotificationBell() {
   }
 
   async function handleMarkAllRead() {
-    await apiFetch('/v1/notifications/read-all', { method: 'PATCH' }).catch(() => {});
+    await api.patch('/v1/notifications/read-all', {}).catch(() => {});
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
   }
