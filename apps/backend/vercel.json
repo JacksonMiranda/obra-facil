@@ -6,7 +6,8 @@
       "src": "api/index.ts",
       "use": "@vercel/node",
       "config": {
-        "maxLambdaSize": "50mb"
+        "maxLambdaSize": "50mb",
+        "includeFiles": "node_modules/@obrafacil/shared/**"
       }
     }
   ],
