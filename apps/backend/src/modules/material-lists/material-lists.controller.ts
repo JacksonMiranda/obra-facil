@@ -10,10 +10,11 @@
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
-import { CurrentUser } from '../../core/decorators/current-user.decorator';
+import { CurrentAccount } from '../../core/decorators/current-account.decorator';
 import { MaterialListsService } from './material-lists.service';
 import { StoreOffersRepository } from './store-offers.repository';
-import type { Profile } from '@obrafacil/shared';
+import { ProfessionalsRepository } from '../professionals/professionals.repository';
+import type { AccountContext } from '@obrafacil/shared';
 
 @ApiTags('material-lists')
 @ApiBearerAuth()
@@ -23,51 +24,84 @@ export class MaterialListsController {
   constructor(
     private readonly service: MaterialListsService,
     private readonly storeOffersRepo: StoreOffersRepository,
+    private readonly professionalsRepo: ProfessionalsRepository,
   ) {}
 
   @Get()
-  findAll(@CurrentUser() profile: Profile) {
-    if (profile.role !== 'professional') {
+  async findAll(@CurrentAccount() account: AccountContext) {
+    if (account.actingAs !== 'professional') {
       throw new ForbiddenException(
         'Apenas profissionais têm listas de materiais',
       );
     }
-    return this.service.findAllByProfessional(profile.id);
+    const professional = await this.professionalsRepo.findByProfileId(
+      account.profile.id,
+    );
+    if (!professional)
+      throw new NotFoundException('Profissional não encontrado');
+    return this.service.findAllByProfessional(professional.id);
   }
 
   @Get(':id')
-  async findOne(@CurrentUser() _profile: Profile, @Param('id') id: string) {
-    const list = await this.service.findById(id);
-    if (!list) throw new NotFoundException('Lista não encontrada');
-    return list;
+  async findOne(
+    @CurrentAccount() account: AccountContext,
+    @Param('id') id: string,
+  ) {
+    const professional = await this.professionalsRepo.findByProfileId(
+      account.profile.id,
+    );
+    if (!professional) throw new NotFoundException('Lista não encontrada');
+    return this.service.findById(id, professional.id);
   }
 
   @Get(':id/offers')
-  getOffers(@Param('id') id: string) {
+  async getOffers(
+    @CurrentAccount() account: AccountContext,
+    @Param('id') id: string,
+  ) {
+    // Validate ownership before returning offers
+    const professional = await this.professionalsRepo.findByProfileId(
+      account.profile.id,
+    );
+    if (!professional) throw new NotFoundException('Lista não encontrada');
+    await this.service.findById(id, professional.id);
     return this.storeOffersRepo.findByList(id);
   }
 
   @Post()
-  create(@CurrentUser() profile: Profile, @Body() body: unknown) {
-    if (profile.role !== 'professional') {
+  async create(
+    @CurrentAccount() account: AccountContext,
+    @Body() body: unknown,
+  ) {
+    if (account.actingAs !== 'professional') {
       throw new ForbiddenException(
         'Apenas profissionais podem criar listas de materiais',
       );
     }
-    return this.service.create(profile.id, body);
+    const professional = await this.professionalsRepo.findByProfileId(
+      account.profile.id,
+    );
+    if (!professional)
+      throw new NotFoundException('Profissional não encontrado');
+    return this.service.create(professional.id, body);
   }
 
   @Post(':id/items')
-  addItem(
+  async addItem(
     @Param('id') listId: string,
-    @CurrentUser() profile: Profile,
+    @CurrentAccount() account: AccountContext,
     @Body() body: unknown,
   ) {
-    if (profile.role !== 'professional') {
+    if (account.actingAs !== 'professional') {
       throw new ForbiddenException(
         'Apenas profissionais podem adicionar itens',
       );
     }
-    return this.service.addItem(profile.id, listId, body);
+    const professional = await this.professionalsRepo.findByProfileId(
+      account.profile.id,
+    );
+    if (!professional)
+      throw new NotFoundException('Profissional não encontrado');
+    return this.service.addItem(professional.id, listId, body);
   }
 }

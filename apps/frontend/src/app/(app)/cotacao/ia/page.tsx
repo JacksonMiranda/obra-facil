@@ -63,7 +63,7 @@ export default function CotacaoIaPage() {
   return (
     <div className="pb-24 bg-surface min-h-screen">
       <div className="bg-white">
-        <div className="flex items-center px-4 pt-10 pb-3">
+        <div className="flex items-center px-4 pb-3">
           <Link href="/" className="mr-3">
             <span className="material-symbols-outlined text-slate-700 text-xl">
               arrow_back

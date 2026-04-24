@@ -148,6 +148,18 @@ insert into professionals (id, profile_id, specialty, bio, rating_avg, jobs_comp
   true,
   -23.5480,
   -46.6200
+),
+-- Carlos Alberto also registered as professional (enables role switching)
+(
+  '10000000-0000-0000-0000-000000000004',
+  '00000000-0000-0000-0000-000000000001',
+  'Pedreiro e Reformas',
+  'Profissional autônomo com experiência em reformas residenciais e acabamentos.',
+  4.8,
+  15,
+  true,
+  -23.5505,
+  -46.6333
 );
 
 -- ============================================================
@@ -418,7 +430,7 @@ insert into works (id, client_id, professional_id, title, status, progress_pct, 
 (
   'b0000000-0000-0000-0000-000000000001',
   '00000000-0000-0000-0000-000000000001',
-  '10000000-0000-0000-0000-000000000002',
+  (SELECT id FROM professionals WHERE profile_id = '00000000-0000-0000-0000-000000000001'),
   'Reforma Banheiro Social',
   'active',
   65,
@@ -434,11 +446,114 @@ insert into works (id, client_id, professional_id, title, status, progress_pct, 
 (
   'b0000000-0000-0000-0000-000000000002',
   '00000000-0000-0000-0000-000000000001',
-  '10000000-0000-0000-0000-000000000003',
+  (SELECT id FROM professionals WHERE profile_id = '00000000-0000-0000-0000-000000000001'),
   'Pintura Fachada',
   'scheduled',
   0,
   'Início previsto para 15 de Outubro',
   array[]::text[],
   null
+),
+-- Works where Carlos is the CLIENT (hired Ricardo Silva)
+(
+  'b0000000-0000-0000-0000-000000000003',
+  '00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000002',
+  'Reforma Cozinha',
+  'active',
+  40,
+  'Assentamento de azulejos',
+  array[
+    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=200'
+  ],
+  now() - interval '5 days'
+),
+(
+  'b0000000-0000-0000-0000-000000000004',
+  '00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001',
+  'Instalação Elétrica Escritório',
+  'completed',
+  100,
+  null,
+  array[]::text[],
+  now() - interval '30 days'
 );
+
+-- ============================================================
+-- VISITS (VISITAS TÉCNICAS)
+-- ============================================================
+
+insert into visits (id, client_id, professional_id, scheduled_at, status, address, notes) values
+(
+  'c0000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000002',
+  now() + interval '2 days 10 hours',
+  'confirmed',
+  'Rua das Flores, 123 — São Paulo, SP',
+  'Avaliar reforma do banheiro social'
+),
+(
+  'c0000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000003',
+  now() + interval '5 days 14 hours',
+  'confirmed',
+  'Rua das Flores, 123 — São Paulo, SP',
+  'Orçamento para pintura da fachada'
+),
+(
+  'c0000000-0000-0000-0000-000000000003',
+  '00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001',
+  now() - interval '3 days 9 hours',
+  'completed',
+  'Rua das Flores, 123 — São Paulo, SP',
+  'Instalação elétrica — visita de diagnóstico'
+),
+-- Visits where Carlos Alberto is the professional (enables professional view)
+(
+  'c0000000-0000-0000-0000-000000000004',
+  '00000000-0000-0000-0000-000000000011',
+  '10000000-0000-0000-0000-000000000004',
+  now() + interval '2 days',
+  'pending',
+  'Rua das Flores, 200, São Paulo - SP',
+  'Reforma do banheiro — avaliação inicial'
+),
+(
+  'c0000000-0000-0000-0000-000000000005',
+  '00000000-0000-0000-0000-000000000008',
+  '10000000-0000-0000-0000-000000000004',
+  now() + interval '5 days',
+  'confirmed',
+  'Av. Paulista, 100, São Paulo - SP',
+  'Orçamento para reforma de cozinha'
+);
+
+-- ============================================================
+-- AVAILABILITY SLOTS
+-- Mon–Fri 08:00–18:00 for all 3 professionals
+-- ============================================================
+
+insert into availability_slots (professional_id, weekday, start_time, end_time) values
+-- Ricardo Silva (Eletricista)
+('10000000-0000-0000-0000-000000000001', 1, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000001', 2, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000001', 3, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000001', 4, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000001', 5, '08:00', '18:00'),
+-- José da Silva (Encanador)
+('10000000-0000-0000-0000-000000000002', 1, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000002', 2, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000002', 3, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000002', 4, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000002', 5, '08:00', '18:00'),
+-- Ana Rodrigues (Pintora)
+('10000000-0000-0000-0000-000000000003', 1, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000003', 2, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000003', 3, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000003', 4, '08:00', '18:00'),
+('10000000-0000-0000-0000-000000000003', 5, '08:00', '18:00');
+

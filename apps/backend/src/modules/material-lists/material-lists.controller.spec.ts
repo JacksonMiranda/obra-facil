@@ -77,14 +77,17 @@ describe('MaterialListsController', () => {
   });
 
   describe('findOne', () => {
-    it('should return a list if found', async () => {
+    it('should return a list if caller is the owner', async () => {
       service.findById.mockResolvedValue(mockList);
       const result = await controller.findOne(mockProfile, 'list-1');
       expect(result).toEqual(mockList);
+      expect(service.findById).toHaveBeenCalledWith('list-1', mockProfile.id);
     });
 
-    it('should throw NotFoundException if list not found', async () => {
-      service.findById.mockResolvedValue(null);
+    it('should propagate NotFoundException when caller is not owner', async () => {
+      service.findById.mockRejectedValue(
+        new NotFoundException('Lista não encontrada'),
+      );
       await expect(controller.findOne(mockProfile, 'list-1')).rejects.toThrow(
         NotFoundException,
       );
@@ -102,10 +105,21 @@ describe('MaterialListsController', () => {
   });
 
   describe('getOffers', () => {
-    it('should delegate to storeOffersRepo', async () => {
+    it('should validate ownership then delegate to storeOffersRepo', async () => {
+      service.findById.mockResolvedValue(mockList);
       storeOffersRepo.findByList.mockResolvedValue([]);
-      await controller.getOffers('list-1');
+      await controller.getOffers(mockProfile, 'list-1');
+      expect(service.findById).toHaveBeenCalledWith('list-1', mockProfile.id);
       expect(storeOffersRepo.findByList).toHaveBeenCalledWith('list-1');
+    });
+
+    it('should propagate NotFoundException when caller is not owner', async () => {
+      service.findById.mockRejectedValue(
+        new NotFoundException('Lista não encontrada'),
+      );
+      await expect(controller.getOffers(mockProfile, 'list-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

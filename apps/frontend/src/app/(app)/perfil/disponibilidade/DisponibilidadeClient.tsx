@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PrimaryButton } from '@/components/ui/StickyBottomCTA';
+import { isAuthBypassEnabled, BYPASS_USER_CLERK_ID } from '@/lib/auth-bypass-config';
+import { DEV_USER_ID_HEADER, ACTING_AS_HEADER } from '@obrafacil/shared';
+import { getActingAs } from '@/lib/acting-as';
 
 const WEEKDAYS = [
   { value: 0, label: 'Domingo' },
@@ -45,11 +48,15 @@ export function DisponibilidadeClient({ initialSlots }: { initialSlots: Slot[] }
     setMessage(null);
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
-    try {
-      const res = await fetch(`${apiUrl}/v1/availability`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slots }),
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (isAuthBypassEnabled) headers[DEV_USER_ID_HEADER] = BYPASS_USER_CLERK_ID;
+      const actingAs = getActingAs();
+      if (actingAs) headers[ACTING_AS_HEADER] = actingAs;
+      try {
+        const res = await fetch(`${apiUrl}/v1/availability`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ slots }),
       });
 
       if (!res.ok) {

@@ -28,7 +28,7 @@ export function PageHeader({
 
   return (
     <header
-      className={`sticky top-0 z-10 border-b ${
+      className={`sticky top-10 md:top-14 z-10 border-b ${
         transparent
           ? 'bg-transparent border-transparent absolute w-full'
           : 'bg-white/80 backdrop-blur-sm border-slate-100'

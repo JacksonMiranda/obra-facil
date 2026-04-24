@@ -5,29 +5,8 @@ import type {
   IVisitsRepository,
   AvailabilitySlot,
   Visit,
-  VisitWithProfessional,
-  VisitWithClient,
+  VisitFull,
 } from '@obrafacil/shared';
-
-const VISITS_WITH_PROF = `
-  SELECT
-    v.id, v.client_id, v.professional_id, v.scheduled_at, v.status,
-    v.address, v.notes, v.cancelled_by, v.created_at, v.updated_at,
-    json_build_object(
-      'id', pr.id, 'profile_id', pr.profile_id, 'specialty', pr.specialty,
-      'bio', pr.bio, 'rating_avg', pr.rating_avg, 'jobs_completed', pr.jobs_completed,
-      'is_verified', pr.is_verified, 'latitude', pr.latitude, 'longitude', pr.longitude,
-      'created_at', pr.created_at,
-      'profiles', json_build_object(
-        'id', p.id, 'clerk_id', p.clerk_id, 'full_name', p.full_name,
-        'avatar_url', p.avatar_url, 'phone', p.phone, 'role', p.role,
-        'created_at', p.created_at, 'updated_at', p.updated_at
-      )
-    ) AS professionals
-  FROM visits v
-  INNER JOIN professionals pr ON pr.id = v.professional_id
-  INNER JOIN profiles p ON p.id = pr.profile_id
-`;
 
 const VISITS_WITH_DETAIL = `
   SELECT
@@ -52,19 +31,6 @@ const VISITS_WITH_DETAIL = `
   FROM visits v
   INNER JOIN professionals pr ON pr.id = v.professional_id
   INNER JOIN profiles pp ON pp.id = pr.profile_id
-  INNER JOIN profiles cp ON cp.id = v.client_id
-`;
-
-const VISITS_WITH_CLIENT = `
-  SELECT
-    v.id, v.client_id, v.professional_id, v.scheduled_at, v.status,
-    v.address, v.notes, v.cancelled_by, v.created_at, v.updated_at,
-    json_build_object(
-      'id', cp.id, 'clerk_id', cp.clerk_id, 'full_name', cp.full_name,
-      'avatar_url', cp.avatar_url, 'phone', cp.phone, 'role', cp.role,
-      'created_at', cp.created_at, 'updated_at', cp.updated_at
-    ) AS client
-  FROM visits v
   INNER JOIN profiles cp ON cp.id = v.client_id
 `;
 
@@ -119,12 +85,12 @@ export class AvailabilityRepository implements IAvailabilityRepository {
 export class VisitsRepository implements IVisitsRepository {
   constructor(private readonly db: DatabaseService) {}
 
-  async findAllByClient(clientId: string): Promise<VisitWithProfessional[]> {
+  async findAllByClient(clientId: string): Promise<VisitFull[]> {
     const { rows } = await this.db.query(
-      `${VISITS_WITH_PROF} WHERE v.client_id = $1 ORDER BY v.scheduled_at DESC`,
+      `${VISITS_WITH_DETAIL} WHERE v.client_id = $1 ORDER BY v.scheduled_at DESC`,
       [clientId],
     );
-    return rows as unknown as VisitWithProfessional[];
+    return rows as unknown as VisitFull[];
   }
 
   /** Active visits for a professional (for availability computation) */
@@ -136,27 +102,22 @@ export class VisitsRepository implements IVisitsRepository {
     return rows as unknown as Visit[];
   }
 
-  async findAllByProfessional(profileId: string): Promise<VisitWithClient[]> {
+  async findAllByProfessional(profileId: string): Promise<VisitFull[]> {
     const { rows } = await this.db.query(
-      `${VISITS_WITH_CLIENT}
-       INNER JOIN professionals pr ON pr.id = v.professional_id
-       WHERE pr.profile_id = $1
+      `${VISITS_WITH_DETAIL}
+       WHERE pp.id = $1
        ORDER BY v.scheduled_at DESC`,
       [profileId],
     );
-    return rows as unknown as VisitWithClient[];
+    return rows as unknown as VisitFull[];
   }
 
-  async findById(
-    id: string,
-  ): Promise<(VisitWithProfessional & VisitWithClient) | null> {
+  async findById(id: string): Promise<VisitFull | null> {
     const { rows } = await this.db.query(
       `${VISITS_WITH_DETAIL} WHERE v.id = $1`,
       [id],
     );
-    return rows.length
-      ? (rows[0] as unknown as VisitWithProfessional & VisitWithClient)
-      : null;
+    return rows.length ? (rows[0] as unknown as VisitFull) : null;
   }
 
   async create({
@@ -185,11 +146,12 @@ export class VisitsRepository implements IVisitsRepository {
     id: string,
     status: string,
     cancelledBy?: string,
+    rejectionReason?: string,
   ): Promise<Visit> {
     const { rows } = await this.db.query(
-      `UPDATE visits SET status = $1, cancelled_by = $2, updated_at = now()
-       WHERE id = $3 RETURNING *`,
-      [status, cancelledBy ?? null, id],
+      `UPDATE visits SET status = $1, cancelled_by = $2, rejection_reason = $3, updated_at = now()
+       WHERE id = $4 RETURNING *`,
+      [status, cancelledBy ?? null, rejectionReason ?? null, id],
     );
     return rows[0] as unknown as Visit;
   }

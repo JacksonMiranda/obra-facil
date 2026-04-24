@@ -166,6 +166,8 @@ describe('ClerkAuthGuard', () => {
     beforeEach(() => {
       process.env.DISABLE_CLERK_AUTH = 'false';
       process.env.CLERK_SECRET_KEY = 'sk_test_dummy';
+      // Default: getActiveRoles returns empty (graceful degradation)
+      db.query.mockResolvedValue({ rows: [] });
     });
 
     it('returns existing profile when clerk_id found', async () => {
@@ -179,7 +181,8 @@ describe('ClerkAuthGuard', () => {
       const { ctx, request } = makeContext({ authorization: 'Bearer tok' });
       await expect(guard.canActivate(ctx)).resolves.toBe(true);
 
-      expect(db.query).toHaveBeenCalledTimes(1);
+      // 2 queries: findProfileByClerkId + getActiveRoles
+      expect(db.query).toHaveBeenCalledTimes(2);
       expect(request.profile).toEqual(profile);
     });
 

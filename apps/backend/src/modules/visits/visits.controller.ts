@@ -11,10 +11,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
-import { CurrentUser } from '../../core/decorators/current-user.decorator';
+import { CurrentAccount } from '../../core/decorators/current-account.decorator';
 import { VisitsService } from './visits.service';
 import { ProfessionalsRepository } from '../professionals/professionals.repository';
-import type { Profile } from '@obrafacil/shared';
+import type { AccountContext } from '@obrafacil/shared';
 
 @ApiTags('visits')
 @ApiBearerAuth()
@@ -30,13 +30,15 @@ export class VisitsController {
 
   /** Professional's own availability config */
   @Get('availability')
-  async getMyAvailability(@CurrentUser() profile: Profile) {
-    if (profile.role !== 'professional') {
+  async getMyAvailability(@CurrentAccount() account: AccountContext) {
+    if (account.actingAs !== 'professional') {
       throw new ForbiddenException(
         'Apenas profissionais podem gerenciar disponibilidade',
       );
     }
-    const pro = await this.professionalsRepo.findByProfileId(profile.id);
+    const pro = await this.professionalsRepo.findByProfileId(
+      account.profile.id,
+    );
     if (!pro)
       throw new ForbiddenException('Perfil profissional não encontrado');
     return this.service.getMyAvailability(pro.id);
@@ -45,15 +47,17 @@ export class VisitsController {
   /** Replace all availability slots */
   @Put('availability')
   async setAvailability(
-    @CurrentUser() profile: Profile,
+    @CurrentAccount() account: AccountContext,
     @Body() body: unknown,
   ) {
-    if (profile.role !== 'professional') {
+    if (account.actingAs !== 'professional') {
       throw new ForbiddenException(
         'Apenas profissionais podem gerenciar disponibilidade',
       );
     }
-    const pro = await this.professionalsRepo.findByProfileId(profile.id);
+    const pro = await this.professionalsRepo.findByProfileId(
+      account.profile.id,
+    );
     if (!pro)
       throw new ForbiddenException('Perfil profissional não encontrado');
     return this.service.setAvailability(pro.id, body);
@@ -68,30 +72,54 @@ export class VisitsController {
   // ── Visits ────────────────────────────────────────────────────────────────
 
   @Get('visits')
-  findAll(@CurrentUser() profile: Profile) {
-    return this.service.findAll(profile);
+  findAll(@CurrentAccount() account: AccountContext) {
+    return this.service.findAll(account.profile.id, account.actingAs);
   }
 
   @Get('visits/:id')
-  findOne(@Param('id') id: string) {
-    return this.service.findById(id);
+  findOne(@Param('id') id: string, @CurrentAccount() account: AccountContext) {
+    return this.service.findById(id, account.profile);
   }
 
   @Post('visits')
-  book(@CurrentUser() profile: Profile, @Body() body: unknown) {
-    if (profile.role !== 'client') {
+  book(@CurrentAccount() account: AccountContext, @Body() body: unknown) {
+    if (account.actingAs !== 'client') {
       throw new ForbiddenException('Apenas clientes podem agendar visitas');
     }
-    return this.service.book(profile.id, body);
+    return this.service.book(account.profile.id, body);
   }
 
   @Patch('visits/:id/cancel')
-  cancel(@Param('id') id: string, @CurrentUser() profile: Profile) {
-    return this.service.cancel(id, profile);
+  cancel(@Param('id') id: string, @CurrentAccount() account: AccountContext) {
+    return this.service.cancel(id, account.profile);
   }
 
   @Patch('visits/:id/complete')
-  complete(@Param('id') id: string, @CurrentUser() profile: Profile) {
-    return this.service.complete(id, profile);
+  complete(@Param('id') id: string, @CurrentAccount() account: AccountContext) {
+    return this.service.complete(id, account.actingAs);
+  }
+
+  @Patch('visits/:id/accept')
+  accept(@Param('id') id: string, @CurrentAccount() account: AccountContext) {
+    if (account.actingAs !== 'professional') {
+      throw new ForbiddenException(
+        'Apenas profissionais podem aceitar visitas',
+      );
+    }
+    return this.service.accept(id, account.profile);
+  }
+
+  @Patch('visits/:id/reject')
+  reject(
+    @Param('id') id: string,
+    @CurrentAccount() account: AccountContext,
+    @Body() body: { reason?: string },
+  ) {
+    if (account.actingAs !== 'professional') {
+      throw new ForbiddenException(
+        'Apenas profissionais podem recusar visitas',
+      );
+    }
+    return this.service.reject(id, account.profile, body?.reason);
   }
 }

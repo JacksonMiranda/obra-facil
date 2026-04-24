@@ -1,6 +1,9 @@
 import { notFound, redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { auth } from '@/lib/auth-bypass';
 import { api } from '@/lib/api/client';
+import { isAuthBypassEnabled } from '@/lib/auth-bypass-config';
+import { ACTING_AS_COOKIE } from '@/lib/acting-as';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -39,9 +42,17 @@ export default async function VisitaDetailPage({
     minute: '2-digit',
   });
 
-  // Determine if the current user is the professional by comparing Clerk IDs
-  const proClerkId = v.professionals?.profiles?.clerk_id;
-  const userRole = proClerkId === userId ? 'professional' : 'client';
+  // Determine user role: in bypass mode, trust the acting-as cookie (UI toggle);
+  // in production, compare the Clerk ID against the professional's profile.
+  let userRole: 'professional' | 'client';
+  if (isAuthBypassEnabled) {
+    const cookieStore = await cookies();
+    const actingAs = cookieStore.get(ACTING_AS_COOKIE)?.value;
+    userRole = actingAs === 'professional' ? 'professional' : 'client';
+  } else {
+    const proClerkId = v.professionals?.profiles?.clerk_id;
+    userRole = proClerkId === userId ? 'professional' : 'client';
+  }
 
   return (
     <div className="pb-24 bg-surface min-h-screen">
