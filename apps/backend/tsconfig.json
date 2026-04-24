@@ -21,8 +21,10 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "ignoreDeprecations": "5.0",
+    "types": ["jest", "node"]
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", "test", "api"]
+  "exclude": ["node_modules", "dist", "api"]
 }
