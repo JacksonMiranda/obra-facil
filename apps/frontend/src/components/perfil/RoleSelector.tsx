@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/contexts/RoleContext';
-import { isAuthBypassEnabled, BYPASS_USER_CLERK_ID } from '@/lib/auth-bypass-config';
-import { DEV_USER_ID_HEADER, ACTING_AS_HEADER } from '@obrafacil/shared';
+import { useClientApi } from '@/lib/api/client-api';
 import { setActingAs as persistActingAs } from '@/lib/acting-as';
 import type { UserRole } from '@obrafacil/shared';
 
@@ -34,39 +33,23 @@ interface RoleSelectorProps {
 export function RoleSelector({ currentRole, availableRoles }: RoleSelectorProps) {
   const router = useRouter();
   const { setRole } = useRole();
+  const api = useClientApi();
   const [loading, setLoading] = useState<UserRole | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (availableRoles.length <= 1) return null;
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
   const handleSelect = async (role: UserRole) => {
     if (role === currentRole || loading) return;
     setLoading(role);
     setError(null);
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (isAuthBypassEnabled) headers[DEV_USER_ID_HEADER] = BYPASS_USER_CLERK_ID;
-      headers[ACTING_AS_HEADER] = currentRole;
-
-      const res = await fetch(`${apiUrl}/v1/account/acting-as`, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ role }),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { error?: string };
-        setError(body.error ?? 'Erro ao alterar perfil');
-        return;
-      }
-
+      await api.patch('/v1/account/acting-as', { role });
       persistActingAs(role);
       setRole(role);
       router.refresh();
     } catch {
-      setError('Erro de conexão');
+      setError('Erro ao alterar perfil');
     } finally {
       setLoading(null);
     }

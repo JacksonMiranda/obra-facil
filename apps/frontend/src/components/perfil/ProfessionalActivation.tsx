@@ -2,66 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getActingAs } from '@/lib/acting-as';
-import { ACTING_AS_HEADER, DEV_USER_ID_HEADER } from '@obrafacil/shared';
-import { isAuthBypassEnabled, BYPASS_USER_CLERK_ID } from '@/lib/auth-bypass-config';
+import { useClientApi } from '@/lib/api/client-api';
 import type { UserRole } from '@obrafacil/shared';
-
-const API_URL =
-  typeof window !== 'undefined'
-    ? (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api')
-    : '';
-
-function buildHeaders(contentType = true, skipActingAs = false): Record<string, string> {
-  const headers: Record<string, string> = {};
-  if (contentType) headers['Content-Type'] = 'application/json';
-  if (!skipActingAs) {
-    const actingAs = getActingAs();
-    if (actingAs) headers[ACTING_AS_HEADER] = actingAs;
-  }
-  if (isAuthBypassEnabled) headers[DEV_USER_ID_HEADER] = BYPASS_USER_CLERK_ID;
-  return headers;
-}
-
-async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: buildHeaders(false),
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const envelope = await res.json() as { data: T };
-  return envelope.data;
-}
-
-async function apiPost<T>(path: string, body: unknown, skipActingAs = false): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    method: 'POST',
-    headers: buildHeaders(true, skipActingAs),
-    credentials: 'include',
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
-    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`);
-  }
-  const envelope = await res.json() as { data: T };
-  return envelope.data;
-}
-
-async function apiPut<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    method: 'PUT',
-    headers: buildHeaders(),
-    credentials: 'include',
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
-    throw new Error((err as { error?: string }).error ?? `HTTP ${res.status}`);
-  }
-  const envelope = await res.json() as { data: T };
-  return envelope.data;
-}
 
 interface ServiceCategory {
   id: string;
@@ -84,6 +26,7 @@ interface Props {
 
 export function ProfessionalActivation({ roles }: Props) {
   const router = useRouter();
+  const api = useClientApi();
   const isProfessional = roles.includes('professional');
 
   const [open, setOpen] = useState(false);
@@ -103,19 +46,21 @@ export function ProfessionalActivation({ roles }: Props) {
   const [draftWarning, setDraftWarning] = useState<{ missing: string[] } | null>(null);
 
   useEffect(() => {
-    apiGet<ServiceCategory[]>('/v1/services')
+    api.get<ServiceCategory[]>('/v1/services')
       .then(setServices)
       .catch(() => setServices([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!isProfessional) return;
-    apiGet<ProfessionalProfile>('/v1/professionals/me')
+    api.get<ProfessionalProfile>('/v1/professionals/me')
       .then((pro) => {
         setCurrentProfile(pro);
         setEditBio(pro.bio ?? '');
       })
       .catch(() => setCurrentProfile(null));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isProfessional]);
 
   // When services load and we have a current profile, pre-select the matching service
@@ -140,7 +85,7 @@ export function ProfessionalActivation({ roles }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const result = await apiPost<{
+      const result = await api.post<{
         visibility_status: string;
         is_complete: boolean;
         missing_fields: string[];
@@ -164,7 +109,7 @@ export function ProfessionalActivation({ roles }: Props) {
     setLoading(true);
     setError(null);
     try {
-      await apiPost('/v1/account/roles/deactivate', { role: 'professional' });
+      await api.post('/v1/account/roles/deactivate', { role: 'professional' });
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao desativar perfil');
@@ -184,7 +129,7 @@ export function ProfessionalActivation({ roles }: Props) {
     setSuccess(null);
     try {
       const selectedSvc = services.find((s) => s.id === editServiceId);
-      const updated = await apiPut<ProfessionalProfile>('/v1/professionals/me', {
+      const updated = await api.put<ProfessionalProfile>('/v1/professionals/me', {
         specialty: selectedSvc?.name,
         bio: editBio.trim() || undefined,
       });
