@@ -70,7 +70,9 @@ async function clientRequest<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Erro desconhecido' })) as { error?: string };
-    throw new Error(err.error ?? `HTTP ${res.status}`);
+    const error = new Error(err.error ?? `HTTP ${res.status}`) as Error & { status: number };
+    error.status = res.status;
+    throw error;
   }
 
   const envelope = (await res.json()) as ClientApiEnvelope<T>;
