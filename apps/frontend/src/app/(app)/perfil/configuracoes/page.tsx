@@ -17,6 +17,8 @@ export default async function ConfiguracoesPage() {
   if (!userId) redirect('/sign-in');
 
   const account = await api.get<AccountContext>('/v1/account/me').catch(() => null);
+  const roles = account?.roles ?? [];
+  const actingAs = account?.actingAs ?? 'client';
 
   return (
     <div className="pb-24 bg-surface min-h-screen">
@@ -46,15 +48,18 @@ export default async function ConfiguracoesPage() {
           ))}
         </div>
 
-        {account && <ProfessionalActivation roles={account.roles} />}
-
-        {account && (
-          <RoleSelector currentRole={account.actingAs} availableRoles={account.roles} />
+        {!account && (
+          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-4">
+            Não foi possível carregar informações da conta. Algumas opções podem estar indisponíveis.
+          </p>
         )}
+
+        <ProfessionalActivation roles={roles} />
+
+        <RoleSelector currentRole={actingAs} availableRoles={roles} />
 
         <p className="text-[10px] text-slate-300 text-center mt-8">Obra Facil v1.0.0</p>
       </div>
     </div>
   );
 }
-
