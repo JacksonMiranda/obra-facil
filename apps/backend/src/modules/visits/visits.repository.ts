@@ -46,7 +46,7 @@ export class AvailabilityRepository implements IAvailabilityRepository {
       [professionalId],
     );
     // PostgreSQL returns time columns as "HH:MM:SS"; normalize to "HH:MM"
-    return (rows as Record<string, unknown>[]).map((row) => ({
+    return rows.map((row) => ({
       ...row,
       start_time: (row.start_time as string).slice(0, 5),
       end_time: (row.end_time as string).slice(0, 5),
@@ -58,7 +58,10 @@ export class AvailabilityRepository implements IAvailabilityRepository {
     slots: { weekday: number; start_time: string; end_time: string }[],
   ): Promise<AvailabilitySlot[]> {
     // Deduplicate by (weekday, start_time) — last entry wins
-    const seen = new Map<string, { weekday: number; start_time: string; end_time: string }>();
+    const seen = new Map<
+      string,
+      { weekday: number; start_time: string; end_time: string }
+    >();
     for (const slot of slots) {
       seen.set(`${slot.weekday}:${slot.start_time}`, slot);
     }
@@ -90,7 +93,7 @@ export class AvailabilityRepository implements IAvailabilityRepository {
       values,
     );
     // Normalize HH:MM:SS → HH:MM
-    return (rows as Record<string, unknown>[]).map((row) => ({
+    return rows.map((row) => ({
       ...row,
       start_time: (row.start_time as string).slice(0, 5),
       end_time: (row.end_time as string).slice(0, 5),
