@@ -52,7 +52,14 @@ export class AvailabilityRepository implements IAvailabilityRepository {
     professionalId: string,
     slots: { weekday: number; start_time: string; end_time: string }[],
   ): Promise<AvailabilitySlot[]> {
-    if (slots.length === 0) {
+    // Deduplicate by (weekday, start_time) — last entry wins
+    const seen = new Map<string, { weekday: number; start_time: string; end_time: string }>();
+    for (const slot of slots) {
+      seen.set(`${slot.weekday}:${slot.start_time}`, slot);
+    }
+    const uniqueSlots = Array.from(seen.values());
+
+    if (uniqueSlots.length === 0) {
       await this.db.query(
         `DELETE FROM availability_slots WHERE professional_id = $1`,
         [professionalId],
@@ -62,7 +69,7 @@ export class AvailabilityRepository implements IAvailabilityRepository {
 
     // Use CTE to DELETE + INSERT atomically in a single statement
     const values: unknown[] = [professionalId];
-    const placeholders = slots.map((slot, i) => {
+    const placeholders = uniqueSlots.map((slot, i) => {
       const base = i * 3 + 2; // offset by 1 for professionalId param
       values.push(slot.weekday, slot.start_time, slot.end_time);
       return `($1, $${base}, $${base + 1}, $${base + 2})`;
