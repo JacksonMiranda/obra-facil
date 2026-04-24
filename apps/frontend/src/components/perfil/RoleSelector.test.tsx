@@ -143,8 +143,8 @@ describe('RoleSelector', () => {
       await userEvent.click(screen.getByText('Cliente'));
 
       await waitFor(() => {
-        const deactivateCalls = mockFetch.mock.calls.filter(([url]: [string]) =>
-          url.includes('/deactivate'),
+        const deactivateCalls = mockFetch.mock.calls.filter((args) =>
+          (args[0] as string).includes('/deactivate'),
         );
         expect(deactivateCalls).toHaveLength(0);
       });
