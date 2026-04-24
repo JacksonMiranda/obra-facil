@@ -86,7 +86,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
          AND ar.role = 'professional'
          AND ar.is_active = true
        WHERE p.visibility_status = 'active'
-         AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%')
+         AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $1 || '%')
          AND ($2::text IS NULL OR p.specialty ILIKE '%' || $2 || '%' OR p.bio ILIKE '%' || $2 || '%')
        ORDER BY p.rating_avg DESC, p.published_at DESC
        LIMIT $3 OFFSET $4`,
