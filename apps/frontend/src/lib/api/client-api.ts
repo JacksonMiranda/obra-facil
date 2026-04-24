@@ -86,10 +86,16 @@ export interface ClientApi {
 
 /**
  * Returns an authenticated API client for use in Client Components.
- * Must be called inside a component tree wrapped by ClerkProvider.
+ *
+ * When NEXT_PUBLIC_DISABLE_CLERK_AUTH=true (CI / local bypass), useAuth() is
+ * NOT called — so the component tree does NOT need to be wrapped in
+ * ClerkProvider. isAuthBypassEnabled is a compile-time constant derived from
+ * an env var, making the branch stable across all renders (hook rules hold).
  */
 export function useClientApi(): ClientApi {
-  const { getToken } = useAuth();
+  // isAuthBypassEnabled is a build-time constant — branch is always the same.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const getToken = isAuthBypassEnabled ? async () => null : useAuth().getToken;
 
   return {
     get: <T>(path: string) => clientRequest<T>(getToken, path),
