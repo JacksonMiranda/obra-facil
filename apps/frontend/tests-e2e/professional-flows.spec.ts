@@ -58,8 +58,8 @@ test.describe('Fluxo 1: Ativação do perfil profissional', () => {
 
     await page.getByRole('button', { name: /tornar-se profissional/i }).click();
 
-    // Aguarda serviços carregarem (seed tem 6 categorias)
-    await expect(page.getByText(/eletricista/i).first()).toBeVisible({ timeout: 5000 });
+    // Aguarda serviços carregarem (seed tem 6 categorias: Reparos elétricos, Pinturas, Pedreiro…)
+    await expect(page.getByText(/pedreiro/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('ativa perfil profissional e exibe "Perfil Profissional Ativo"', async ({ page }) => {
