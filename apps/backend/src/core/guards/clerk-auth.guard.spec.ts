@@ -170,18 +170,19 @@ describe('ClerkAuthGuard', () => {
       db.query.mockResolvedValue({ rows: [] });
     });
 
-    it('returns existing profile when clerk_id found', async () => {
+    it('returns existing profile when clerk_id found (UPSERT returns existing row)', async () => {
       (verifyToken as jest.Mock).mockResolvedValue({
         sub: 'user_real_123',
         first_name: 'Alex',
       });
       const profile = makeProfile({ clerk_id: 'user_real_123' });
+      // UPSERT resolves with existing profile (ON CONFLICT DO UPDATE ... RETURNING *)
       db.query.mockResolvedValueOnce({ rows: [profile] } as Rows<Profile>);
 
       const { ctx, request } = makeContext({ authorization: 'Bearer tok' });
       await expect(guard.canActivate(ctx)).resolves.toBe(true);
 
-      // 2 queries: findProfileByClerkId + getActiveRoles
+      // 2 queries: UPSERT profiles + getActiveRoles
       expect(db.query).toHaveBeenCalledTimes(2);
       expect(request.profile).toEqual(profile);
     });
@@ -200,9 +201,10 @@ describe('ClerkAuthGuard', () => {
       });
       await guard.canActivate(ctx);
 
+      // Should call the UPSERT, not a plain SELECT
       expect(db.query).toHaveBeenCalledWith(
-        'SELECT * FROM profiles WHERE clerk_id = $1',
-        ['user_real_123'],
+        expect.stringContaining('INSERT INTO profiles'),
+        ['user_real_123', 'Alex'],
       );
     });
 
@@ -216,15 +218,14 @@ describe('ClerkAuthGuard', () => {
         clerk_id: 'user_new_456',
         full_name: 'Alex Cesar',
       });
-      db.query
-        .mockResolvedValueOnce({ rows: [] } as Rows<Profile>)
-        .mockResolvedValueOnce({ rows: [inserted] } as Rows<Profile>);
+      // Single UPSERT handles both insert and conflict — no pre-select needed
+      db.query.mockResolvedValueOnce({ rows: [inserted] } as Rows<Profile>);
 
       const { ctx, request } = makeContext({ authorization: 'Bearer tok' });
       await expect(guard.canActivate(ctx)).resolves.toBe(true);
 
       expect(db.query).toHaveBeenNthCalledWith(
-        2,
+        1,
         expect.stringContaining('INSERT INTO profiles'),
         ['user_new_456', 'Alex Cesar'],
       );
@@ -242,14 +243,12 @@ describe('ClerkAuthGuard', () => {
         clerk_id: 'user_new_789',
         full_name: 'Maria Silva',
       });
-      db.query
-        .mockResolvedValueOnce({ rows: [] } as Rows<Profile>)
-        .mockResolvedValueOnce({ rows: [inserted] } as Rows<Profile>);
+      db.query.mockResolvedValueOnce({ rows: [inserted] } as Rows<Profile>);
 
       const { ctx } = makeContext({ authorization: 'Bearer tok' });
       await guard.canActivate(ctx);
 
-      expect(db.query).toHaveBeenNthCalledWith(2, expect.any(String), [
+      expect(db.query).toHaveBeenNthCalledWith(1, expect.any(String), [
         'user_new_789',
         'Maria Silva',
       ]);
@@ -261,24 +260,21 @@ describe('ClerkAuthGuard', () => {
         clerk_id: 'user_nameless',
         full_name: 'Usuário',
       });
-      db.query
-        .mockResolvedValueOnce({ rows: [] } as Rows<Profile>)
-        .mockResolvedValueOnce({ rows: [inserted] } as Rows<Profile>);
+      db.query.mockResolvedValueOnce({ rows: [inserted] } as Rows<Profile>);
 
       const { ctx } = makeContext({ authorization: 'Bearer tok' });
       await guard.canActivate(ctx);
 
-      expect(db.query).toHaveBeenNthCalledWith(2, expect.any(String), [
+      expect(db.query).toHaveBeenNthCalledWith(1, expect.any(String), [
         'user_nameless',
         'Usuário',
       ]);
     });
 
-    it('throws 401 when JIT INSERT returns no rows', async () => {
+    it('throws 401 when JIT UPSERT returns no rows', async () => {
       (verifyToken as jest.Mock).mockResolvedValue({ sub: 'user_race' });
-      db.query
-        .mockResolvedValueOnce({ rows: [] } as Rows<Profile>)
-        .mockResolvedValueOnce({ rows: [] } as Rows<Profile>);
+      // UPSERT returns empty (should not happen in practice, but guard must handle it)
+      db.query.mockResolvedValueOnce({ rows: [] } as Rows<Profile>);
 
       const { ctx } = makeContext({ authorization: 'Bearer tok' });
       await expect(guard.canActivate(ctx)).rejects.toThrow(
