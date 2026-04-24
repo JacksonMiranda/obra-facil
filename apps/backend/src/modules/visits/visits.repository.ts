@@ -45,7 +45,12 @@ export class AvailabilityRepository implements IAvailabilityRepository {
       `SELECT * FROM availability_slots WHERE professional_id = $1 ORDER BY weekday, start_time`,
       [professionalId],
     );
-    return rows as unknown as AvailabilitySlot[];
+    // PostgreSQL returns time columns as "HH:MM:SS"; normalize to "HH:MM"
+    return (rows as Record<string, unknown>[]).map((row) => ({
+      ...row,
+      start_time: (row.start_time as string).slice(0, 5),
+      end_time: (row.end_time as string).slice(0, 5),
+    })) as unknown as AvailabilitySlot[];
   }
 
   async replaceAll(
@@ -84,7 +89,12 @@ export class AvailabilityRepository implements IAvailabilityRepository {
       RETURNING *`,
       values,
     );
-    return rows as unknown as AvailabilitySlot[];
+    // Normalize HH:MM:SS → HH:MM
+    return (rows as Record<string, unknown>[]).map((row) => ({
+      ...row,
+      start_time: (row.start_time as string).slice(0, 5),
+      end_time: (row.end_time as string).slice(0, 5),
+    })) as unknown as AvailabilitySlot[];
   }
 }
 
