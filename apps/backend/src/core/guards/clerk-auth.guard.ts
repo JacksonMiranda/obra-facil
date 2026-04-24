@@ -4,7 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { verifyToken } from '@clerk/backend';
+import { verifyToken, createClerkClient } from '@clerk/backend';
 import type { Request } from 'express';
 import {
   ACTING_AS_HEADER,
@@ -156,19 +156,40 @@ export class ClerkAuthGuard implements CanActivate {
     clerkUserId: string,
     tokenPayload: Record<string, unknown>,
   ): Promise<Profile> {
-    const fullName = this.extractName(tokenPayload);
+    let fullName = this.extractName(tokenPayload);
+    let avatarUrl: string | null = null;
+
+    // JWT standard claims do not include name/avatar by default.
+    // Fall back to the Clerk Users API to get the real user data.
+    if (fullName === 'Usuário') {
+      try {
+        const clerk = createClerkClient({
+          secretKey: process.env.CLERK_SECRET_KEY!,
+        });
+        const user = await clerk.users.getUser(clerkUserId);
+        const parts = [user.firstName, user.lastName].filter(
+          (p): p is string => typeof p === 'string' && p.trim().length > 0,
+        );
+        if (parts.length) fullName = parts.join(' ');
+        avatarUrl = user.imageUrl ?? null;
+      } catch {
+        // Non-fatal: keep fallback name, profile will be corrected on next login
+      }
+    }
+
     const { rows } = await this.db.query<Profile>(
-      `INSERT INTO profiles (clerk_id, full_name, role)
-       VALUES ($1, $2, 'client')
+      `INSERT INTO profiles (clerk_id, full_name, avatar_url, role)
+       VALUES ($1, $2, $3, 'client')
        ON CONFLICT (clerk_id) DO UPDATE SET
          full_name = CASE
            WHEN profiles.full_name = 'Usuário' OR profiles.full_name = ''
              THEN EXCLUDED.full_name
            ELSE profiles.full_name
          END,
+         avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
          updated_at = now()
        RETURNING *`,
-      [clerkUserId, fullName],
+      [clerkUserId, fullName, avatarUrl],
     );
     if (!rows.length) {
       throw new UnauthorizedException('Falha ao provisionar perfil');
