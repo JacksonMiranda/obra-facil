@@ -10,6 +10,9 @@ type Dashboard = {
     id: string;
     rating: number | null;
     rating_count: number | null;
+    visibility_status?: 'draft' | 'active' | 'inactive';
+    is_complete?: boolean;
+    missing_fields?: string[];
   };
   stats: {
     upcoming_visits: number;
@@ -69,7 +72,7 @@ export default async function ProfissionalDashboardPage() {
   return (
     <div className="pb-24 bg-surface min-h-screen">
       <div className="bg-white">
-        <div className="flex items-center px-4 pt-10 pb-3">
+        <div className="flex items-center px-4 pb-3">
           <Link href="/" className="mr-3">
             <span className="material-symbols-outlined text-slate-700 text-xl">
               arrow_back
@@ -90,6 +93,34 @@ export default async function ProfissionalDashboardPage() {
         </div>
       </div>
 
+      {/* Visibility status banner */}
+      {data.professional.visibility_status && data.professional.visibility_status !== 'active' && (
+        <div className="mx-4 mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <p className="text-xs font-semibold text-amber-700">
+            ⚠️ Seu perfil está{' '}
+            {data.professional.visibility_status === 'draft' ? 'incompleto (rascunho)' : 'inativo'}
+          </p>
+          {data.professional.missing_fields && data.professional.missing_fields.length > 0 && (
+            <p className="text-xs text-amber-600 mt-0.5">
+              Clientes não podem ver seu perfil. Preencha:{' '}
+              <span className="font-medium">
+                {data.professional.missing_fields.map((f: string) => {
+                  if (f === 'bio') return 'Descrição (mín. 10 caracteres)';
+                  if (f === 'specialty') return 'Especialidade';
+                  if (f === 'full_name') return 'Nome completo';
+                  return f;
+                }).join(', ')}
+              </span>
+            </p>
+          )}
+          {data.professional.visibility_status === 'inactive' && (
+            <p className="text-xs text-amber-600 mt-0.5">
+              Reative seu perfil em Configurações para aparecer para clientes.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="px-4 pt-4 grid grid-cols-2 gap-3">
         <StatCard
           label="Visitas agendadas"
@@ -97,9 +128,9 @@ export default async function ProfissionalDashboardPage() {
           icon="event"
         />
         <StatCard
-          label="Obras ativas"
+          label="Solicitações ativas"
           value={data.stats.active_works}
-          icon="construction"
+          icon="assignment"
         />
         <StatCard
           label="Conversas"
@@ -162,7 +193,7 @@ export default async function ProfissionalDashboardPage() {
 
       <div className="px-4 mt-6">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">
-          Obras ativas
+          Solicitações ativas
         </p>
         {data.active_works.length === 0 ? (
           <p className="text-xs text-slate-400">Nenhuma obra em andamento.</p>

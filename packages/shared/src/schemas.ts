@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MIN_BIO_LENGTH } from './visibility';
 
 // ── Professionals ────────────────────────────────────────────────────────────
 
@@ -11,6 +12,39 @@ export const SearchProfessionalsSchema = z.object({
 });
 
 export type SearchProfessionalsInput = z.infer<typeof SearchProfessionalsSchema>;
+
+/**
+ * Validated when activating professional profile.
+ * bio is required and must meet the minimum length for publication.
+ */
+export const ActivateProfessionalSchema = z.object({
+  specialty: z.string().min(2).max(100),
+  bio: z
+    .string()
+    .min(MIN_BIO_LENGTH, `Bio deve ter no mínimo ${MIN_BIO_LENGTH} caracteres`)
+    .max(500),
+  city: z.string().max(100).optional(),
+  display_name: z.string().max(100).optional(),
+});
+
+export type ActivateProfessionalInput = z.infer<typeof ActivateProfessionalSchema>;
+
+/**
+ * Validated when updating professional profile (all fields optional).
+ * If bio is provided it must still meet the minimum length.
+ */
+export const UpdateProfessionalSchema = z.object({
+  specialty: z.string().min(2).max(100).optional(),
+  bio: z
+    .string()
+    .min(MIN_BIO_LENGTH, `Bio deve ter no mínimo ${MIN_BIO_LENGTH} caracteres`)
+    .max(500)
+    .optional(),
+  city: z.string().max(100).optional(),
+  display_name: z.string().max(100).optional(),
+});
+
+export type UpdateProfessionalInput = z.infer<typeof UpdateProfessionalSchema>;
 
 // ── Conversations ────────────────────────────────────────────────────────────
 
@@ -83,3 +117,9 @@ export const BookVisitSchema = z.object({
 });
 
 export type BookVisitInput = z.infer<typeof BookVisitSchema>;
+
+export const RejectVisitSchema = z.object({
+  reason: z.string().min(1, 'Motivo obrigatório').max(500),
+});
+
+export type RejectVisitInput = z.infer<typeof RejectVisitSchema>;

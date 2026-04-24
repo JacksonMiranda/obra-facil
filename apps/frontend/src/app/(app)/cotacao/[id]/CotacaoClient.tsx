@@ -46,9 +46,7 @@ export function CotacaoClient({
       });
 
       if (res.ok) {
-        const envelope = await res.json().catch(() => ({}));
-        const orderId = envelope?.data?.id ?? envelope?.id ?? '';
-        router.push(`/pedidos/confirmacao?order=${orderId}`);
+        router.push('/solicitacoes');
       } else {
         setError('Nao foi possivel confirmar o pedido. Tente novamente.');
       }

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MaterialListsService } from './material-lists.service';
 import { MaterialListsRepository } from './material-lists.repository';
+import { OwnershipService } from '../../core/authorization/ownership.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { MaterialList } from '@obrafacil/shared';
 
@@ -25,6 +26,7 @@ describe('MaterialListsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MaterialListsService,
+        OwnershipService,
         {
           provide: MaterialListsRepository,
           useValue: {

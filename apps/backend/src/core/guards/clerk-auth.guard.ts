@@ -6,11 +6,20 @@ import {
 } from '@nestjs/common';
 import { verifyToken } from '@clerk/backend';
 import type { Request } from 'express';
-import { DEV_USER_ID_HEADER, type Profile } from '@obrafacil/shared';
+import {
+  ACTING_AS_HEADER,
+  DEV_USER_ID_HEADER,
+  type AccountContext,
+  type Profile,
+  type UserRole,
+} from '@obrafacil/shared';
 import { DatabaseService } from '../../database/database.service';
 
 // Express lowercases header names; compare against the lowercase form.
 const BYPASS_HEADER_LC = DEV_USER_ID_HEADER.toLowerCase();
+const ACTING_AS_HEADER_LC = ACTING_AS_HEADER.toLowerCase();
+
+const VALID_ROLES: UserRole[] = ['client', 'professional', 'store'];
 
 @Injectable()
 export class ClerkAuthGuard implements CanActivate {
@@ -19,38 +28,91 @@ export class ClerkAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()
-      .getRequest<Request & { profile: Profile }>();
+      .getRequest<Request & { profile: Profile; account: AccountContext }>();
 
     if (process.env.DISABLE_CLERK_AUTH === 'true') {
       request.profile = await this.resolveBypassProfile(request);
-      return true;
+    } else {
+      const authHeader = request.headers['authorization'];
+      if (!authHeader?.startsWith('Bearer ')) {
+        throw new UnauthorizedException('Token de autenticação ausente');
+      }
+
+      const token = authHeader.slice(7);
+
+      let clerkUserId: string;
+      let tokenPayload: Record<string, unknown>;
+      try {
+        const payload = await verifyToken(token, {
+          secretKey: process.env.CLERK_SECRET_KEY!,
+        });
+        clerkUserId = payload.sub;
+        tokenPayload = payload as unknown as Record<string, unknown>;
+      } catch {
+        throw new UnauthorizedException('Token inválido ou expirado');
+      }
+
+      request.profile = await this.resolveOrProvisionProfile(
+        clerkUserId,
+        tokenPayload,
+      );
     }
 
-    const authHeader = request.headers['authorization'];
-    if (!authHeader?.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Token de autenticação ausente');
-    }
-
-    const token = authHeader.slice(7);
-
-    let clerkUserId: string;
-    let tokenPayload: Record<string, unknown>;
-    try {
-      const payload = await verifyToken(token, {
-        secretKey: process.env.CLERK_SECRET_KEY!,
-      });
-      clerkUserId = payload.sub;
-      tokenPayload = payload as unknown as Record<string, unknown>;
-    } catch {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
-
-    request.profile = await this.resolveOrProvisionProfile(
-      clerkUserId,
-      tokenPayload,
-    );
+    // Resolve account context (roles + actingAs)
+    request.account = await this.resolveAccountContext(request);
     return true;
   }
+
+  // ── Account context ────────────────────────────────────────────────────────
+
+  private async resolveAccountContext(
+    request: Request & { profile: Profile },
+  ): Promise<AccountContext> {
+    const profile = request.profile;
+    const roles = await this.getActiveRoles(profile.id);
+
+    // Fallback: if account_roles table doesn't exist yet (migration pending),
+    // default to the legacy profile.role.
+    const effectiveRoles = roles.length > 0 ? roles : [profile.role];
+
+    const requestedRole = this.readActingAsHeader(request);
+    let actingAs: UserRole;
+
+    if (requestedRole && effectiveRoles.includes(requestedRole)) {
+      actingAs = requestedRole;
+    } else {
+      // Default: primary role (or first active role).
+      // If the requested role is not active (e.g. stale cookie), fall back
+      // silently rather than throwing 403 — the cookie will be corrected
+      // by the client on the next role switch.
+      actingAs = profile.role;
+    }
+
+    return { profile, roles: effectiveRoles, actingAs };
+  }
+
+  private async getActiveRoles(profileId: string): Promise<UserRole[]> {
+    try {
+      const { rows } = await this.db.query<{ role: UserRole }>(
+        `SELECT role FROM account_roles WHERE profile_id = $1 AND is_active = true`,
+        [profileId],
+      );
+      return rows.map((r) => r.role);
+    } catch {
+      // Table may not exist in older envs — degrade gracefully
+      return [];
+    }
+  }
+
+  private readActingAsHeader(request: Request): UserRole | null {
+    const raw = request.headers[ACTING_AS_HEADER_LC];
+    const value = Array.isArray(raw) ? raw[0] : raw;
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim().toLowerCase() as UserRole;
+    return VALID_ROLES.includes(trimmed) ? trimmed : null;
+  }
+
+  // ── Existing helpers (unchanged) ──────────────────────────────────────────
 
   private async resolveBypassProfile(request: Request): Promise<Profile> {
     const headerClerkId = this.readBypassHeader(request);
@@ -58,8 +120,6 @@ export class ClerkAuthGuard implements CanActivate {
     if (headerClerkId) {
       const profile = await this.findProfileByClerkId(headerClerkId);
       if (!profile) {
-        // Do not echo the caller-supplied clerk_id in the response body to
-        // avoid boolean enumeration of valid identifiers.
         throw new UnauthorizedException('Não autorizado');
       }
       return profile;
@@ -92,10 +152,6 @@ export class ClerkAuthGuard implements CanActivate {
     return rows.length ? rows[0] : null;
   }
 
-  // JIT provisioning covers Clerk users who log in before the Clerk webhook
-  // creates their profile row. ON CONFLICT makes this idempotent with the
-  // webhook's upsert (see webhooks.controller.ts). Default role is 'client';
-  // professionals/stores must be promoted out-of-band.
   private async resolveOrProvisionProfile(
     clerkUserId: string,
     tokenPayload: Record<string, unknown>,

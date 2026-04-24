@@ -6,10 +6,10 @@ import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
 import { ForbiddenException } from '@nestjs/common';
 import type {
   Profile,
+  AccountContext,
   ProfessionalWithProfile,
   AvailabilitySlot,
-  VisitWithProfessional,
-  VisitWithClient,
+  VisitFull,
 } from '@obrafacil/shared';
 
 describe('VisitsController', () => {
@@ -28,6 +28,12 @@ describe('VisitsController', () => {
     updated_at: new Date().toISOString(),
   };
 
+  const mockAccount: AccountContext = {
+    profile: mockProfile,
+    roles: ['professional'],
+    actingAs: 'professional',
+  };
+
   const mockPro: ProfessionalWithProfile = {
     id: 'pro-1',
     profile_id: 'user-1',
@@ -38,11 +44,15 @@ describe('VisitsController', () => {
     is_verified: true,
     latitude: null,
     longitude: null,
+    visibility_status: 'active',
+    display_name: null,
+    city: null,
+    published_at: null,
     created_at: new Date().toISOString(),
     profiles: mockProfile,
   };
 
-  const mockVisit: VisitWithProfessional & VisitWithClient = {
+  const mockVisit: VisitFull = {
     id: 'v1',
     client_id: 'client-1',
     professional_id: 'pro-1',
@@ -51,6 +61,7 @@ describe('VisitsController', () => {
     address: 'Street 1, City',
     notes: 'Gate code 1234',
     cancelled_by: null,
+    rejection_reason: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     professionals: mockPro,
@@ -100,22 +111,25 @@ describe('VisitsController', () => {
       proRepo.findByProfileId.mockResolvedValue(mockPro);
       service.getMyAvailability.mockResolvedValue([]);
 
-      const result = await controller.getMyAvailability(mockProfile);
+      const result = await controller.getMyAvailability(mockAccount);
       expect(result).toEqual([]);
       expect(proRepo.findByProfileId).toHaveBeenCalledWith('user-1');
       expect(service.getMyAvailability).toHaveBeenCalledWith('pro-1');
     });
 
     it('should throw Forbidden if not professional', async () => {
-      const clientProfile: Profile = { ...mockProfile, role: 'client' };
-      await expect(controller.getMyAvailability(clientProfile)).rejects.toThrow(
+      const clientAccount: AccountContext = {
+        ...mockAccount,
+        actingAs: 'client',
+      };
+      await expect(controller.getMyAvailability(clientAccount)).rejects.toThrow(
         ForbiddenException,
       );
     });
 
     it('should throw Forbidden if professional profile not found', async () => {
       proRepo.findByProfileId.mockResolvedValue(null);
-      await expect(controller.getMyAvailability(mockProfile)).rejects.toThrow(
+      await expect(controller.getMyAvailability(mockAccount)).rejects.toThrow(
         ForbiddenException,
       );
     });
@@ -124,7 +138,7 @@ describe('VisitsController', () => {
       proRepo.findByProfileId.mockResolvedValue(mockPro);
       service.setAvailability.mockResolvedValue([] as AvailabilitySlot[]);
 
-      const result = await controller.setAvailability(mockProfile, []);
+      const result = await controller.setAvailability(mockAccount, []);
       expect(result).toEqual([]);
       expect(service.setAvailability).toHaveBeenCalledWith('pro-1', []);
     });
@@ -132,29 +146,27 @@ describe('VisitsController', () => {
 
   describe('visits', () => {
     it('should return all visits for a profile', async () => {
-      service.findAll.mockResolvedValue(
-        [] as VisitWithProfessional[] | VisitWithClient[],
-      );
-      const result = await controller.findAll(mockProfile);
+      service.findAll.mockResolvedValue([] as VisitFull[]);
+      const result = await controller.findAll(mockAccount);
       expect(result).toEqual([]);
-      expect(service.findAll).toHaveBeenCalledWith(mockProfile);
+      expect(service.findAll).toHaveBeenCalledWith('user-1', 'professional');
     });
 
     it('should find one visit by id', async () => {
       service.findById.mockResolvedValue(mockVisit);
-      const result = await controller.findOne('v1');
+      const result = await controller.findOne('v1', mockAccount);
       expect(result).toEqual(mockVisit);
     });
 
     it('should allow clients to book visits', async () => {
-      const clientProfile: Profile = {
-        ...mockProfile,
-        id: 'client-1',
-        role: 'client',
+      const clientAccount: AccountContext = {
+        profile: { ...mockProfile, id: 'client-1', role: 'client' },
+        roles: ['client'],
+        actingAs: 'client',
       };
       service.book.mockResolvedValue(mockVisit);
 
-      const result = await controller.book(clientProfile, {
+      const result = await controller.book(clientAccount, {
         date: 'today',
       } as any);
       expect(result).toEqual(mockVisit);
@@ -162,20 +174,20 @@ describe('VisitsController', () => {
     });
 
     it('should block professionals from booking visits', () => {
-      expect(() => controller.book(mockProfile, {} as any)).toThrow(
+      expect(() => controller.book(mockAccount, {} as any)).toThrow(
         ForbiddenException,
       );
     });
 
     it('should cancel a visit', async () => {
       service.cancel.mockResolvedValue({ ...mockVisit, status: 'cancelled' });
-      const result = await controller.cancel('v1', mockProfile);
+      const result = await controller.cancel('v1', mockAccount);
       expect(result).toEqual({ ...mockVisit, status: 'cancelled' });
     });
 
     it('should complete a visit', async () => {
       service.complete.mockResolvedValue({ ...mockVisit, status: 'completed' });
-      const result = await controller.complete('v1', mockProfile);
+      const result = await controller.complete('v1', mockAccount);
       expect(result).toEqual({ ...mockVisit, status: 'completed' });
     });
   });

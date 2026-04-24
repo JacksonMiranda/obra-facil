@@ -70,7 +70,7 @@ services:
     command: ["sh", "-c", "cd /app/apps/frontend && node /app/node_modules/.bin/next start -H 0.0.0.0 -p 3000"]
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
 

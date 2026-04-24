@@ -1,9 +1,10 @@
 // HTTP API client — wraps fetch with Clerk Bearer token injection
 // All backend calls go through this client. Never call the backend directly.
 
-import { DEV_USER_ID_HEADER } from '@obrafacil/shared';
+import { ACTING_AS_HEADER, DEV_USER_ID_HEADER } from '@obrafacil/shared';
 import { auth } from '@/lib/auth-bypass';
 import { BYPASS_USER_CLERK_ID, isAuthBypassEnabled } from '@/lib/auth-bypass-config';
+import { getActingAs, ACTING_AS_COOKIE } from '@/lib/acting-as';
 
 // Server-side uses INTERNAL_API_URL (Docker service name); browser uses NEXT_PUBLIC_API_URL (baked at build)
 const API_URL =
@@ -29,6 +30,23 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
     : {};
   if (isAuthBypassEnabled) {
     headers[DEV_USER_ID_HEADER] = BYPASS_USER_CLERK_ID;
+  }
+  // Inject the acting-as role header.
+  // On the client, read from document.cookie; on the server, read from next/headers.
+  let actingAs: string | null | undefined = null;
+  if (typeof window === 'undefined') {
+    try {
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      actingAs = cookieStore.get(ACTING_AS_COOKIE)?.value ?? null;
+    } catch {
+      // Outside a request context (e.g. static generation) — skip header
+    }
+  } else {
+    actingAs = getActingAs();
+  }
+  if (actingAs) {
+    headers[ACTING_AS_HEADER] = actingAs;
   }
   return headers;
 }

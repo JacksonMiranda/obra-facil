@@ -154,6 +154,36 @@ create table works (
 );
 
 -- ============================================================
+-- VISIT SCHEDULING
+-- ============================================================
+
+create type visit_status as enum ('pending', 'confirmed', 'completed', 'cancelled', 'rejected');
+
+create table availability_slots (
+  id              uuid primary key default uuid_generate_v4(),
+  professional_id uuid not null references professionals(id) on delete cascade,
+  weekday         smallint not null check (weekday between 0 and 6),
+  start_time      time not null,
+  end_time        time not null,
+  created_at      timestamptz not null default now(),
+  unique (professional_id, weekday, start_time),
+  check (end_time > start_time)
+);
+
+create table visits (
+  id              uuid primary key default uuid_generate_v4(),
+  client_id       uuid not null references profiles(id) on delete cascade,
+  professional_id uuid not null references professionals(id) on delete cascade,
+  scheduled_at    timestamptz not null,
+  status          visit_status not null default 'pending',
+  address         text,
+  notes           text,
+  cancelled_by    uuid references profiles(id),
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+-- ============================================================
 -- INDEXES
 -- ============================================================
 
@@ -167,6 +197,11 @@ create index idx_orders_client_id on orders(client_id);
 create index idx_works_client_id on works(client_id);
 create index idx_works_status on works(status);
 create index idx_professionals_specialty_trgm on professionals using gin (specialty gin_trgm_ops);
+create unique index idx_visits_no_double_booking on visits (professional_id, scheduled_at) where status not in ('cancelled', 'rejected');
+create index idx_visits_client on visits(client_id);
+create index idx_visits_professional on visits(professional_id);
+create index idx_visits_scheduled on visits(scheduled_at);
+create index idx_availability_professional on availability_slots(professional_id);
 
 -- ============================================================
 -- TRIGGERS
@@ -187,6 +222,9 @@ create trigger orders_updated_at before update on orders
   for each row execute function update_updated_at();
 
 create trigger works_updated_at before update on works
+  for each row execute function update_updated_at();
+
+create trigger visits_updated_at before update on visits
   for each row execute function update_updated_at();
 
 create trigger material_lists_updated_at before update on material_lists

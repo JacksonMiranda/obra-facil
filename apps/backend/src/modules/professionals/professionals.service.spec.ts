@@ -18,6 +18,10 @@ describe('ProfessionalsService', () => {
     is_verified: true,
     latitude: null,
     longitude: null,
+    visibility_status: 'active',
+    display_name: null,
+    city: null,
+    published_at: null,
     created_at: new Date().toISOString(),
     profiles: {
       id: 'profile-1',
