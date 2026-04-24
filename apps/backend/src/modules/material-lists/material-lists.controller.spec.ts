@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MaterialListsController } from './material-lists.controller';
 import { MaterialListsService } from './material-lists.service';
 import { StoreOffersRepository } from './store-offers.repository';
+import { ProfessionalsRepository } from '../professionals/professionals.repository';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { Profile, MaterialList, AccountContext } from '@obrafacil/shared';
@@ -10,6 +11,7 @@ describe('MaterialListsController', () => {
   let controller: MaterialListsController;
   let service: jest.Mocked<MaterialListsService>;
   let storeOffersRepo: jest.Mocked<StoreOffersRepository>;
+  let professionalsRepo: jest.Mocked<ProfessionalsRepository>;
 
   const mockProfile: Profile = {
     id: 'prof-1',
@@ -56,6 +58,12 @@ describe('MaterialListsController', () => {
             findByList: jest.fn(),
           },
         },
+        {
+          provide: ProfessionalsRepository,
+          useValue: {
+            findByProfileId: jest.fn(),
+          },
+        },
       ],
     })
       .overrideGuard(ClerkAuthGuard)
@@ -65,6 +73,23 @@ describe('MaterialListsController', () => {
     controller = module.get<MaterialListsController>(MaterialListsController);
     service = module.get(MaterialListsService);
     storeOffersRepo = module.get(StoreOffersRepository);
+    professionalsRepo = module.get(ProfessionalsRepository);
+    professionalsRepo.findByProfileId.mockResolvedValue({
+      id: 'prof-1',
+      profile_id: mockProfile.id,
+      specialty: '',
+      bio: null,
+      rating_avg: 0,
+      jobs_completed: 0,
+      is_verified: false,
+      latitude: null,
+      longitude: null,
+      visibility_status: 'active',
+      display_name: null,
+      city: null,
+      published_at: null,
+      created_at: new Date().toISOString(),
+    } as never);
   });
 
   describe('findAll', () => {
@@ -74,12 +99,12 @@ describe('MaterialListsController', () => {
       expect(result).toEqual([mockList]);
     });
 
-    it('should throw ForbiddenException for clients', () => {
+    it('should throw ForbiddenException for clients', async () => {
       const clientAccount: AccountContext = {
         ...mockAccount,
         actingAs: 'client',
       };
-      expect(() => controller.findAll(clientAccount)).toThrow(
+      await expect(controller.findAll(clientAccount)).rejects.toThrow(
         ForbiddenException,
       );
     });

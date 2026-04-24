@@ -9,6 +9,7 @@ import { WorksController } from './works.controller';
 import { WorksRepository } from './works.repository';
 import { ProfessionalsRepository } from '../professionals/professionals.repository';
 import { OwnershipService } from '../../core/authorization/ownership.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
 import type {
   Profile,
@@ -95,6 +96,10 @@ describe('WorksController', () => {
           },
         },
         OwnershipService,
+        {
+          provide: NotificationsService,
+          useValue: { notify: jest.fn() },
+        },
       ],
     })
       .overrideGuard(ClerkAuthGuard)
