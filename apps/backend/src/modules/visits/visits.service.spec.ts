@@ -53,15 +53,14 @@ describe('VisitsService', () => {
       availabilityRepo as never,
       visitsRepo as never,
       new OwnershipService(),
+      { notify: jest.fn() } as never,
     );
   });
 
   describe('findAll', () => {
     it('routes professional to findAllByProfessional', async () => {
       visitsRepo.findAllByProfessional.mockResolvedValue([{ id: 'v1' }]);
-      const result = await service.findAll(
-        makeProfile({ role: 'professional' }),
-      );
+      const result = await service.findAll('client-1', 'professional');
       expect(visitsRepo.findAllByProfessional).toHaveBeenCalledWith('client-1');
       expect(visitsRepo.findAllByClient).not.toHaveBeenCalled();
       expect(result).toEqual([{ id: 'v1' }]);
@@ -69,7 +68,7 @@ describe('VisitsService', () => {
 
     it('routes client to findAllByClient', async () => {
       visitsRepo.findAllByClient.mockResolvedValue([]);
-      await service.findAll(makeProfile({ role: 'client' }));
+      await service.findAll('client-1', 'client');
       expect(visitsRepo.findAllByClient).toHaveBeenCalledWith('client-1');
       expect(visitsRepo.findAllByProfessional).not.toHaveBeenCalled();
     });
@@ -186,9 +185,9 @@ describe('VisitsService', () => {
   describe('complete', () => {
     it('only professional can complete', async () => {
       visitsRepo.findById.mockResolvedValue({ id: 'v1', status: 'confirmed' });
-      await expect(
-        service.complete('v1', makeProfile({ role: 'client' })),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.complete('v1', 'client')).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
     });
 
     it('professional transitions confirmed → completed', async () => {
@@ -197,14 +196,14 @@ describe('VisitsService', () => {
         id: 'v1',
         status: 'completed',
       });
-      await service.complete('v1', makeProfile({ role: 'professional' }));
+      await service.complete('v1', 'professional');
       expect(visitsRepo.updateStatus).toHaveBeenCalledWith('v1', 'completed');
     });
 
     it('rejects completing a non-confirmed visit', async () => {
       visitsRepo.findById.mockResolvedValue({ id: 'v1', status: 'cancelled' });
       await expect(
-        service.complete('v1', makeProfile({ role: 'professional' })),
+        service.complete('v1', 'professional'),
       ).rejects.toBeInstanceOf(ConflictException);
     });
   });

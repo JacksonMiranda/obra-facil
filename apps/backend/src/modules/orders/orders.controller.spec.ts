@@ -3,7 +3,7 @@ import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
 import { ForbiddenException } from '@nestjs/common';
-import type { Profile } from '@obrafacil/shared';
+import type { Profile, AccountContext } from '@obrafacil/shared';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -18,6 +18,12 @@ describe('OrdersController', () => {
     role: 'client',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+  };
+
+  const mockAccount: AccountContext = {
+    profile: mockProfile,
+    roles: ['client'],
+    actingAs: 'client',
   };
 
   beforeEach(async () => {
@@ -44,14 +50,17 @@ describe('OrdersController', () => {
   describe('findAll', () => {
     it('should return all orders for clients', async () => {
       service.findAllByProfile.mockResolvedValue([]);
-      const result = await controller.findAll(mockProfile);
+      const result = await controller.findAll(mockAccount);
       expect(result).toEqual([]);
       expect(service.findAllByProfile).toHaveBeenCalledWith('user-1');
     });
 
     it('should throw ForbiddenException for non-clients', () => {
-      const profProfile = { ...mockProfile, role: 'professional' as const };
-      expect(() => controller.findAll(profProfile)).toThrow(ForbiddenException);
+      const profAccount: AccountContext = {
+        ...mockAccount,
+        actingAs: 'professional',
+      };
+      expect(() => controller.findAll(profAccount)).toThrow(ForbiddenException);
     });
   });
 
@@ -70,14 +79,17 @@ describe('OrdersController', () => {
       };
       service.create.mockResolvedValue(mockOrder);
       const body = { storeId: 'store-1', totalAmount: 100 };
-      const result = await controller.create(mockProfile, body);
+      const result = await controller.create(mockAccount, body);
       expect(result).toEqual(mockOrder);
       expect(service.create).toHaveBeenCalledWith('user-1', body);
     });
 
     it('should throw ForbiddenException for pro-users', () => {
-      const profProfile = { ...mockProfile, role: 'professional' as const };
-      expect(() => controller.create(profProfile, {})).toThrow(
+      const profAccount: AccountContext = {
+        ...mockAccount,
+        actingAs: 'professional',
+      };
+      expect(() => controller.create(profAccount, {})).toThrow(
         ForbiddenException,
       );
     });
