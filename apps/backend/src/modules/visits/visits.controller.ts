@@ -83,7 +83,7 @@ export class VisitsController {
 
   @Post('visits')
   book(@CurrentAccount() account: AccountContext, @Body() body: unknown) {
-    if (account.actingAs !== 'client') {
+    if (!account.roles.includes('client')) {
       throw new ForbiddenException('Apenas clientes podem agendar visitas');
     }
     return this.service.book(account.profile.id, body);

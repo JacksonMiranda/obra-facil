@@ -72,7 +72,7 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
         scheduledAt,
         address: address || undefined,
         notes: notes || undefined,
-      });
+      }, true); // skipActingAs=true: agendar visita é sempre uma ação de client
 
       router.push(`/agendar/confirmacao?profissional=${encodeURIComponent(professionalName)}&data=${selectedDateStr}&hora=${selectedTime}`);
     } catch (err: unknown) {
