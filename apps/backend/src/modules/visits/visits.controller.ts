@@ -90,8 +90,12 @@ export class VisitsController {
   }
 
   @Patch('visits/:id/cancel')
-  cancel(@Param('id') id: string, @CurrentAccount() account: AccountContext) {
-    return this.service.cancel(id, account.profile);
+  cancel(
+    @Param('id') id: string,
+    @CurrentAccount() account: AccountContext,
+    @Body() body: { reason?: string },
+  ) {
+    return this.service.cancel(id, account.profile, body?.reason);
   }
 
   @Patch('visits/:id/complete')
