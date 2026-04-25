@@ -200,8 +200,8 @@ export class VisitsService {
           },
         });
       })
-      .catch(() => {
-        /* notification failure must not break booking */
+      .catch((err: unknown) => {
+        console.error('[VisitsService] Failed to notify professional on book:', err);
       });
 
     return visit;
