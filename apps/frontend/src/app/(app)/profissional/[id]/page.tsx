@@ -124,13 +124,6 @@ export default async function ProfissionalPage({
                 <span className="material-symbols-outlined text-lg">calendar_month</span>
                 Agendar Visita
               </Link>
-              <Link
-                href={`/agendar/${id}`}
-                className="w-full h-12 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm transition-all hover:scale-[0.98] bg-trust hover:bg-blue-800 text-white"
-              >
-                <span className="material-symbols-outlined text-lg">request_quote</span>
-                Solicitar Orçamento
-              </Link>
             </div>
             <div className="mt-5 pt-5 border-t border-slate-100 flex items-center gap-2 text-xs text-slate-500">
               <span className="material-symbols-outlined text-base text-emerald-500">shield</span>
@@ -143,22 +136,13 @@ export default async function ProfissionalPage({
       {/* ── CTA fixado no rodapé — mobile only ───────────────────── */}
       <div className="md:hidden">
         <StickyBottomCTA>
-          <div className="flex flex-col gap-2 w-full">
-            <Link
-              href={`/agendar/${id}`}
-              className="w-full h-14 rounded-xl flex items-center justify-center gap-2 font-semibold text-base transition-all active:scale-[0.98] bg-savings hover:bg-emerald-600 text-white"
-            >
-              <span className="material-symbols-outlined text-xl">calendar_month</span>
-              Agendar Visita
-            </Link>
-            <Link
-              href={`/agendar/${id}`}
-              className="w-full h-14 rounded-xl flex items-center justify-center gap-2 font-semibold text-base transition-all active:scale-[0.98] bg-trust hover:bg-blue-800 text-white"
-            >
-              <span className="material-symbols-outlined text-xl">request_quote</span>
-              Solicitar Orçamento
-            </Link>
-          </div>
+          <Link
+            href={`/agendar/${id}`}
+            className="w-full h-14 rounded-xl flex items-center justify-center gap-2 font-semibold text-base transition-all active:scale-[0.98] bg-savings hover:bg-emerald-600 text-white"
+          >
+            <span className="material-symbols-outlined text-xl">calendar_month</span>
+            Agendar Visita
+          </Link>
         </StickyBottomCTA>
       </div>
     </div>
