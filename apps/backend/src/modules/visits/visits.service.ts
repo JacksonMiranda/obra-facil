@@ -149,12 +149,36 @@ export class VisitsService {
 
   async book(clientProfile: Profile, rawInput: unknown): Promise<Visit> {
     const input = BookVisitSchema.parse(rawInput);
+
+    // Prevent self-hire: check if the professional belongs to the booking client
+    const pro = await this.professionalsRepo.findById(input.professionalId);
+    if (!pro) {
+      throw new NotFoundException('Profissional não encontrado');
+    }
+    if (pro.profile_id === clientProfile.id) {
+      throw new ForbiddenException(
+        'Você não pode contratar o seu próprio serviço.',
+      );
+    }
+
     let visit: Visit;
     try {
       visit = await this.visitsRepo.create({
         clientId: clientProfile.id,
         professionalId: input.professionalId,
         scheduledAt: input.scheduledAt,
+        // Structured address
+        street: input.street,
+        streetNumber: input.streetNumber,
+        complement: input.complement,
+        neighborhood: input.neighborhood,
+        cityName: input.cityName,
+        stateCode: input.stateCode,
+        // Booking metadata
+        requesterName: input.requesterName,
+        serviceType: input.serviceType,
+        description: input.description,
+        // Legacy fallback
         address: input.address,
         notes: input.notes,
       });
@@ -201,7 +225,10 @@ export class VisitsService {
         });
       })
       .catch((err: unknown) => {
-        console.error('[VisitsService] Failed to notify professional on book:', err);
+        console.error(
+          '[VisitsService] Failed to notify professional on book:',
+          err,
+        );
       });
 
     return visit;

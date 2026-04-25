@@ -17,6 +17,7 @@ import { CurrentAccount } from '../../core/decorators/current-account.decorator'
 import { DatabaseService } from '../../database/database.service';
 import {
   ActivateProfessionalSchema,
+  UpdateProfileSchema,
   computeCompleteness,
   deriveVisibilityStatus,
 } from '@obrafacil/shared';
@@ -131,6 +132,13 @@ export class AccountController {
       `UPDATE professionals SET visibility_status = $2${visibilityStatus === 'active' ? ', published_at = now()' : ''}
        WHERE id = $1`,
       [professionalId, visibilityStatus],
+    );
+
+    // Auto-switch the profile's active role to 'professional' so the frontend
+    // immediately reflects the correct type without requiring a manual switch.
+    await this.db.query(
+      `UPDATE profiles SET role = 'professional', updated_at = now() WHERE id = $1`,
+      [profileId],
     );
 
     const { rows: roles } = await this.db.query<{ role: UserRole }>(
@@ -249,5 +257,95 @@ export class AccountController {
     );
 
     return { actingAs: input.role };
+  }
+
+  /**
+   * Updates editable profile data for the authenticated account.
+   * If the user has a professional profile, recomputes visibility_status
+   * because full_name is part of the completeness check.
+   */
+  @Patch('profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Atualizar dados básicos do perfil do usuário' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        full_name: { type: 'string', example: 'João da Silva', maxLength: 100 },
+        phone: { type: 'string', example: '(11) 99999-9999', maxLength: 20 },
+      },
+    },
+  })
+  async updateProfile(
+    @CurrentAccount() account: AccountContext,
+    @Body() body: unknown,
+  ) {
+    const input = UpdateProfileSchema.parse(body);
+    const profileId = account.profile.id;
+
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+
+    if (input.full_name !== undefined) {
+      // Reject placeholder names
+      const trimmed = input.full_name.trim();
+      if (!trimmed) throw new BadRequestException('Nome não pode ser vazio');
+      setClauses.push(`full_name = $${idx++}`);
+      values.push(trimmed);
+    }
+
+    if (input.phone !== undefined) {
+      setClauses.push(`phone = $${idx++}`);
+      values.push(input.phone.trim() || null);
+    }
+
+    if (!setClauses.length) {
+      throw new BadRequestException('Nenhum campo para atualizar');
+    }
+
+    setClauses.push(`updated_at = now()`);
+    values.push(profileId);
+
+    const { rows } = await this.db.query<{
+      id: string;
+      full_name: string;
+      phone: string | null;
+    }>(
+      `UPDATE profiles SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING id, full_name, phone`,
+      values,
+    );
+
+    // If the user has a professional profile, recompute visibility because
+    // full_name is part of the completeness check.
+    if (
+      input.full_name !== undefined &&
+      account.roles.includes('professional')
+    ) {
+      const { rows: proRows } = await this.db.query<{
+        id: string;
+        specialty: string;
+        bio: string | null;
+      }>(`SELECT id, specialty, bio FROM professionals WHERE profile_id = $1`, [
+        profileId,
+      ]);
+      if (proRows.length) {
+        const pro = proRows[0];
+        const completeness = computeCompleteness({
+          specialty: pro.specialty,
+          bio: pro.bio,
+          full_name: input.full_name.trim(),
+        });
+        const visibilityStatus = deriveVisibilityStatus(completeness);
+        await this.db.query(
+          `UPDATE professionals
+              SET visibility_status = $2${visibilityStatus === 'active' ? ', published_at = COALESCE(published_at, now())' : ''}
+            WHERE id = $1`,
+          [pro.id, visibilityStatus],
+        );
+      }
+    }
+
+    return rows[0];
   }
 }

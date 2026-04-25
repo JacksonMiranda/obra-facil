@@ -363,6 +363,18 @@ export interface Database {
         professional_id: string;
         scheduled_at: string;
         status: VisitStatus;
+        // Structured address
+        street: string | null;
+        street_number: string | null;
+        complement: string | null;
+        neighborhood: string | null;
+        city_name: string | null;
+        state_code: string | null;
+        // Booking metadata
+        requester_name: string | null;
+        service_type: string | null;
+        description: string | null;
+        // Legacy (kept for compatibility)
         address: string | null;
         notes: string | null;
         cancelled_by: string | null;
@@ -376,6 +388,15 @@ export interface Database {
         professional_id: string;
         scheduled_at: string;
         status?: VisitStatus;
+        street?: string | null;
+        street_number?: string | null;
+        complement?: string | null;
+        neighborhood?: string | null;
+        city_name?: string | null;
+        state_code?: string | null;
+        requester_name?: string | null;
+        service_type?: string | null;
+        description?: string | null;
         address?: string | null;
         notes?: string | null;
         cancelled_by?: string | null;
