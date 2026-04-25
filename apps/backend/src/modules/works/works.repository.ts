@@ -64,9 +64,18 @@ export class WorksRepository implements IWorksRepository {
     return rows[0] as unknown as Work;
   }
 
+  async cancelByVisitId(visitId: string): Promise<void> {
+    await this.db.query(
+      `UPDATE works
+         SET status = 'cancelled'::work_status, updated_at = now()
+       WHERE visit_id = $1 AND status = 'scheduled'`,
+      [visitId],
+    );
+  }
+
   async updateStatus(
     id: string,
-    status: 'scheduled' | 'active' | 'completed',
+    status: 'scheduled' | 'active' | 'completed' | 'cancelled',
   ): Promise<Work> {
     const { rows } = await this.db.query(
       `UPDATE works
