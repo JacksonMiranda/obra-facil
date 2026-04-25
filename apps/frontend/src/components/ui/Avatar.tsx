@@ -39,7 +39,7 @@ export function Avatar({ avatarId, src, name, size = 'md', isOnline, isVerified,
   const resolvedUrl = resolveAvatarUrl(avatarId) ?? src ?? null;
 
   return (
-    <div className={`relative inline-flex ${className}`}>
+    <div className={`relative inline-flex rounded-full ${className}`}>
       <div className={`${s.container} relative rounded-full overflow-hidden ${avatarId ? 'bg-transparent' : 'bg-trust/10'} flex items-center justify-center flex-shrink-0`}>
         {resolvedUrl && !imgError ? (
           <Image
