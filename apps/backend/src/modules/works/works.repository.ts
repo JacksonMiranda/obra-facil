@@ -101,11 +101,11 @@ export class WorksRepository implements IWorksRepository {
       `INSERT INTO works
          (visit_id, client_id, professional_id, title, status, progress_pct, photos)
        VALUES ($1, $2, $3, $4, 'scheduled', 0, '{}')
-       ON CONFLICT (visit_id) DO NOTHING
+       ON CONFLICT DO NOTHING
        RETURNING *`,
       [visit.id, visit.client_id, visit.professional_id, title],
     );
-    // If ON CONFLICT fired (duplicate), return existing row
+    // ON CONFLICT DO NOTHING returns empty rows on duplicate — look up existing
     if (!rows.length) {
       const existing = await this.db.query(
         `SELECT * FROM works WHERE visit_id = $1`,
