@@ -5,6 +5,8 @@ import { SignOutButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { ACTING_AS_COOKIE } from '@/lib/acting-as';
 import { ProfileNameEditor } from '@/components/perfil/ProfileNameEditor';
+import { api } from '@/lib/api/client';
+import type { AccountContext } from '@obrafacil/shared';
 
 export default async function PerfilPage() {
   const { userId } = await auth();
@@ -14,8 +16,14 @@ export default async function PerfilPage() {
   const actingAs = cookieStore.get(ACTING_AS_COOKIE)?.value ?? 'client';
   const isProfessional = actingAs === 'professional';
 
-  const user = await currentUser();
-  const name = user?.fullName ?? 'Usuário';
+  const [user, account] = await Promise.all([
+    currentUser(),
+    api.get<AccountContext>('/v1/account/me').catch(() => null),
+  ]);
+
+  // Prefer the DB name (profiles.full_name) over Clerk's fullName —
+  // PATCH /v1/account/profile updates the DB but not Clerk.
+  const name = account?.profile.full_name ?? user?.fullName ?? 'Usuário';
   const email = user?.emailAddresses?.[0]?.emailAddress ?? '';
   const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
