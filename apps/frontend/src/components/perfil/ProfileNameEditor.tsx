@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useClientApi } from '@/lib/api/client-api';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function ProfileNameEditor({ initialName, onUpdated }: Props) {
+  const router = useRouter();
   const api = useClientApi();
   const isPlaceholder = !initialName || initialName === 'Usuário';
 
@@ -36,8 +38,8 @@ export function ProfileNameEditor({ initialName, onUpdated }: Props) {
       setEditing(false);
       onUpdated?.(trimmed);
       setTimeout(() => setSuccess(false), 3000);
-      // Refresh server data
-      window.location.reload();
+      // Revalidate server components (layout, page) without a full reload
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar nome');
     } finally {

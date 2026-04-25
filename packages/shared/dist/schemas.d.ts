@@ -87,5 +87,6 @@ export type RejectVisitInput = z.infer<typeof RejectVisitSchema>;
 export declare const UpdateProfileSchema: z.ZodObject<{
     full_name: z.ZodOptional<z.ZodString>;
     phone: z.ZodOptional<z.ZodString>;
+    avatar_url: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;

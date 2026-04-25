@@ -23,7 +23,7 @@
     "strictBindCallApply": true,
     "noFallthroughCasesInSwitch": true,
     "ignoreDeprecations": "5.0",
-    "types": ["jest", "node"]
+    "types": ["jest", "node", "multer"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", "api"]
