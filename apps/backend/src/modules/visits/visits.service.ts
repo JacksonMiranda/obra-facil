@@ -8,6 +8,7 @@ import { OwnershipService } from '../../core/authorization/ownership.service';
 import { AvailabilityRepository, VisitsRepository } from './visits.repository';
 import { WorksRepository } from '../works/works.repository';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ProfessionalsRepository } from '../professionals/professionals.repository';
 import {
   SetAvailabilitySchema,
   BookVisitSchema,
@@ -29,6 +30,7 @@ export class VisitsService {
     private readonly ownershipService: OwnershipService,
     private readonly notificationsService: NotificationsService,
     private readonly worksRepo: WorksRepository,
+    private readonly professionalsRepo: ProfessionalsRepository,
   ) {}
 
   // ── Availability ──────────────────────────────────────────────────────────
@@ -145,11 +147,12 @@ export class VisitsService {
     return visit;
   }
 
-  async book(clientId: string, rawInput: unknown): Promise<Visit> {
+  async book(clientProfile: Profile, rawInput: unknown): Promise<Visit> {
     const input = BookVisitSchema.parse(rawInput);
+    let visit: Visit;
     try {
-      return await this.visitsRepo.create({
-        clientId,
+      visit = await this.visitsRepo.create({
+        clientId: clientProfile.id,
         professionalId: input.professionalId,
         scheduledAt: input.scheduledAt,
         address: input.address,
@@ -166,6 +169,42 @@ export class VisitsService {
       }
       throw err;
     }
+
+    // Notify the professional about the new visit request (fire-and-forget)
+    this.professionalsRepo
+      .findById(input.professionalId)
+      .then((pro) => {
+        if (!pro) return;
+        const scheduledDate = new Date(input.scheduledAt);
+        const formattedDate = scheduledDate.toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'America/Sao_Paulo',
+        });
+        return this.notificationsService.notify({
+          profileId: pro.profile_id,
+          type: 'visit_requested',
+          title: 'Nova solicitação de visita',
+          message: `${clientProfile.full_name} solicitou uma visita técnica para ${formattedDate}.`,
+          link: '/agenda',
+          metadata: {
+            visitId: visit.id,
+            clientId: clientProfile.id,
+            clientName: clientProfile.full_name,
+            specialty: pro.specialty,
+            scheduledAt: input.scheduledAt,
+            address: input.address ?? null,
+          },
+        });
+      })
+      .catch(() => {
+        /* notification failure must not break booking */
+      });
+
+    return visit;
   }
 
   async cancel(id: string, profile: Profile): Promise<Visit> {

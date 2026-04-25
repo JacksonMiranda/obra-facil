@@ -86,7 +86,7 @@ export class VisitsController {
     if (!account.roles.includes('client')) {
       throw new ForbiddenException('Apenas clientes podem agendar visitas');
     }
-    return this.service.book(account.profile.id, body);
+    return this.service.book(account.profile, body);
   }
 
   @Patch('visits/:id/cancel')
