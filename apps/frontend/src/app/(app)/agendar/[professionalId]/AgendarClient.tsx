@@ -70,8 +70,8 @@ export function AgendarClient({
             At xl (≥1280px): side by side with divider
             At lg/mobile: stacked */}
         <div className="flex flex-col gap-5">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5
-                          xl:grid xl:grid-cols-2 xl:divide-x xl:divide-slate-100">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 lg:p-6 xl:p-8
+                          xl:grid xl:grid-cols-[3fr_2fr] xl:divide-x xl:divide-slate-100">
             <div className="xl:pr-5">
               <ScheduleCalendar
                 selectedDate={flow.selectedDate}
@@ -142,4 +142,4 @@ export function AgendarClient({
       )}
     </div>
   );
-}
+}
