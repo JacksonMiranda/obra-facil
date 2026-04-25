@@ -5,7 +5,7 @@ import { SignOutButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { ACTING_AS_COOKIE } from '@/lib/acting-as';
 import { ProfileNameEditor } from '@/components/perfil/ProfileNameEditor';
-import { AvatarUpload } from '@/components/perfil/AvatarUpload';
+import { AvatarSelectorModal } from '@/components/perfil/AvatarSelectorModal';
 import { api } from '@/lib/api/client';
 import type { AccountContext } from '@obrafacil/shared';
 
@@ -14,7 +14,7 @@ export default async function PerfilPage() {
   if (!userId) redirect('/sign-in');
 
   const cookieStore = await cookies();
-  const actingAs = cookieStore.get(ACTING_AS_COOKIE)?.value ?? 'client';
+  const actingAs = (cookieStore.get(ACTING_AS_COOKIE)?.value ?? 'client') as 'client' | 'professional';
   const isProfessional = actingAs === 'professional';
 
   const [user, account] = await Promise.all([
@@ -24,6 +24,7 @@ export default async function PerfilPage() {
 
   // Prefer DB values (profiles table) over Clerk — DB is the source of truth after any edit.
   const name = account?.profile.full_name ?? user?.fullName ?? 'Usuário';
+  const avatarId = account?.profile.avatar_id ?? null;
   const avatarUrl = account?.profile.avatar_url ?? user?.imageUrl ?? null;
   const email = user?.emailAddresses?.[0]?.emailAddress ?? '';
 
@@ -34,7 +35,12 @@ export default async function PerfilPage() {
 
         {/* Avatar + Name */}
         <div className="flex flex-col items-center">
-          <AvatarUpload currentAvatarUrl={avatarUrl} name={name} />
+          <AvatarSelectorModal
+            currentAvatarId={avatarId}
+            currentAvatarUrl={avatarUrl}
+            name={name}
+            actingAs={actingAs}
+          />
           <p className="text-lg font-bold text-slate-900 mt-3">{name}</p>
           <p className="text-sm text-slate-400">{email}</p>
           <ProfileNameEditor initialName={name} />

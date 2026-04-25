@@ -8,6 +8,7 @@ import { api } from '@/lib/api/client';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { StarRating } from '@/components/ui/StarRating';
 import { FAB } from '@/components/ui/FAB';
+import { Avatar } from '@/components/ui/Avatar';
 import Link from 'next/link';
 
 const QUICK_SERVICES = [
@@ -130,16 +131,13 @@ export default async function HomePage() {
             return (
               <div key={p.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-full bg-slate-100 overflow-hidden flex-shrink-0">
-                    {p.profiles?.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.profiles.avatar_url} alt={p.profiles.full_name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="material-symbols-outlined text-2xl text-slate-300">person</span>
-                      </div>
-                    )}
-                  </div>
+                  <Avatar
+                    avatarId={p.profiles?.avatar_id}
+                    src={p.profiles?.avatar_url}
+                    name={p.profiles?.full_name ?? 'Profissional'}
+                    size="lg"
+                    className="flex-shrink-0"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-900 truncate">{p.profiles?.full_name ?? 'Profissional'}</p>
                     <p className="text-xs text-slate-400 truncate">{p.specialty ?? 'Especialista'}</p>
@@ -168,14 +166,13 @@ export default async function HomePage() {
               >
                 {/* Avatar hero */}
                 <div className="h-40 bg-gradient-to-br from-primary/5 to-primary-container/10 flex items-center justify-center">
-                  {p.profiles?.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.profiles.avatar_url} alt={p.profiles.full_name} className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg" />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center ring-4 ring-white shadow-lg">
-                      <span className="material-symbols-outlined text-4xl text-primary/50">person</span>
-                    </div>
-                  )}
+                  <Avatar
+                    avatarId={p.profiles?.avatar_id}
+                    src={p.profiles?.avatar_url}
+                    name={p.profiles?.full_name ?? 'Profissional'}
+                    size="xl"
+                    className="ring-4 ring-white shadow-lg"
+                  />
                 </div>
                 {/* Info */}
                 <div className="p-4">

@@ -14,10 +14,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Clerk is only used as fallback when the DB has no value yet.
   const clerkName = user ? [user.firstName, user.lastName].filter(Boolean).join(' ') : undefined;
   const userName = account?.profile.full_name || clerkName || undefined;
+  const avatarId = account?.profile.avatar_id ?? undefined;
   const avatarUrl = account?.profile.avatar_url ?? user?.imageUrl ?? undefined;
 
   return (
-    <AppShell userName={userName} avatarUrl={avatarUrl}>
+    <AppShell userName={userName} avatarId={avatarId} avatarUrl={avatarUrl}>
       {children}
     </AppShell>
   );
