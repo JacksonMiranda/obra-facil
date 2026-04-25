@@ -67,6 +67,15 @@ export type SetAvailabilityInput = z.infer<typeof SetAvailabilitySchema>;
 export declare const BookVisitSchema: z.ZodObject<{
     professionalId: z.ZodString;
     scheduledAt: z.ZodString;
+    street: z.ZodString;
+    streetNumber: z.ZodString;
+    complement: z.ZodOptional<z.ZodString>;
+    neighborhood: z.ZodString;
+    cityName: z.ZodString;
+    stateCode: z.ZodString;
+    requesterName: z.ZodString;
+    serviceType: z.ZodString;
+    description: z.ZodString;
     address: z.ZodOptional<z.ZodString>;
     notes: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
@@ -75,3 +84,8 @@ export declare const RejectVisitSchema: z.ZodObject<{
     reason: z.ZodString;
 }, z.core.$strip>;
 export type RejectVisitInput = z.infer<typeof RejectVisitSchema>;
+export declare const UpdateProfileSchema: z.ZodObject<{
+    full_name: z.ZodOptional<z.ZodString>;
+    phone: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;

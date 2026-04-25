@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { SignOutButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { ACTING_AS_COOKIE } from '@/lib/acting-as';
+import { ProfileNameEditor } from '@/components/perfil/ProfileNameEditor';
 
 export default async function PerfilPage() {
   const { userId } = await auth();
@@ -35,6 +36,7 @@ export default async function PerfilPage() {
           </div>
           <p className="text-lg font-bold text-slate-900 mt-3">{name}</p>
           <p className="text-sm text-slate-400">{email}</p>
+          <ProfileNameEditor initialName={name} />
         </div>
       </div>
 

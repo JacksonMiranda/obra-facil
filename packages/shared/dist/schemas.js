@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RejectVisitSchema = exports.BookVisitSchema = exports.SetAvailabilitySchema = exports.CreateOrderSchema = exports.AddMaterialItemSchema = exports.CreateMaterialListSchema = exports.SendMessageSchema = exports.OpenConversationSchema = exports.UpdateProfessionalSchema = exports.ActivateProfessionalSchema = exports.SearchProfessionalsSchema = void 0;
+exports.UpdateProfileSchema = exports.RejectVisitSchema = exports.BookVisitSchema = exports.SetAvailabilitySchema = exports.CreateOrderSchema = exports.AddMaterialItemSchema = exports.CreateMaterialListSchema = exports.SendMessageSchema = exports.OpenConversationSchema = exports.UpdateProfessionalSchema = exports.ActivateProfessionalSchema = exports.SearchProfessionalsSchema = void 0;
 const zod_1 = require("zod");
 const visibility_1 = require("./visibility");
 // ── Professionals ────────────────────────────────────────────────────────────
@@ -77,9 +77,26 @@ exports.SetAvailabilitySchema = zod_1.z.object({
 exports.BookVisitSchema = zod_1.z.object({
     professionalId: uuidLike,
     scheduledAt: zod_1.z.string().datetime(),
-    address: zod_1.z.string().min(1).optional(),
+    // Structured address (required for new bookings)
+    street: zod_1.z.string().min(1, 'Rua obrigatória').max(200),
+    streetNumber: zod_1.z.string().min(1, 'Número obrigatório').max(20),
+    complement: zod_1.z.string().max(100).optional(),
+    neighborhood: zod_1.z.string().min(1, 'Bairro obrigatório').max(100),
+    cityName: zod_1.z.string().min(1, 'Cidade obrigatória').max(100),
+    stateCode: zod_1.z.string().length(2, 'Estado deve ter 2 caracteres').toUpperCase(),
+    // Booking metadata
+    requesterName: zod_1.z.string().min(1, 'Nome do solicitante obrigatório').max(100),
+    serviceType: zod_1.z.string().min(1, 'Tipo de serviço obrigatório').max(100),
+    description: zod_1.z.string().min(10, 'Descreva o problema (mín. 10 caracteres)').max(1000),
+    // Deprecated — kept for backward compatibility
+    address: zod_1.z.string().optional(),
     notes: zod_1.z.string().optional(),
 });
 exports.RejectVisitSchema = zod_1.z.object({
     reason: zod_1.z.string().min(1, 'Motivo obrigatório').max(500),
+});
+// ── Profile ─────────────────────────────────────────────────────────────────
+exports.UpdateProfileSchema = zod_1.z.object({
+    full_name: zod_1.z.string().min(1, 'Nome obrigatório').max(100).optional(),
+    phone: zod_1.z.string().max(20).optional(),
 });

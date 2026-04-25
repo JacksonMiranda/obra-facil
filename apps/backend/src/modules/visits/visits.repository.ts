@@ -152,20 +152,58 @@ export class VisitsRepository implements IVisitsRepository {
     clientId,
     professionalId,
     scheduledAt,
+    street,
+    streetNumber,
+    complement,
+    neighborhood,
+    cityName,
+    stateCode,
+    requesterName,
+    serviceType,
+    description,
     address,
     notes,
   }: {
     clientId: string;
     professionalId: string;
     scheduledAt: string;
+    street?: string;
+    streetNumber?: string;
+    complement?: string;
+    neighborhood?: string;
+    cityName?: string;
+    stateCode?: string;
+    requesterName?: string;
+    serviceType?: string;
+    description?: string;
     address?: string;
     notes?: string;
   }): Promise<Visit> {
     const { rows } = await this.db.query(
-      `INSERT INTO visits (client_id, professional_id, scheduled_at, address, notes, status)
-       VALUES ($1, $2, $3, $4, $5, 'pending')
+      `INSERT INTO visits (
+         client_id, professional_id, scheduled_at, status,
+         street, street_number, complement, neighborhood, city_name, state_code,
+         requester_name, service_type, description,
+         address, notes
+       )
+       VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
-      [clientId, professionalId, scheduledAt, address ?? null, notes ?? null],
+      [
+        clientId,
+        professionalId,
+        scheduledAt,
+        street ?? null,
+        streetNumber ?? null,
+        complement ?? null,
+        neighborhood ?? null,
+        cityName ?? null,
+        stateCode ?? null,
+        requesterName ?? null,
+        serviceType ?? null,
+        description ?? null,
+        address ?? null,
+        notes ?? null,
+      ],
     );
     return rows[0] as unknown as Visit;
   }

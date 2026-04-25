@@ -57,12 +57,15 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     city: _city,
     limit = 20,
     offset = 0,
+    excludeProfileId,
   }: {
     query?: string;
     service?: string;
     city?: string;
     limit?: number;
     offset?: number;
+    /** Profile ID to exclude from results (prevents self-hire) */
+    excludeProfileId?: string;
   }): Promise<ProfessionalWithProfile[]> {
     // Mapeamento de termos amigáveis (UI) para raízes comuns em 'specialty' ou 'bio'
     let mappedService = service;
@@ -86,11 +89,22 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
          AND ar.role = 'professional'
          AND ar.is_active = true
        WHERE p.visibility_status = 'active'
+         AND EXISTS (
+           SELECT 1 FROM availability_slots av
+           WHERE av.professional_id = p.id
+         )
          AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $1 || '%')
          AND ($2::text IS NULL OR p.specialty ILIKE '%' || $2 || '%' OR p.bio ILIKE '%' || $2 || '%')
+         AND ($5::uuid IS NULL OR p.profile_id != $5)
        ORDER BY p.rating_avg DESC, p.published_at DESC
        LIMIT $3 OFFSET $4`,
-      [query ?? null, mappedService ?? null, limit, offset],
+      [
+        query ?? null,
+        mappedService ?? null,
+        limit,
+        offset,
+        excludeProfileId ?? null,
+      ],
     );
     return rows.map(mapRow);
   }

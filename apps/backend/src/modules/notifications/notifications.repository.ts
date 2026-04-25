@@ -31,7 +31,13 @@ export class NotificationsRepository {
       await this.db.query(
         `INSERT INTO notifications (profile_id, type, title, message, link)
          VALUES ($1, $2, $3, $4, $5)`,
-        [data.profileId, data.type, data.title, data.message, data.link ?? null],
+        [
+          data.profileId,
+          data.type,
+          data.title,
+          data.message,
+          data.link ?? null,
+        ],
       );
     }
   }

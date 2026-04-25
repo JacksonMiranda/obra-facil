@@ -352,6 +352,15 @@ export interface Database {
                     professional_id: string;
                     scheduled_at: string;
                     status: VisitStatus;
+                    street: string | null;
+                    street_number: string | null;
+                    complement: string | null;
+                    neighborhood: string | null;
+                    city_name: string | null;
+                    state_code: string | null;
+                    requester_name: string | null;
+                    service_type: string | null;
+                    description: string | null;
                     address: string | null;
                     notes: string | null;
                     cancelled_by: string | null;
@@ -365,6 +374,15 @@ export interface Database {
                     professional_id: string;
                     scheduled_at: string;
                     status?: VisitStatus;
+                    street?: string | null;
+                    street_number?: string | null;
+                    complement?: string | null;
+                    neighborhood?: string | null;
+                    city_name?: string | null;
+                    state_code?: string | null;
+                    requester_name?: string | null;
+                    service_type?: string | null;
+                    description?: string | null;
                     address?: string | null;
                     notes?: string | null;
                     cancelled_by?: string | null;
@@ -458,7 +476,7 @@ export type VisitFull = Visit & {
     professionals: ProfessionalWithProfile;
     client: Profile;
 };
-export type NotificationType = 'visit_accepted' | 'visit_rejected' | 'visit_cancelled' | 'visit_completed' | 'work_started' | 'work_completed' | 'work_progress';
+export type NotificationType = 'visit_requested' | 'visit_accepted' | 'visit_rejected' | 'visit_cancelled' | 'visit_completed' | 'work_started' | 'work_completed' | 'work_progress';
 export interface Notification {
     id: string;
     profile_id: string;
@@ -467,5 +485,6 @@ export interface Notification {
     message: string;
     link: string | null;
     is_read: boolean;
+    metadata: Record<string, unknown> | null;
     created_at: string;
 }

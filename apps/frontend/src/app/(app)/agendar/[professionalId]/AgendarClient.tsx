@@ -13,6 +13,12 @@ function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+const BR_STATES = [
+  'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA',
+  'MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN',
+  'RO','RR','RS','SC','SE','SP','TO',
+];
+
 interface AvailableDay {
   date: string;
   times: string[];
@@ -21,22 +27,45 @@ interface AvailableDay {
 interface AgendarClientProps {
   professionalId: string;
   professionalName: string;
+  /** The current user's professional profile ID, if they have one */
+  currentUserProfessionalId?: string | null;
+  /** Pre-fill for service type */
+  professionalSpecialty?: string;
 }
 
-export function AgendarClient({ professionalId, professionalName }: AgendarClientProps) {
+export function AgendarClient({
+  professionalId,
+  professionalName,
+  currentUserProfessionalId,
+  professionalSpecialty,
+}: AgendarClientProps) {
   const router = useRouter();
   const [availability, setAvailability] = useState<AvailableDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [address, setAddress] = useState('');
-  const [notes, setNotes] = useState('');
+
+  // Structured form fields
+  const [street, setStreet] = useState('');
+  const [streetNumber, setStreetNumber] = useState('');
+  const [complement, setComplement] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [cityName, setCityName] = useState('');
+  const [stateCode, setStateCode] = useState('');
+  const [requesterName, setRequesterName] = useState('');
+  const [serviceType, setServiceType] = useState(professionalSpecialty ?? '');
+  const [description, setDescription] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const timeSlotsRef = useRef<HTMLElement>(null);
-  const addressRef = useRef<HTMLInputElement>(null);
+  const streetRef = useRef<HTMLInputElement>(null);
   const api = useClientApi();
+
+  // Check if this user is trying to book their own professional profile
+  const isSelfBooking = !!currentUserProfessionalId && currentUserProfessionalId === professionalId;
 
   useEffect(() => {
     async function load() {
@@ -59,8 +88,23 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
   const selectedDateStr = selectedDate ? toDateStr(selectedDate) : undefined;
   const timesForDay = availability.find((d) => d.date === selectedDateStr)?.times ?? [];
 
+  function validateForm(): boolean {
+    const errs: Record<string, string> = {};
+    if (!street.trim()) errs.street = 'Rua obrigatória';
+    if (!streetNumber.trim()) errs.streetNumber = 'Número obrigatório';
+    if (!neighborhood.trim()) errs.neighborhood = 'Bairro obrigatório';
+    if (!cityName.trim()) errs.cityName = 'Cidade obrigatória';
+    if (!stateCode) errs.stateCode = 'Estado obrigatório';
+    if (!requesterName.trim()) errs.requesterName = 'Nome do solicitante obrigatório';
+    if (!serviceType.trim()) errs.serviceType = 'Tipo de serviço obrigatório';
+    if (description.trim().length < 10) errs.description = 'Descreva o problema (mín. 10 caracteres)';
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   const handleBook = async () => {
     if (!selectedDate || !selectedTime) return;
+    if (!validateForm()) return;
     setBooking(true);
     setError(null);
 
@@ -70,9 +114,16 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
       await api.post('/v1/visits', {
         professionalId,
         scheduledAt,
-        address: address || undefined,
-        notes: notes || undefined,
-      }, true); // skipActingAs=true: agendar visita é sempre uma ação de client
+        street: street.trim(),
+        streetNumber: streetNumber.trim(),
+        complement: complement.trim() || undefined,
+        neighborhood: neighborhood.trim(),
+        cityName: cityName.trim(),
+        stateCode: stateCode.toUpperCase(),
+        requesterName: requesterName.trim(),
+        serviceType: serviceType.trim(),
+        description: description.trim(),
+      }, true); // skipActingAs=true: booking is always a client action
 
       router.push(`/agendar/confirmacao?profissional=${encodeURIComponent(professionalName)}&data=${selectedDateStr}&hora=${selectedTime}`);
     } catch (err: unknown) {
@@ -80,6 +131,9 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
       if (status === 409) {
         setError('Este horário já foi reservado. Escolha outro.');
         setSelectedTime(null);
+        // Reload availability to show updated slots
+        const data = await api.get<AvailableDay[]>(`/v1/professionals/${professionalId}/availability`).catch(() => null);
+        if (data) setAvailability(data);
       } else {
         setError('Erro ao agendar. Tente novamente.');
       }
@@ -96,6 +150,22 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
     );
   }
 
+  // Self-booking guard
+  if (isSelfBooking) {
+    return (
+      <div className="px-4 py-16 text-center">
+        <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">block</span>
+        <h2 className="text-lg font-semibold text-slate-700 mb-2">Não é possível agendar</h2>
+        <p className="text-sm text-slate-500 mb-6">
+          Você não pode contratar o seu próprio serviço.
+        </p>
+        <button onClick={() => router.back()} className="text-trust font-medium text-sm">
+          Voltar
+        </button>
+      </div>
+    );
+  }
+
   if (availability.length === 0) {
     return (
       <div className="px-4 py-16 text-center">
@@ -104,10 +174,7 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
         <p className="text-sm text-slate-500 mb-6">
           Este profissional ainda não configurou sua agenda. Envie uma mensagem para combinar.
         </p>
-        <button
-          onClick={() => router.back()}
-          className="text-trust font-medium text-sm"
-        >
+        <button onClick={() => router.back()} className="text-trust font-medium text-sm">
           Voltar ao perfil
         </button>
       </div>
@@ -118,6 +185,11 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
   const selectedDateLabel = selectedDate
     ? selectedDate.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
     : '';
+
+  const inputClass = (field: string) =>
+    `w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] ${
+      fieldErrors[field] ? 'border-red-300' : 'border-slate-200'
+    }`;
 
   return (
     <div className="px-4 md:px-8 pb-32 md:pb-8">
@@ -186,7 +258,7 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
                     key={time}
                     onClick={() => {
                       setSelectedTime(time);
-                      setTimeout(() => addressRef.current?.focus(), 150);
+                      setTimeout(() => streetRef.current?.focus(), 150);
                     }}
                     className={`
                       p-4 rounded-xl text-center transition-all active:scale-95
@@ -213,31 +285,171 @@ export function AgendarClient({ professionalId, professionalName }: AgendarClien
             </div>
           )}
 
-          {/* Address + Notes form */}
+          {/* Structured booking form */}
           {selectedTime && (
-            <div className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="text-base font-bold text-slate-900 mb-3">Detalhes da visita</h3>
-              <label className="block mb-3">
-                <span className="text-xs font-medium text-slate-500 mb-1 block">Endereço da visita</span>
-                <input
-                  ref={addressRef}
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Rua, número, bairro, cidade"
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF]"
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs font-medium text-slate-500 mb-1 block">Observações (opcional)</span>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Descreva brevemente o serviço necessário..."
-                  rows={3}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] resize-none"
-                />
-              </label>
+            <div className="bg-white rounded-xl shadow-sm p-5 space-y-4">
+              <h3 className="text-base font-bold text-slate-900">Detalhes da visita</h3>
+
+              {/* Address section */}
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Endereço</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">
+                      Rua / Avenida <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      ref={streetRef}
+                      type="text"
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
+                      placeholder="Ex: Rua das Flores"
+                      maxLength={200}
+                      className={inputClass('street')}
+                    />
+                    {fieldErrors.street && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.street}</p>}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-slate-500 mb-1 block">
+                        Número <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={streetNumber}
+                        onChange={(e) => setStreetNumber(e.target.value)}
+                        placeholder="123"
+                        maxLength={20}
+                        className={inputClass('streetNumber')}
+                      />
+                      {fieldErrors.streetNumber && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.streetNumber}</p>}
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-slate-500 mb-1 block">
+                        Complemento
+                      </label>
+                      <input
+                        type="text"
+                        value={complement}
+                        onChange={(e) => setComplement(e.target.value)}
+                        placeholder="Ap. 12"
+                        maxLength={100}
+                        className={inputClass('complement')}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">
+                      Bairro <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={neighborhood}
+                      onChange={(e) => setNeighborhood(e.target.value)}
+                      placeholder="Ex: Centro"
+                      maxLength={100}
+                      className={inputClass('neighborhood')}
+                    />
+                    {fieldErrors.neighborhood && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.neighborhood}</p>}
+                  </div>
+
+                  <div className="grid grid-cols-[1fr_auto] gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-slate-500 mb-1 block">
+                        Cidade <span className="text-red-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={cityName}
+                        onChange={(e) => setCityName(e.target.value)}
+                        placeholder="Ex: São Paulo"
+                        maxLength={100}
+                        className={inputClass('cityName')}
+                      />
+                      {fieldErrors.cityName && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.cityName}</p>}
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-slate-500 mb-1 block">
+                        UF <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        value={stateCode}
+                        onChange={(e) => setStateCode(e.target.value)}
+                        className={`px-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] ${
+                          fieldErrors.stateCode ? 'border-red-300' : 'border-slate-200'
+                        }`}
+                      >
+                        <option value="">--</option>
+                        {BR_STATES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                      {fieldErrors.stateCode && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.stateCode}</p>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Booking details section */}
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Sobre o Serviço</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">
+                      Seu nome <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={requesterName}
+                      onChange={(e) => setRequesterName(e.target.value)}
+                      placeholder="Nome completo"
+                      maxLength={100}
+                      className={inputClass('requesterName')}
+                    />
+                    {fieldErrors.requesterName && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.requesterName}</p>}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">
+                      Tipo de serviço <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={serviceType}
+                      onChange={(e) => setServiceType(e.target.value)}
+                      placeholder="Ex: Instalação elétrica"
+                      maxLength={100}
+                      className={inputClass('serviceType')}
+                    />
+                    {fieldErrors.serviceType && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.serviceType}</p>}
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">
+                      Descrição do problema <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Descreva detalhadamente o que precisa ser feito..."
+                      rows={3}
+                      maxLength={1000}
+                      className={`w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] resize-none ${
+                        fieldErrors.description ? 'border-red-300' : 'border-slate-200'
+                      }`}
+                    />
+                    <div className="flex justify-between mt-0.5">
+                      {fieldErrors.description
+                        ? <p className="text-xs text-red-500">{fieldErrors.description}</p>
+                        : <span />
+                      }
+                      <span className="text-xs text-slate-300">{description.length}/1000</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

@@ -22,6 +22,12 @@ export default async function AgendarPage({
   const p = pro as any;
   const name = p.profiles?.full_name ?? 'Profissional';
 
+  // Fetch the current user's professional profile to prevent self-booking
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const myPro = await api.get<any>('/v1/professionals/me').catch(() => null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const currentUserProfessionalId: string | null = (myPro as any)?.id ?? null;
+
   return (
     <div className="pb-24 bg-surface min-h-screen">
       <PageHeader title="Agendar Visita" />
@@ -44,7 +50,12 @@ export default async function AgendarPage({
         </div>
       </div>
 
-      <AgendarClient professionalId={professionalId} professionalName={name} />
+      <AgendarClient
+        professionalId={professionalId}
+        professionalName={name}
+        currentUserProfessionalId={currentUserProfessionalId}
+        professionalSpecialty={p.specialty}
+      />
     </div>
   );
 }
