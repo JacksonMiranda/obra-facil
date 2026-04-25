@@ -17,8 +17,20 @@ export const PRESET_AVATARS: PresetAvatar[] = [
   // ── Clientes ────────────────────────────────────────────────────────────
   {
     id: 'client-neutral-01',
-    label: 'Pessoa',
-    imageUrl: '/avatars/clients/client-neutral-01.svg',
+    label: 'Homem',
+    imageUrl: '/avatars/clients/client-neutral-01.png',
+    profileType: 'CLIENT',
+  },
+  {
+    id: 'client-young-01',
+    label: 'Mulher',
+    imageUrl: '/avatars/clients/client-young-01.png',
+    profileType: 'CLIENT',
+  },
+  {
+    id: 'client-family-01',
+    label: 'Casal',
+    imageUrl: '/avatars/clients/client-family-01.png',
     profileType: 'CLIENT',
   },
   {
@@ -27,52 +39,40 @@ export const PRESET_AVATARS: PresetAvatar[] = [
     imageUrl: '/avatars/clients/client-home-01.svg',
     profileType: 'CLIENT',
   },
-  {
-    id: 'client-family-01',
-    label: 'Família',
-    imageUrl: '/avatars/clients/client-family-01.svg',
-    profileType: 'CLIENT',
-  },
-  {
-    id: 'client-young-01',
-    label: 'Jovem',
-    imageUrl: '/avatars/clients/client-young-01.svg',
-    profileType: 'CLIENT',
-  },
 
   // ── Profissionais ────────────────────────────────────────────────────────
   {
     id: 'professional-electrician-01',
     label: 'Eletricista',
-    imageUrl: '/avatars/professionals/professional-electrician-01.svg',
+    imageUrl: '/avatars/professionals/professional-electrician-01.png',
     profileType: 'PROFESSIONAL',
     recommendedForSpecialties: ['eletric', 'elétric'],
   },
   {
     id: 'professional-plumber-01',
     label: 'Encanador',
-    imageUrl: '/avatars/professionals/professional-plumber-01.svg',
+    imageUrl: '/avatars/professionals/professional-plumber-01.png',
     profileType: 'PROFESSIONAL',
     recommendedForSpecialties: ['encanad', 'hidráulica', 'hidraulica'],
   },
   {
     id: 'professional-mason-01',
     label: 'Pedreiro',
-    imageUrl: '/avatars/professionals/professional-mason-01.svg',
+    imageUrl: '/avatars/professionals/professional-mason-01.png',
     profileType: 'PROFESSIONAL',
     recommendedForSpecialties: ['pedreir', 'alvenar', 'construção', 'construcao'],
   },
   {
     id: 'professional-painter-01',
     label: 'Pintor',
-    imageUrl: '/avatars/professionals/professional-painter-01.svg',
+    imageUrl: '/avatars/professionals/professional-painter-01.png',
     profileType: 'PROFESSIONAL',
     recommendedForSpecialties: ['pintor', 'pintura'],
   },
   {
     id: 'professional-cleaner-01',
-    label: 'Limpeza',
-    imageUrl: '/avatars/professionals/professional-cleaner-01.svg',
+    label: 'Diarista',
+    imageUrl: '/avatars/professionals/professional-cleaner-01.png',
     profileType: 'PROFESSIONAL',
     recommendedForSpecialties: ['diarista', 'limpeza', 'faxina'],
   },
