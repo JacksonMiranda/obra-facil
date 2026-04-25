@@ -484,6 +484,7 @@ export type VisitFull = Visit & {
 // ── Notifications ────────────────────────────────────────────────────────────
 
 export type NotificationType =
+  | 'visit_requested'
   | 'visit_accepted'
   | 'visit_rejected'
   | 'visit_cancelled'
@@ -500,5 +501,6 @@ export interface Notification {
   message: string;
   link: string | null;
   is_read: boolean;
+  metadata: Record<string, unknown> | null;
   created_at: string;
 }
