@@ -135,7 +135,12 @@ export default async function VisitaDetailPage({
         )}
 
         {/* Actions */}
-        <VisitaActions visitId={v.id} status={v.status} userRole={userRole} />
+        <VisitaActions
+          visitId={v.id}
+          status={v.status}
+          userRole={userRole}
+          clientName={client?.full_name}
+        />
       </div>
     </div>
   );

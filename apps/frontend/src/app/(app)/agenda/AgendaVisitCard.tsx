@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useClientApi } from '@/lib/api/client-api';
 import { RejectModal } from './RejectModal';
 import type { VisitFull, UserRole } from '@obrafacil/shared';
@@ -59,7 +60,15 @@ export function AgendaVisitCard({ visit, actingAs }: AgendaVisitCardProps) {
 
   return (
     <>
-      <div className={`bg-white rounded-xl border shadow-sm p-4 ${meta.border}`}>
+      <Link
+        href={`/visitas/${visit.id}`}
+        className={`bg-white rounded-xl border shadow-sm p-4 block active:scale-[0.99] transition-transform ${meta.border}`}
+        onClick={(e) => {
+          // Don't navigate if user is clicking one of the action buttons
+          const target = e.target as HTMLElement;
+          if (target.closest('button')) e.preventDefault();
+        }}
+      >
         <div className="flex items-start gap-3">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${meta.bg}`}>
             <span className={`material-symbols-outlined text-xl ${meta.color}`}>person</span>
@@ -94,7 +103,7 @@ export function AgendaVisitCard({ visit, actingAs }: AgendaVisitCardProps) {
             {error && <p className="text-[10px] text-red-600 font-medium text-center">{error}</p>}
             <div className="flex gap-2">
               <button
-                onClick={handleAccept}
+                onClick={(e) => { e.preventDefault(); handleAccept(); }}
                 disabled={loading}
                 className="flex-1 h-9 rounded-lg bg-green-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all disabled:opacity-50"
               >
@@ -102,7 +111,7 @@ export function AgendaVisitCard({ visit, actingAs }: AgendaVisitCardProps) {
                 Aceitar
               </button>
               <button
-                onClick={() => setShowRejectModal(true)}
+                onClick={(e) => { e.preventDefault(); setShowRejectModal(true); }}
                 disabled={loading}
                 className="flex-1 h-9 rounded-lg border border-red-400 text-red-500 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all disabled:opacity-50"
               >
@@ -112,7 +121,7 @@ export function AgendaVisitCard({ visit, actingAs }: AgendaVisitCardProps) {
             </div>
           </div>
         )}
-      </div>
+      </Link>
 
       {showRejectModal && (
         <RejectModal

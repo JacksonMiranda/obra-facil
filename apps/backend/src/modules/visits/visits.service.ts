@@ -234,7 +234,7 @@ export class VisitsService {
     return visit;
   }
 
-  async cancel(id: string, profile: Profile): Promise<Visit> {
+  async cancel(id: string, profile: Profile, reason?: string): Promise<Visit> {
     const visit = await this.visitsRepo.findById(id);
     if (!visit) throw new NotFoundException('Visita não encontrada');
     if (!['pending', 'confirmed'].includes(visit.status)) {
@@ -246,6 +246,7 @@ export class VisitsService {
       id,
       'cancelled',
       profile.id,
+      reason,
     );
     // Notify the other party
     const visitFull = visit as unknown as VisitFull;
