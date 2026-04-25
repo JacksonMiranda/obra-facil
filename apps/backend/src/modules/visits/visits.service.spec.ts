@@ -34,6 +34,9 @@ describe('VisitsService', () => {
     create: jest.Mock;
     updateStatus: jest.Mock;
   };
+  let worksRepo: {
+    createFromVisit: jest.Mock;
+  };
   let service: VisitsService;
 
   beforeEach(() => {
@@ -49,11 +52,15 @@ describe('VisitsService', () => {
       create: jest.fn(),
       updateStatus: jest.fn(),
     };
+    worksRepo = {
+      createFromVisit: jest.fn().mockResolvedValue({ id: 'work-1' }),
+    };
     service = new VisitsService(
       availabilityRepo as never,
       visitsRepo as never,
       new OwnershipService(),
       { notify: jest.fn() } as never,
+      worksRepo as never,
     );
   });
 
@@ -149,6 +156,73 @@ describe('VisitsService', () => {
     it('rejects invalid Zod payload', async () => {
       await expect(service.book('client-1', {})).rejects.toThrow();
       expect(visitsRepo.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('accept', () => {
+    const proProfile = makeProfile({ id: 'pro-profile', role: 'professional' });
+    const visitData = {
+      id: 'v1',
+      client_id: 'client-1',
+      professional_id: 'pro-id',
+      status: 'pending',
+      address: 'Rua Teste, 1',
+      professionals: { profile_id: 'pro-profile' },
+    };
+
+    it('confirms visit and creates a work record', async () => {
+      visitsRepo.findById.mockResolvedValue(visitData);
+      visitsRepo.updateStatus.mockResolvedValue({
+        ...visitData,
+        status: 'confirmed',
+      });
+      const result = await service.accept('v1', proProfile);
+      expect(visitsRepo.updateStatus).toHaveBeenCalledWith('v1', 'confirmed');
+      expect(worksRepo.createFromVisit).toHaveBeenCalledWith({
+        id: 'v1',
+        client_id: 'client-1',
+        professional_id: 'pro-id',
+        address: 'Rua Teste, 1',
+      });
+      expect(result.status).toBe('confirmed');
+    });
+
+    it('throws Conflict when visit is not pending', async () => {
+      visitsRepo.findById.mockResolvedValue({
+        ...visitData,
+        status: 'confirmed',
+      });
+      await expect(service.accept('v1', proProfile)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(worksRepo.createFromVisit).not.toHaveBeenCalled();
+    });
+
+    it('throws Forbidden when caller is not the visit professional', async () => {
+      const stranger = makeProfile({ id: 'other-pro', role: 'professional' });
+      visitsRepo.findById.mockResolvedValue(visitData);
+      await expect(service.accept('v1', stranger)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(worksRepo.createFromVisit).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFound when visit does not exist', async () => {
+      visitsRepo.findById.mockResolvedValue(null);
+      await expect(service.accept('v1', proProfile)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('is idempotent — createFromVisit always called (ON CONFLICT handles dedup)', async () => {
+      visitsRepo.findById.mockResolvedValue(visitData);
+      visitsRepo.updateStatus.mockResolvedValue({
+        ...visitData,
+        status: 'confirmed',
+      });
+      await service.accept('v1', proProfile);
+      await service.accept('v1', proProfile);
+      expect(worksRepo.createFromVisit).toHaveBeenCalledTimes(2);
     });
   });
 

@@ -1,7 +1,10 @@
 // Avatar — per Stitch prototypes: circular with online/verified indicator
 // per spec_ui.md INT-02: "Foto grande e nítida"
 
+'use client';
+
 import Image from 'next/image';
+import { useState } from 'react';
 
 interface AvatarProps {
   src?: string | null;
@@ -26,17 +29,19 @@ function getInitials(name: string) {
 
 export function Avatar({ src, name, size = 'md', isOnline, isVerified, className = '' }: AvatarProps) {
   const s = sizeClasses[size];
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div className={`relative inline-flex ${className}`}>
       <div className={`${s.container} rounded-full overflow-hidden bg-trust/10 ring-2 ring-trust/20 flex items-center justify-center flex-shrink-0`}>
-        {src ? (
+        {src && !imgError ? (
           <Image
             src={src}
             alt={name}
             fill
             className="object-cover"
             sizes="96px"
+            onError={() => setImgError(true)}
           />
         ) : (
           <span className={`font-semibold text-trust ${s.text}`}>

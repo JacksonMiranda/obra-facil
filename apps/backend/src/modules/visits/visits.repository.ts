@@ -162,8 +162,8 @@ export class VisitsRepository implements IVisitsRepository {
     notes?: string;
   }): Promise<Visit> {
     const { rows } = await this.db.query(
-      `INSERT INTO visits (client_id, professional_id, scheduled_at, address, notes)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO visits (client_id, professional_id, scheduled_at, address, notes, status)
+       VALUES ($1, $2, $3, $4, $5, 'pending')
        RETURNING *`,
       [clientId, professionalId, scheduledAt, address ?? null, notes ?? null],
     );

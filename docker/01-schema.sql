@@ -141,8 +141,7 @@ create table orders (
 create table works (
   id              uuid primary key default uuid_generate_v4(),
   client_id       uuid not null references profiles(id) on delete cascade,
-  professional_id uuid not null references professionals(id) on delete restrict,
-  title           text not null,
+  professional_id uuid not null references professionals(id) on delete restrict,  visit_id        uuid,                                  -- set after visits table is created  title           text not null,
   status          work_status not null default 'scheduled',
   progress_pct    smallint not null default 0 check (progress_pct between 0 and 100),
   next_step       text,
@@ -171,17 +170,27 @@ create table availability_slots (
 );
 
 create table visits (
-  id              uuid primary key default uuid_generate_v4(),
-  client_id       uuid not null references profiles(id) on delete cascade,
-  professional_id uuid not null references professionals(id) on delete cascade,
-  scheduled_at    timestamptz not null,
-  status          visit_status not null default 'pending',
-  address         text,
-  notes           text,
-  cancelled_by    uuid references profiles(id),
-  created_at      timestamptz not null default now(),
-  updated_at      timestamptz not null default now()
+  id               uuid primary key default uuid_generate_v4(),
+  client_id        uuid not null references profiles(id) on delete cascade,
+  professional_id  uuid not null references professionals(id) on delete cascade,
+  scheduled_at     timestamptz not null,
+  status           visit_status not null default 'pending',
+  address          text,
+  notes            text,
+  rejection_reason text,
+  cancelled_by     uuid references profiles(id),
+  created_at       timestamptz not null default now(),
+  updated_at       timestamptz not null default now()
 );
+
+-- retroactively add the FK and unique index for works.visit_id now that visits exists
+alter table works
+  add constraint works_visit_id_fkey foreign key (visit_id)
+    references visits(id) on delete set null;
+
+create unique index if not exists works_visit_id_unique
+  on works (visit_id) where visit_id is not null;
+create index if not exists idx_works_visit_id on works (visit_id);
 
 -- ============================================================
 -- INDEXES
