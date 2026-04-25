@@ -83,23 +83,34 @@ export class AvailabilityRepository implements IAvailabilityRepository {
       return [];
     }
 
-    // Use CTE to DELETE + INSERT atomically in a single statement
-    const values: unknown[] = [professionalId];
-    const placeholders = uniqueSlots.map((slot, i) => {
-      const base = i * 3 + 2; // offset by 1 for professionalId param
-      values.push(slot.weekday, slot.start_time, slot.end_time);
-      return `($1, $${base}, $${base + 1}, $${base + 2})`;
+    // Use an explicit transaction: DELETE first, then INSERT as separate
+    // statements so PostgreSQL sees the deletions before evaluating the
+    // unique constraint (professional_id, weekday, start_time).
+    // A single-statement CTE (WITH deleted AS (DELETE ...) INSERT ...)
+    // does NOT work here because both sides of the CTE share the same
+    // snapshot and the INSERT still "sees" the old rows, causing a
+    // unique constraint violation (pg error 23505).
+    const rows = await this.db.transaction(async (query) => {
+      await query(`DELETE FROM availability_slots WHERE professional_id = $1`, [
+        professionalId,
+      ]);
+
+      const values: unknown[] = [professionalId];
+      const placeholders = uniqueSlots.map((slot, i) => {
+        const base = i * 3 + 2;
+        values.push(slot.weekday, slot.start_time, slot.end_time);
+        return `($1, $${base}, $${base + 1}, $${base + 2})`;
+      });
+
+      const { rows: inserted } = await query(
+        `INSERT INTO availability_slots (professional_id, weekday, start_time, end_time)
+         VALUES ${placeholders.join(', ')}
+         RETURNING *`,
+        values,
+      );
+      return inserted as Record<string, unknown>[];
     });
 
-    const { rows } = await this.db.query(
-      `WITH deleted AS (
-        DELETE FROM availability_slots WHERE professional_id = $1
-      )
-      INSERT INTO availability_slots (professional_id, weekday, start_time, end_time)
-      VALUES ${placeholders.join(', ')}
-      RETURNING *`,
-      values,
-    );
     // Normalize HH:MM:SS → HH:MM
     return rows.map((row) => ({
       ...row,
