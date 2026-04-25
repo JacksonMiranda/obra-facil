@@ -5,7 +5,7 @@ export type UserRole = 'client' | 'professional' | 'store';
 export type MessageType = 'text' | 'image' | 'audio' | 'material_list';
 export type MaterialListStatus = 'draft' | 'sent' | 'quoted';
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered';
-export type WorkStatus = 'scheduled' | 'active' | 'completed';
+export type WorkStatus = 'scheduled' | 'active' | 'completed' | 'cancelled';
 export type VisitStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rejected';
 /**
  * Lifecycle status of a professional profile.

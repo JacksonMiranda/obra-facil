@@ -16,7 +16,7 @@ create type user_role as enum ('client', 'professional', 'store');
 create type message_type as enum ('text', 'image', 'audio', 'material_list');
 create type material_list_status as enum ('draft', 'sent', 'quoted');
 create type order_status as enum ('pending', 'confirmed', 'shipped', 'delivered');
-create type work_status as enum ('scheduled', 'active', 'completed');
+create type work_status as enum ('scheduled', 'active', 'completed', 'cancelled');
 
 -- ============================================================
 -- TABLES

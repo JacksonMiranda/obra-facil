@@ -248,6 +248,8 @@ export class VisitsService {
       profile.id,
       reason,
     );
+    // Cancel associated work (only if still scheduled)
+    await this.worksRepo.cancelByVisitId(id);
     // Notify the other party
     const visitFull = visit as unknown as VisitFull;
     const professionalProfileId = visitFull.professionals?.profile_id;
@@ -350,6 +352,8 @@ export class VisitsService {
       undefined,
       reason,
     );
+    // Cancel associated work (only if still scheduled — defensive)
+    await this.worksRepo.cancelByVisitId(id);
     await this.notificationsService.notify({
       profileId: visit.client_id,
       type: 'visit_rejected',
