@@ -7,6 +7,7 @@ import { api } from '@/lib/api/client';
 import { StarRating } from '@/components/ui/StarRating';
 import { StickyBottomCTA } from '@/components/ui/StickyBottomCTA';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Avatar } from '@/components/ui/Avatar';
 import Link from 'next/link';
 
 import { ShareButton, ReviewsSection } from './ProfissionalClient';
@@ -44,18 +45,12 @@ export default async function ProfissionalPage({
           {/* ── Centered circular photo ─────────────────────────── */}
           <div className="flex flex-col items-center pt-6 pb-4 bg-white md:rounded-2xl md:border md:border-slate-100 md:shadow-sm">
             <div className="w-28 h-28 rounded-full bg-slate-200 overflow-hidden border-4 border-white shadow-lg">
-              {profile?.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.avatar_url}
-                  alt={profile.full_name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="material-symbols-outlined text-5xl text-slate-300">person</span>
-                </div>
-              )}
+              <Avatar
+                avatarId={profile?.avatar_id}
+                src={profile?.avatar_url}
+                name={profile?.full_name ?? 'Profissional'}
+                size="xl"
+              />
             </div>
 
             <h1 className="text-xl font-bold text-slate-900 mt-3 text-center">{profile?.full_name}</h1>

@@ -11,7 +11,7 @@ const COLS = `
   p.rating_avg, p.jobs_completed,
   p.is_verified, p.latitude, p.longitude, p.created_at,
   p.visibility_status, p.display_name, p.city, p.published_at,
-  pr.id AS pr_id, pr.clerk_id, pr.full_name, pr.avatar_url,
+  pr.id AS pr_id, pr.clerk_id, pr.full_name, pr.avatar_url, pr.avatar_id,
   pr.phone, pr.role, pr.created_at AS pr_created_at, pr.updated_at AS pr_updated_at
 `;
 
@@ -37,6 +37,7 @@ function mapRow(row: Record<string, unknown>): ProfessionalWithProfile {
       clerk_id: row.clerk_id as string,
       full_name: row.full_name as string,
       avatar_url: (row.avatar_url as string | null) ?? null,
+      avatar_id: (row.avatar_id as string | null) ?? null,
       phone: (row.phone as string | null) ?? null,
       role: row.role as 'client' | 'professional' | 'store',
       created_at: String(row.pr_created_at),
@@ -132,7 +133,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
               json_build_object(
                 'id', rv.id, 'rating', rv.rating, 'comment', rv.comment,
                 'created_at', rv.created_at,
-                'profiles', json_build_object('id', rp.id, 'full_name', rp.full_name, 'avatar_url', rp.avatar_url)
+                'profiles', json_build_object('id', rp.id, 'full_name', rp.full_name, 'avatar_url', rp.avatar_url, 'avatar_id', rp.avatar_id)
               ) ORDER BY rv.created_at DESC
             ) FILTER (WHERE rv.id IS NOT NULL),
             '[]'
@@ -145,7 +146,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
         GROUP BY p.id, p.profile_id, p.specialty, p.bio,
                  p.rating_avg, p.jobs_completed, p.is_verified,
                  p.latitude, p.longitude, p.created_at,
-                 pr.id, pr.clerk_id, pr.full_name, pr.avatar_url,
+                 pr.id, pr.clerk_id, pr.full_name, pr.avatar_url, pr.avatar_id,
                  pr.phone, pr.role, pr.created_at, pr.updated_at`,
       [id],
     );

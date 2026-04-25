@@ -53,6 +53,7 @@ export interface Database {
           id: string;
           clerk_id: string;
           full_name: string;
+          avatar_id: string | null;
           avatar_url: string | null;
           phone: string | null;
           role: UserRole;
@@ -63,6 +64,7 @@ export interface Database {
           id?: string;
           clerk_id: string;
           full_name: string;
+          avatar_id?: string | null;
           avatar_url?: string | null;
           phone?: string | null;
           role?: UserRole;

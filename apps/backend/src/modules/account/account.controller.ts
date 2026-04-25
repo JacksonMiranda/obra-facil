@@ -3,25 +3,14 @@ import {
   Body,
   ConflictException,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Patch,
   Post,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
-import { put, del } from '@vercel/blob';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
 import { CurrentAccount } from '../../core/decorators/current-account.decorator';
@@ -284,10 +273,11 @@ export class AccountController {
       properties: {
         full_name: { type: 'string', example: 'João da Silva', maxLength: 100 },
         phone: { type: 'string', example: '(11) 99999-9999', maxLength: 20 },
-        avatar_url: {
+        avatar_id: {
           type: 'string',
           nullable: true,
-          example: 'https://example.com/avatar.jpg',
+          example: 'professional-electrician-01',
+          description: 'ID do avatar preset selecionado na galeria',
         },
       },
     },
@@ -316,9 +306,9 @@ export class AccountController {
       values.push(input.phone.trim() || null);
     }
 
-    if (input.avatar_url !== undefined) {
-      setClauses.push(`avatar_url = $${idx++}`);
-      values.push(input.avatar_url);
+    if (input.avatar_id !== undefined) {
+      setClauses.push(`avatar_id = $${idx++}`);
+      values.push(input.avatar_id);
     }
 
     if (!setClauses.length) {
@@ -333,8 +323,9 @@ export class AccountController {
       full_name: string;
       phone: string | null;
       avatar_url: string | null;
+      avatar_id: string | null;
     }>(
-      `UPDATE profiles SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING id, full_name, phone, avatar_url`,
+      `UPDATE profiles SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING id, full_name, phone, avatar_url, avatar_id`,
       values,
     );
 
@@ -369,89 +360,5 @@ export class AccountController {
     }
 
     return rows[0];
-  }
-
-  /** Uploads a new avatar image for the authenticated user. */
-  @Post('profile/avatar')
-  @HttpCode(HttpStatus.OK)
-  @UseInterceptors(
-    FileInterceptor('file', {
-      limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
-    }),
-  )
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Fazer upload do avatar do usuário' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: { file: { type: 'string', format: 'binary' } },
-    },
-  })
-  async uploadAvatar(
-    @CurrentAccount() account: AccountContext,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    if (!file) {
-      throw new BadRequestException('Arquivo não enviado');
-    }
-
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowed.includes(file.mimetype)) {
-      throw new BadRequestException(
-        'Tipo de arquivo inválido. Use JPEG, PNG ou WebP.',
-      );
-    }
-
-    const token = process.env.BLOB_READ_WRITE_TOKEN;
-    if (!token) {
-      throw new BadRequestException(
-        'Serviço de upload de imagens não configurado',
-      );
-    }
-
-    const ext = file.mimetype.split('/')[1];
-    const filename = `avatars/${account.profile.id}.${ext}`;
-
-    const { url } = await put(filename, file.buffer, {
-      access: 'public',
-      token,
-      addRandomSuffix: false,
-    });
-
-    await this.db.query(
-      `UPDATE profiles SET avatar_url = $1, updated_at = now() WHERE id = $2`,
-      [url, account.profile.id],
-    );
-
-    return { avatar_url: url };
-  }
-
-  /** Removes the avatar for the authenticated user, reverting to initials fallback. */
-  @Delete('profile/avatar')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remover avatar do usuário' })
-  async removeAvatar(@CurrentAccount() account: AccountContext) {
-    const { rows } = await this.db.query<{ avatar_url: string | null }>(
-      `SELECT avatar_url FROM profiles WHERE id = $1`,
-      [account.profile.id],
-    );
-
-    const existing = rows[0]?.avatar_url;
-    const token = process.env.BLOB_READ_WRITE_TOKEN;
-
-    if (existing && token) {
-      try {
-        await del(existing, { token });
-      } catch {
-        // Non-fatal — proceed even if Blob deletion fails
-      }
-    }
-
-    await this.db.query(
-      `UPDATE profiles SET avatar_url = NULL, updated_at = now() WHERE id = $1`,
-      [account.profile.id],
-    );
-
-    return { avatar_url: null };
   }
 }

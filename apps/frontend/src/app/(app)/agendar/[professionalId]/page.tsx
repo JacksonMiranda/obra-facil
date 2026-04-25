@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth-bypass';
 import { api } from '@/lib/api/client';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Avatar } from '@/components/ui/Avatar';
 import { AgendarClient } from './AgendarClient';
 
 export default async function AgendarPage({
@@ -35,14 +36,12 @@ export default async function AgendarPage({
       {/* Professional info summary */}
       <div className="bg-white px-4 py-3 flex items-center gap-3 border-b border-slate-100">
         <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
-          {p.profiles?.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.profiles.avatar_url} alt={name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="material-symbols-outlined text-xl text-slate-300">person</span>
-            </div>
-          )}
+          <Avatar
+            avatarId={p.profiles?.avatar_id}
+            src={p.profiles?.avatar_url}
+            name={name}
+            size="sm"
+          />
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-900">{name}</p>

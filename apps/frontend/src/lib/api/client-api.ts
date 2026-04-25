@@ -82,7 +82,6 @@ async function clientRequest<T>(
 export interface ClientApi {
   get: <T>(path: string) => Promise<T>;
   post: <T>(path: string, body: unknown, skipActingAs?: boolean) => Promise<T>;
-  postForm: <T>(path: string, form: FormData) => Promise<T>;
   put: <T>(path: string, body: unknown) => Promise<T>;
   patch: <T>(path: string, body: unknown) => Promise<T>;
   delete: <T>(path: string) => Promise<T>;
@@ -105,28 +104,6 @@ export function useClientApi(): ClientApi {
     get: <T>(path: string) => clientRequest<T>(getToken, path),
     post: <T>(path: string, body: unknown, skipActingAs = false) =>
       clientRequest<T>(getToken, path, { method: 'POST', body: JSON.stringify(body) }, skipActingAs),
-    postForm: <T>(path: string, form: FormData) =>
-      (async () => {
-        // For multipart/form-data, omit Content-Type so the browser sets it with the boundary.
-        const authHeaders = await buildAuthHeaders(getToken);
-        // Remove Content-Type so the browser sets multipart/form-data with the boundary.
-        delete (authHeaders as Record<string, string>)['Content-Type'];
-
-        const res = await fetch(`${API_URL}${path}`, {
-          method: 'POST',
-          body: form,
-          headers: authHeaders as HeadersInit,
-          credentials: 'include',
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Erro desconhecido' })) as { error?: string };
-          const error = new Error(err.error ?? `HTTP ${res.status}`) as Error & { status: number };
-          error.status = res.status;
-          throw error;
-        }
-        const envelope = (await res.json()) as ClientApiEnvelope<T>;
-        return envelope.data;
-      })(),
     put: <T>(path: string, body: unknown) =>
       clientRequest<T>(getToken, path, { method: 'PUT', body: JSON.stringify(body) }),
     patch: <T>(path: string, body: unknown) =>

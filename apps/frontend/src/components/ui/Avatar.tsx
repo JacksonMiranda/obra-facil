@@ -5,8 +5,12 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { resolveAvatarUrl } from '@/lib/avatars/presets';
 
 interface AvatarProps {
+  /** ID de um avatar preset da galeria (profiles.avatar_id). Prioridade máxima. */
+  avatarId?: string | null;
+  /** URL legada (profiles.avatar_url / Clerk). Fallback quando avatarId é nulo. */
   src?: string | null;
   name: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -27,16 +31,19 @@ function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 }
 
-export function Avatar({ src, name, size = 'md', isOnline, isVerified, className = '' }: AvatarProps) {
+export function Avatar({ avatarId, src, name, size = 'md', isOnline, isVerified, className = '' }: AvatarProps) {
   const s = sizeClasses[size];
   const [imgError, setImgError] = useState(false);
+
+  // Priority: preset gallery (avatarId) → legacy URL (src) → initials
+  const resolvedUrl = resolveAvatarUrl(avatarId) ?? src ?? null;
 
   return (
     <div className={`relative inline-flex ${className}`}>
       <div className={`${s.container} rounded-full overflow-hidden bg-trust/10 ring-2 ring-trust/20 flex items-center justify-center flex-shrink-0`}>
-        {src && !imgError ? (
+        {resolvedUrl && !imgError ? (
           <Image
-            src={src}
+            src={resolvedUrl}
             alt={name}
             fill
             className="object-cover"
