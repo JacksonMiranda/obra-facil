@@ -99,4 +99,5 @@ exports.RejectVisitSchema = zod_1.z.object({
 exports.UpdateProfileSchema = zod_1.z.object({
     full_name: zod_1.z.string().min(1, 'Nome obrigatório').max(100).optional(),
     phone: zod_1.z.string().max(20).optional(),
+    avatar_url: zod_1.z.string().url('URL inválida').max(500).nullable().optional(),
 });

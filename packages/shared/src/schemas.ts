@@ -141,6 +141,7 @@ export type RejectVisitInput = z.infer<typeof RejectVisitSchema>;
 export const UpdateProfileSchema = z.object({
   full_name: z.string().min(1, 'Nome obrigatório').max(100).optional(),
   phone: z.string().max(20).optional(),
+  avatar_url: z.string().url('URL inválida').max(500).nullable().optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
