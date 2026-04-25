@@ -4,7 +4,7 @@ import type { IWorksRepository, Work, WorkFull } from '@obrafacil/shared';
 
 const WORKS_WITH_FULL = `
   SELECT
-    w.id, w.client_id, w.professional_id, w.title, w.status, w.progress_pct,
+    w.id, w.client_id, w.professional_id, w.visit_id, w.title, w.status, w.progress_pct,
     w.next_step, w.photos, w.started_at, w.completed_at, w.created_at, w.updated_at,
     json_build_object(
       'id', pr.id, 'profile_id', pr.profile_id, 'specialty', pr.specialty,
@@ -79,6 +79,40 @@ export class WorksRepository implements IWorksRepository {
        RETURNING *`,
       [status, id],
     );
+    return rows[0] as unknown as Work;
+  }
+
+  async findByVisitId(visitId: string): Promise<WorkFull | null> {
+    const { rows } = await this.db.query(
+      `${WORKS_WITH_FULL} WHERE w.visit_id = $1`,
+      [visitId],
+    );
+    return rows.length ? (rows[0] as unknown as WorkFull) : null;
+  }
+
+  async createFromVisit(visit: {
+    id: string;
+    client_id: string;
+    professional_id: string;
+    address?: string | null;
+  }): Promise<Work> {
+    const title = `Serviço agendado${visit.address ? ` - ${visit.address}` : ''}`;
+    const { rows } = await this.db.query(
+      `INSERT INTO works
+         (visit_id, client_id, professional_id, title, status, progress_pct, photos)
+       VALUES ($1, $2, $3, $4, 'scheduled', 0, '{}')
+       ON CONFLICT (visit_id) DO NOTHING
+       RETURNING *`,
+      [visit.id, visit.client_id, visit.professional_id, title],
+    );
+    // If ON CONFLICT fired (duplicate), return existing row
+    if (!rows.length) {
+      const existing = await this.db.query(
+        `SELECT * FROM works WHERE visit_id = $1`,
+        [visit.id],
+      );
+      return existing.rows[0] as unknown as Work;
+    }
     return rows[0] as unknown as Work;
   }
 }

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { OwnershipService } from '../../core/authorization/ownership.service';
 import { AvailabilityRepository, VisitsRepository } from './visits.repository';
+import { WorksRepository } from '../works/works.repository';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
   SetAvailabilitySchema,
@@ -27,6 +28,7 @@ export class VisitsService {
     private readonly visitsRepo: VisitsRepository,
     private readonly ownershipService: OwnershipService,
     private readonly notificationsService: NotificationsService,
+    private readonly worksRepo: WorksRepository,
   ) {}
 
   // ── Availability ──────────────────────────────────────────────────────────
@@ -239,6 +241,15 @@ export class VisitsService {
       );
     }
     const result = await this.visitsRepo.updateStatus(id, 'confirmed');
+
+    // Idempotently create the work linked to this visit
+    await this.worksRepo.createFromVisit({
+      id: visit.id,
+      client_id: visit.client_id,
+      professional_id: visit.professional_id,
+      address: (visit as unknown as { address?: string | null }).address,
+    });
+
     await this.notificationsService.notify({
       profileId: visit.client_id,
       type: 'visit_accepted',
