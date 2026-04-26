@@ -97,7 +97,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
           .replace(/[\u0300-\u036f]/g, '')
       : null;
 
-    const { rows } = await this.db.query(
+    const { rows } = (await this.db.query(
       `SELECT
          p.id, p.profile_id, p.specialty, p.bio,
          p.rating_avg, p.jobs_completed,
@@ -121,19 +121,19 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
         excludeProfileId ?? null,
         normalizedQuery ?? null,
       ],
-    );
+    )) || { rows: [] };
     return rows.map(mapRow);
   }
 
   /** Public detail. */
   async findById(id: string): Promise<ProfessionalWithProfile | null> {
-    const { rows } = await this.db.query(
+    const { rows } = (await this.db.query(
       `SELECT ${COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE p.id = $1`,
       [id],
-    );
+    )) || { rows: [] };
     return rows.length ? mapRow(rows[0]) : null;
   }
 
@@ -141,7 +141,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
   async findByIdWithReviews(
     id: string,
   ): Promise<(ProfessionalWithProfile & { reviews: unknown[] }) | null> {
-    const { rows } = await this.db.query(
+    const { rows } = (await this.db.query(
       `SELECT ${COLS},
           COALESCE(
             json_agg(
@@ -164,7 +164,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
                  pr.id, pr.clerk_id, pr.full_name, pr.avatar_url, pr.avatar_id,
                  pr.phone, pr.role, pr.created_at, pr.updated_at`,
       [id],
-    );
+    )) || { rows: [] };
     if (!rows.length) return null;
     const base = mapRow(rows[0]);
     return { ...base, reviews: (rows[0].reviews as unknown[]) ?? [] };
@@ -173,26 +173,26 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
   async findByClerkId(
     clerkId: string,
   ): Promise<ProfessionalWithProfile | null> {
-    const { rows } = await this.db.query(
+    const { rows } = (await this.db.query(
       `SELECT ${COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE pr.clerk_id = $1`,
       [clerkId],
-    );
+    )) || { rows: [] };
     return rows.length ? mapRow(rows[0]) : null;
   }
 
   async findByProfileId(
     profileId: string,
   ): Promise<ProfessionalWithProfile | null> {
-    const { rows } = await this.db.query(
+    const { rows } = (await this.db.query(
       `SELECT ${COLS}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE p.profile_id = $1`,
       [profileId],
-    );
+    )) || { rows: [] };
     return rows.length ? mapRow(rows[0]) : null;
   }
 }

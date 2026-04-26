@@ -75,22 +75,22 @@ export class AccountController {
     const profileId = account.profile.id;
 
     // Check if professional record already exists
-    const { rows: existingPro } = await this.db.query<{ id: string }>(
+    const { rows: existingPro } = (await this.db.query<{ id: string }>(
       `SELECT id FROM professionals WHERE profile_id = $1`,
       [profileId],
-    );
+    )) || { rows: [] };
 
     let professionalId: string;
 
     if (existingPro.length) {
       professionalId = existingPro[0].id;
     } else {
-      const { rows: newPro } = await this.db.query<{ id: string }>(
+      const { rows: newPro } = (await this.db.query<{ id: string }>(
         `INSERT INTO professionals (profile_id, specialty, bio)
          VALUES ($1, $2, $3)
          RETURNING id`,
         [profileId, input.specialty, input.bio ?? null],
-      );
+      )) || { rows: [] };
       professionalId = newPro[0].id;
     }
 
@@ -111,7 +111,7 @@ export class AccountController {
     );
 
     // Recompute visibility_status
-    const { rows: proRow } = await this.db.query<{
+    const { rows: proRow } = (await this.db.query<{
       bio: string | null;
       full_name: string;
     }>(
@@ -120,7 +120,7 @@ export class AccountController {
          INNER JOIN profiles pr ON pr.id = p.profile_id
         WHERE p.id = $1`,
       [professionalId],
-    );
+    )) || { rows: [] };
     const completeness = computeCompleteness({
       specialty: input.specialty,
       bio: proRow[0]?.bio ?? null,
@@ -141,10 +141,10 @@ export class AccountController {
       [profileId],
     );
 
-    const { rows: roles } = await this.db.query<{ role: UserRole }>(
+    const { rows: roles } = (await this.db.query<{ role: UserRole }>(
       `SELECT role FROM account_roles WHERE profile_id = $1 AND is_active = true`,
       [profileId],
-    );
+    )) || { rows: [] };
 
     return {
       professionalId,

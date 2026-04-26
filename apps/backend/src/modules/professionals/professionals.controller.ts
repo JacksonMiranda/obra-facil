@@ -1,4 +1,4 @@
-﻿import {
+import {
   Body,
   Controller,
   ForbiddenException,
@@ -114,13 +114,13 @@ export class ProfessionalsController {
         missing_fields: completeness.missing,
       },
       stats: {
-        upcoming_visits: upcomingVisits.rows.length,
-        active_works: activeWorks.rows.length,
-        pending_conversations: pendingConversations.rows[0]?.total ?? 0,
-        completed_works: doneWorks.rows[0]?.total ?? 0,
+        upcoming_visits: upcomingVisits?.rows?.length ?? 0,
+        active_works: activeWorks?.rows?.length ?? 0,
+        pending_conversations: pendingConversations?.rows?.[0]?.total ?? 0,
+        completed_works: doneWorks?.rows?.[0]?.total ?? 0,
       },
-      upcoming_visits: upcomingVisits.rows,
-      active_works: activeWorks.rows,
+      upcoming_visits: upcomingVisits?.rows ?? [],
+      active_works: activeWorks?.rows ?? [],
     };
   }
 

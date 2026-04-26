@@ -18,7 +18,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const avatarUrl = account?.profile.avatar_url ?? user?.imageUrl ?? undefined;
 
   return (
-    <AppShell userName={userName} avatarId={avatarId} avatarUrl={avatarUrl}>
+    <AppShell 
+      userName={userName} 
+      avatarId={avatarId} 
+      avatarUrl={avatarUrl} 
+      initialRole={account?.actingAs}
+    >
       {children}
     </AppShell>
   );
