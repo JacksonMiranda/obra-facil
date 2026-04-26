@@ -98,19 +98,17 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
       : null;
 
     const { rows } = await this.db.query(
-      `SELECT ${COLS}
-       FROM professionals p
-       INNER JOIN profiles pr ON pr.id = p.profile_id
-       INNER JOIN account_roles ar
-         ON ar.profile_id = p.profile_id
-         AND ar.role = 'professional'
-         AND ar.is_active = true
-       WHERE p.visibility_status = 'active'
-         AND EXISTS (
-           SELECT 1 FROM availability_slots av
-           WHERE av.professional_id = p.id
-         )
-         AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $6 || '%')
+      `SELECT
+         p.id, p.profile_id, p.specialty, p.bio,
+         p.rating_avg, p.jobs_completed,
+         p.is_verified, p.latitude, p.longitude, p.created_at,
+         p.visibility_status, p.display_name, p.city, p.published_at,
+         p.pr_id, p.pr_clerk_id AS clerk_id, p.pr_full_name AS full_name,
+         p.pr_avatar_url AS avatar_url, p.pr_avatar_id AS avatar_id,
+         p.pr_phone AS phone, p.pr_role AS role,
+         p.pr_created_at AS pr_created_at, p.pr_updated_at AS pr_updated_at
+       FROM professionals_public p
+       WHERE ($1::text IS NULL OR p.display_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $6 || '%')
          AND ($2::text IS NULL OR p.specialty ILIKE '%' || $2 || '%' OR p.bio ILIKE '%' || $2 || '%' OR p.specialty ILIKE '%' || $6 || '%')
          AND ($5::uuid IS NULL OR p.profile_id != $5)
        ORDER BY p.rating_avg DESC, p.published_at DESC

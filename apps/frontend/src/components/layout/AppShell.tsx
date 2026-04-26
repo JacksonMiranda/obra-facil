@@ -18,12 +18,16 @@ interface AppShellProps {
   userName?: string;
   avatarId?: string;
   avatarUrl?: string;
+  initialRole?: UserRole;
 }
 
-export async function AppShell({ children, userName, avatarId, avatarUrl }: AppShellProps) {
+export async function AppShell({ children, userName, avatarId, avatarUrl, initialRole }: AppShellProps) {
   const cookieStore = await cookies();
   const raw = cookieStore.get(ACTING_AS_COOKIE)?.value as UserRole | undefined;
-  const actingAs: UserRole = raw && VALID_ROLES.includes(raw) ? raw : 'client';
+  const cookieRole: UserRole | undefined = raw && VALID_ROLES.includes(raw) ? raw : undefined;
+
+  // Priority: Prop (from backend /me) > Cookie > Default ('client')
+  const actingAs: UserRole = initialRole || cookieRole || 'client';
 
   return (
     <RoleProvider initialRole={actingAs}>
