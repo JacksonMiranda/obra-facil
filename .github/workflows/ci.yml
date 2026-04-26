@@ -75,12 +75,17 @@ jobs:
           # 2. Seed DATA (insere profiles/professionals antes dos backfills)
           # 3. Migrations que fazem backfill (precisam dos dados do seed)
           eval "$PG -f docker/01-schema.sql"
-          eval "$PG -f docker/02-seed.sql"
           eval "$PG -f docker/03-account-roles.sql"
           eval "$PG -f docker/04-rls.sql"
           eval "$PG -f docker/05-professional-visibility.sql"
           eval "$PG -f docker/06-rejection-reason.sql"
           eval "$PG -f docker/06-notifications.sql"
+          eval "$PG -f docker/07-fix-profile-full-name.sql"
+          eval "$PG -f docker/07-professionals-unique.sql"
+          eval "$PG -f docker/08-avatar-id.sql"
+          eval "$PG -f docker/08-visits-structured-fields.sql"
+          eval "$PG -f docker/09-reviews-work-id.sql"
+          eval "$PG -f docker/02-seed.sql"
 
       - name: Testes unitários backend (Jest)
         run: npm test --workspace=backend

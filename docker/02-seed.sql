@@ -111,6 +111,18 @@ insert into profiles (id, clerk_id, full_name, avatar_url, phone, role) values
 );
 
 -- ============================================================
+-- ACCOUNT ROLES (Required for role switching and visibility)
+-- ============================================================
+
+insert into account_roles (profile_id, role, is_primary, is_active)
+select id, role, true, true from profiles;
+
+-- Carlos Alberto is also a professional
+insert into account_roles (profile_id, role, is_primary, is_active) values
+('00000000-0000-0000-0000-000000000001', 'professional', false, true)
+on conflict do nothing;
+
+-- ============================================================
 -- PROFESSIONALS
 -- per Stitch prototypes: Ricardo Silva (4.9/128), José da Silva (4.9/142)
 -- ============================================================

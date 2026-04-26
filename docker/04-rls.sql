@@ -61,8 +61,9 @@ CREATE POLICY orders_select_owner ON orders
   USING (
     client_id::text = current_setting('app.profile_id', true)
     OR EXISTS (
-      SELECT 1 FROM professionals p
-      WHERE p.id = orders.professional_id
+      SELECT 1 FROM material_lists ml
+      INNER JOIN professionals p ON p.id = ml.professional_id
+      WHERE ml.id = orders.material_list_id
         AND p.profile_id::text = current_setting('app.profile_id', true)
     )
   );
