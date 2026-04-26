@@ -71,14 +71,21 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     // Mapeamento de termos amigáveis (UI) para raízes comuns em 'specialty' ou 'bio'
     let mappedService = service;
     if (service) {
-      const s = service.toLowerCase();
-      if (s.includes('elétric')) mappedService = 'eletric';
-      else if (s.includes('hidráulica') || s.includes('encanador'))
+      // Normaliza para remover acentos antes de comparar, evitando falhas NFC/NFD
+      const normalize = (str: string) =>
+        str
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[̀-ͯ]/g, '');
+      const s = normalize(service);
+      if (s.includes('eletric')) mappedService = 'eletric';
+      else if (s.includes('hidraul') || s.includes('encanador'))
         mappedService = 'encanad';
-      else if (s.includes('pintura')) mappedService = 'pintor';
+      else if (s.includes('pintur') || s.includes('pintor'))
+        mappedService = 'pint';
       else if (s.includes('diarista')) mappedService = 'diarista';
       else if (s.includes('pedreiro')) mappedService = 'pedreir';
-      else if (s.includes('marceneiro')) mappedService = 'marceneir';
+      else if (s.includes('marceneir')) mappedService = 'marceneir';
     }
 
     const { rows } = await this.db.query(
