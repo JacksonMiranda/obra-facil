@@ -180,7 +180,9 @@ describe('VisitsController', () => {
         date: 'today',
       } as any);
       expect(result).toEqual(mockVisit);
-      expect(service.book).toHaveBeenCalledWith('client-1', { date: 'today' });
+      expect(service.book).toHaveBeenCalledWith(clientAccount.profile, {
+        date: 'today',
+      });
     });
 
     it('should block professionals from booking visits', () => {

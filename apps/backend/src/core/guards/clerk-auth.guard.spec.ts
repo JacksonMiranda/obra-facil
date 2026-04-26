@@ -183,8 +183,8 @@ describe('ClerkAuthGuard', () => {
       const { ctx, request } = makeContext({ authorization: 'Bearer tok' });
       await expect(guard.canActivate(ctx)).resolves.toBe(true);
 
-      // 2 queries: UPSERT profiles + getActiveRoles
-      expect(db.query).toHaveBeenCalledTimes(2);
+      // 3 queries: UPSERT profiles + provision account_roles + getActiveRoles
+      expect(db.query).toHaveBeenCalledTimes(3);
       expect(request.profile).toEqual(profile);
     });
 
@@ -205,7 +205,7 @@ describe('ClerkAuthGuard', () => {
       // Should call the UPSERT, not a plain SELECT
       expect(db.query).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO profiles'),
-        ['user_real_123', 'Alex'],
+        ['user_real_123', 'Alex', null],
       );
     });
 
@@ -228,7 +228,7 @@ describe('ClerkAuthGuard', () => {
       expect(db.query).toHaveBeenNthCalledWith(
         1,
         expect.stringContaining('INSERT INTO profiles'),
-        ['user_new_456', 'Alex Cesar'],
+        ['user_new_456', 'Alex Cesar', null],
       );
       expect(request.profile).toEqual(inserted);
     });
@@ -252,6 +252,7 @@ describe('ClerkAuthGuard', () => {
       expect(db.query).toHaveBeenNthCalledWith(1, expect.any(String), [
         'user_new_789',
         'Maria Silva',
+        null,
       ]);
     });
 
@@ -269,6 +270,7 @@ describe('ClerkAuthGuard', () => {
       expect(db.query).toHaveBeenNthCalledWith(1, expect.any(String), [
         'user_nameless',
         'Usuário',
+        null,
       ]);
     });
 

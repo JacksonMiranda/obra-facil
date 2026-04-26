@@ -174,23 +174,23 @@ describe('ProfessionalsRepository', () => {
 
     it.each([
       // Terms with accent (é) match the repository condition: s.includes('elétric')
-      ['elétrico', 'eletric'],
-      ['Reparos elétricos', 'eletric'],
-      ['hidráulica', 'encanad'],
-      ['encanador', 'encanad'],
-      ['pintura', 'pintor'],
-      ['pedreiro', 'pedreir'],
-      ['Marceneiro', 'marceneir'],
-      ['diarista', 'diarista'],
+      ['elétrico', 'Eletric'],
+      ['Reparos elétricos', 'Eletric'],
+      ['hidráulica', 'Encanad'],
+      ['encanador', 'Encanad'],
+      ['pintura', 'Pint'],
+      ['pedreiro', 'Pedreir'],
+      ['Marceneiro', 'Marceneir'],
+      ['diarista', 'Diari'],
     ])('mapeia "%s" para "%s"', async (input, expected) => {
       const result = await captureServiceParam(input);
       expect(result).toBe(expected);
     });
 
     it('preserva o termo original quando não há mapeamento conhecido', async () => {
-      const result = await captureServiceParam('pintor decorador especialista');
+      const result = await captureServiceParam('Jardineiro');
       // Nenhuma das chaves de mapeamento corresponde → usa o valor original
-      expect(result).toBe('pintor decorador especialista');
+      expect(result).toBe('Jardineiro');
     });
   });
 

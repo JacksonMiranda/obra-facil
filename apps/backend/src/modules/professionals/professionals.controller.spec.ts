@@ -220,7 +220,7 @@ describe('ProfessionalsController', () => {
       const result = await controller.search({}, mockAccount);
 
       expect(result).toEqual(activeResult);
-      expect(service.search).toHaveBeenCalledWith({});
+      expect(service.search).toHaveBeenCalledWith({}, mockProfile.id);
     });
 
     it('passes query params to the service', async () => {
@@ -228,10 +228,13 @@ describe('ProfessionalsController', () => {
 
       await controller.search({ q: 'Marceneiro', limit: '10' }, mockAccount);
 
-      expect(service.search).toHaveBeenCalledWith({
-        q: 'Marceneiro',
-        limit: '10',
-      });
+      expect(service.search).toHaveBeenCalledWith(
+        {
+          q: 'Marceneiro',
+          limit: '10',
+        },
+        mockProfile.id,
+      );
     });
   });
 });

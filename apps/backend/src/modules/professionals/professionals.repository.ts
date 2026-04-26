@@ -80,8 +80,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
       if (s.includes('eletric')) mappedService = 'Eletric';
       else if (s.includes('hidraul') || s.includes('encanad'))
         mappedService = 'Encanad';
-      else if (s.includes('pint'))
-        mappedService = 'Pint';
+      else if (s.includes('pint')) mappedService = 'Pint';
       else if (s.includes('diari') || s.includes('limpez'))
         mappedService = 'Diari';
       else if (s.includes('pedreir') || s.includes('reform'))
@@ -91,7 +90,12 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     }
 
     // Também normaliza o termo de busca geral para ignorar acentos em especialidades
-    const normalizedQuery = query ? query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : null;
+    const normalizedQuery = query
+      ? query
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+      : null;
 
     const { rows } = await this.db.query(
       `SELECT ${COLS}
