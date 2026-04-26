@@ -78,7 +78,7 @@ describe('ProfessionalsRepository', () => {
   // ── search — SQL structure ─────────────────────────────────────────────────
 
   describe('search — estrutura SQL (Fluxo 3: Busca pública)', () => {
-    it('inclui INNER JOIN account_roles na query de busca', async () => {
+    it('utiliza a view professionals_public na query de busca', async () => {
       (db.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
 
       await repo.search({});
@@ -86,40 +86,18 @@ describe('ProfessionalsRepository', () => {
       const sql: string = (
         (db.query as jest.Mock).mock.calls[0] as unknown[]
       )[0] as string;
-      expect(sql).toContain('INNER JOIN account_roles ar');
+      expect(sql).toContain('FROM professionals_public p');
     });
 
-    it("filtra por ar.role = 'professional' na condição do JOIN", async () => {
+    it('filtra por profile_id se excludeProfileId for fornecido', async () => {
       (db.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
 
-      await repo.search({});
+      await repo.search({ excludeProfileId: 'some-uuid' });
 
       const sql: string = (
         (db.query as jest.Mock).mock.calls[0] as unknown[]
       )[0] as string;
-      expect(sql).toContain("ar.role = 'professional'");
-    });
-
-    it('filtra por ar.is_active = true na condição do JOIN', async () => {
-      (db.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
-
-      await repo.search({});
-
-      const sql: string = (
-        (db.query as jest.Mock).mock.calls[0] as unknown[]
-      )[0] as string;
-      expect(sql).toContain('ar.is_active = true');
-    });
-
-    it("filtra por p.visibility_status = 'active' no WHERE", async () => {
-      (db.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
-
-      await repo.search({});
-
-      const sql: string = (
-        (db.query as jest.Mock).mock.calls[0] as unknown[]
-      )[0] as string;
-      expect(sql).toContain("p.visibility_status = 'active'");
+      expect(sql).toContain('p.profile_id != $5');
     });
 
     it('usa parâmetros posicionais ($1, $2, $3, $4) — sem interpolação de string', async () => {
