@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateProfileSchema = exports.RejectVisitSchema = exports.BookVisitSchema = exports.SetAvailabilitySchema = exports.CreateOrderSchema = exports.AddMaterialItemSchema = exports.CreateMaterialListSchema = exports.SendMessageSchema = exports.OpenConversationSchema = exports.UpdateProfessionalSchema = exports.ActivateProfessionalSchema = exports.SearchProfessionalsSchema = void 0;
+exports.CreateReviewSchema = exports.UpdateProfileSchema = exports.RejectVisitSchema = exports.BookVisitSchema = exports.SetAvailabilitySchema = exports.CreateOrderSchema = exports.AddMaterialItemSchema = exports.CreateMaterialListSchema = exports.SendMessageSchema = exports.OpenConversationSchema = exports.UpdateProfessionalSchema = exports.ActivateProfessionalSchema = exports.SearchProfessionalsSchema = void 0;
 const zod_1 = require("zod");
 const visibility_1 = require("./visibility");
 // ── Professionals ────────────────────────────────────────────────────────────
@@ -100,4 +100,9 @@ exports.UpdateProfileSchema = zod_1.z.object({
     full_name: zod_1.z.string().min(1, 'Nome obrigatório').max(100).optional(),
     phone: zod_1.z.string().max(20).optional(),
     avatar_id: zod_1.z.string().max(100).nullable().optional(),
+});
+// ── Reviews ──────────────────────────────────────────────────────────────────
+exports.CreateReviewSchema = zod_1.z.object({
+    rating: zod_1.z.number().int().min(1, 'Selecione uma nota para continuar.').max(5),
+    comment: zod_1.z.string().max(1000, 'Comentário muito longo (máx. 1000 caracteres)').optional(),
 });

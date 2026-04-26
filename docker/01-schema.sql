@@ -56,12 +56,13 @@ create table services (
 
 create table reviews (
   id              uuid primary key default uuid_generate_v4(),
+  work_id         uuid references works(id) on delete cascade,
   professional_id uuid not null references professionals(id) on delete cascade,
   reviewer_id     uuid not null references profiles(id) on delete cascade,
   rating          smallint not null check (rating between 1 and 5),
   comment         text,
   created_at      timestamptz not null default now(),
-  unique (professional_id, reviewer_id)
+  unique (work_id, reviewer_id)
 );
 
 create table conversations (
@@ -199,6 +200,7 @@ create index if not exists idx_works_visit_id on works (visit_id);
 create index idx_professionals_rating on professionals(rating_avg desc);
 create index idx_professionals_location on professionals(latitude, longitude);
 create index idx_reviews_professional_id on reviews(professional_id);
+create index idx_reviews_work_id on reviews(work_id);
 create index idx_messages_conversation_id on messages(conversation_id, created_at);
 create index idx_conversations_client_id on conversations(client_id);
 create index idx_conversations_professional_id on conversations(professional_id);

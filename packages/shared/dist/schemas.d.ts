@@ -90,3 +90,8 @@ export declare const UpdateProfileSchema: z.ZodObject<{
     avatar_id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
+export declare const CreateReviewSchema: z.ZodObject<{
+    rating: z.ZodNumber;
+    comment: z.ZodOptional<z.ZodString>;
+}, z.core.$strip>;
+export type CreateReviewInput = z.infer<typeof CreateReviewSchema>;
