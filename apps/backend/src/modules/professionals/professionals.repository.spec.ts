@@ -41,6 +41,7 @@ function makeRawRow(
     pr_id: 'profile-uuid',
     clerk_id: 'clerk-001',
     full_name: 'Ricardo Silva',
+    avatar_id: null,
     avatar_url: null,
     phone: null,
     role: 'professional',

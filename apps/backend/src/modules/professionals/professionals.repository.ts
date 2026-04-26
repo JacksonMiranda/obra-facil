@@ -71,22 +71,27 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     // Mapeamento de termos amigáveis (UI) para raízes comuns em 'specialty' ou 'bio'
     let mappedService = service;
     if (service) {
-      // Normaliza para remover acentos antes de comparar, evitando falhas NFC/NFD
       const normalize = (str: string) =>
         str
           .toLowerCase()
           .normalize('NFD')
-          .replace(/[̀-ͯ]/g, '');
+          .replace(/[\u0300-\u036f]/g, '');
       const s = normalize(service);
-      if (s.includes('eletric')) mappedService = 'eletric';
-      else if (s.includes('hidraul') || s.includes('encanador'))
-        mappedService = 'encanad';
-      else if (s.includes('pintur') || s.includes('pintor'))
-        mappedService = 'pint';
-      else if (s.includes('diarista')) mappedService = 'diarista';
-      else if (s.includes('pedreiro')) mappedService = 'pedreir';
-      else if (s.includes('marceneir')) mappedService = 'marceneir';
+      if (s.includes('eletric')) mappedService = 'Eletric';
+      else if (s.includes('hidraul') || s.includes('encanad'))
+        mappedService = 'Encanad';
+      else if (s.includes('pint'))
+        mappedService = 'Pint';
+      else if (s.includes('diari') || s.includes('limpez'))
+        mappedService = 'Diari';
+      else if (s.includes('pedreir') || s.includes('reform'))
+        mappedService = 'Pedreir';
+      else if (s.includes('marceneir') || s.includes('movel'))
+        mappedService = 'Marceneir';
     }
+
+    // Também normaliza o termo de busca geral para ignorar acentos em especialidades
+    const normalizedQuery = query ? query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') : null;
 
     const { rows } = await this.db.query(
       `SELECT ${COLS}
@@ -101,8 +106,8 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
            SELECT 1 FROM availability_slots av
            WHERE av.professional_id = p.id
          )
-         AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $1 || '%')
-         AND ($2::text IS NULL OR p.specialty ILIKE '%' || $2 || '%' OR p.bio ILIKE '%' || $2 || '%')
+         AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $6 || '%')
+         AND ($2::text IS NULL OR p.specialty ILIKE '%' || $2 || '%' OR p.bio ILIKE '%' || $2 || '%' OR p.specialty ILIKE '%' || $6 || '%')
          AND ($5::uuid IS NULL OR p.profile_id != $5)
        ORDER BY p.rating_avg DESC, p.published_at DESC
        LIMIT $3 OFFSET $4`,
@@ -112,6 +117,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
         limit,
         offset,
         excludeProfileId ?? null,
+        normalizedQuery ?? null,
       ],
     );
     return rows.map(mapRow);

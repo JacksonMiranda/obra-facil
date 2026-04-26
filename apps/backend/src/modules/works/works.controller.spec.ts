@@ -27,6 +27,7 @@ describe('WorksController', () => {
     id: 'profile-id',
     clerk_id: 'clerk-id',
     full_name: 'Test User',
+    avatar_id: null,
     avatar_url: null,
     phone: null,
     role: 'client',

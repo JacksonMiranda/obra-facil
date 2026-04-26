@@ -18,6 +18,7 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     id: '00000000-0000-0000-0000-000000000001',
     clerk_id: 'demo_client_001',
     full_name: 'Carlos Alberto',
+    avatar_id: null,
     avatar_url: null,
     phone: null,
     role: 'client',

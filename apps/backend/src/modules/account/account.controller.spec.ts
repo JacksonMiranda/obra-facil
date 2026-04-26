@@ -13,6 +13,7 @@ describe('AccountController', () => {
     id: 'profile-uuid',
     clerk_id: 'clerk-001',
     full_name: 'Jackson Miranda',
+    avatar_id: null,
     avatar_url: null,
     phone: null,
     role: 'client',

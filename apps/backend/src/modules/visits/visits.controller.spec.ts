@@ -21,6 +21,7 @@ describe('VisitsController', () => {
     id: 'user-1',
     clerk_id: 'clerk-1',
     full_name: 'Alex',
+    avatar_id: null,
     avatar_url: null,
     phone: null,
     role: 'professional',
@@ -58,6 +59,15 @@ describe('VisitsController', () => {
     professional_id: 'pro-1',
     scheduled_at: new Date().toISOString(),
     status: 'confirmed',
+    street: null,
+    street_number: null,
+    complement: null,
+    neighborhood: null,
+    city_name: null,
+    state_code: null,
+    requester_name: null,
+    service_type: null,
+    description: null,
     address: 'Street 1, City',
     notes: 'Gate code 1234',
     cancelled_by: null,
@@ -181,7 +191,7 @@ describe('VisitsController', () => {
 
     it('should cancel a visit', async () => {
       service.cancel.mockResolvedValue({ ...mockVisit, status: 'cancelled' });
-      const result = await controller.cancel('v1', mockAccount);
+      const result = await controller.cancel('v1', mockAccount, {});
       expect(result).toEqual({ ...mockVisit, status: 'cancelled' });
     });
 

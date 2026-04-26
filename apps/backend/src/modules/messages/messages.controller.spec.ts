@@ -12,6 +12,7 @@ describe('MessagesController', () => {
     id: 'user-1',
     clerk_id: 'clerk-1',
     full_name: 'Alex',
+    avatar_id: null,
     avatar_url: null,
     phone: null,
     role: 'client',

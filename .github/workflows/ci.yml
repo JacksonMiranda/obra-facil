@@ -6,9 +6,9 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, pipeline]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, pipeline]
 
 jobs:
   ci:

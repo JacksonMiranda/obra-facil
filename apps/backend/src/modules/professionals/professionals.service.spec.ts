@@ -27,6 +27,7 @@ describe('ProfessionalsService', () => {
       id: 'profile-1',
       clerk_id: 'clerk-1',
       full_name: 'Alex Pro',
+      avatar_id: null,
       avatar_url: null,
       phone: null,
       role: 'professional',

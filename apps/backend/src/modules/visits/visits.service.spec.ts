@@ -12,6 +12,7 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     id: 'client-1',
     clerk_id: 'c1',
     full_name: 'Carlos',
+    avatar_id: null,
     avatar_url: null,
     phone: null,
     role: 'client',
@@ -61,6 +62,7 @@ describe('VisitsService', () => {
       new OwnershipService(),
       { notify: jest.fn() } as never,
       worksRepo as never,
+      { findById: jest.fn() } as never,
     );
   });
 
@@ -127,7 +129,7 @@ describe('VisitsService', () => {
 
     it('creates the visit with sanitized payload', async () => {
       visitsRepo.create.mockResolvedValue({ id: 'v-new' });
-      const result = await service.book('client-1', validInput);
+      const result = await service.book(makeProfile(), validInput);
       expect(visitsRepo.create).toHaveBeenCalledWith({
         clientId: 'client-1',
         professionalId: validInput.professionalId,
@@ -141,20 +143,20 @@ describe('VisitsService', () => {
     it('translates unique-constraint (double booking) to Conflict', async () => {
       const err = Object.assign(new Error('duplicate'), { code: '23505' });
       visitsRepo.create.mockRejectedValue(err);
-      await expect(service.book('client-1', validInput)).rejects.toBeInstanceOf(
+      await expect(service.book(makeProfile(), validInput)).rejects.toBeInstanceOf(
         ConflictException,
       );
     });
 
     it('rethrows non-constraint errors', async () => {
       visitsRepo.create.mockRejectedValue(new Error('boom'));
-      await expect(service.book('client-1', validInput)).rejects.toThrow(
+      await expect(service.book(makeProfile(), validInput)).rejects.toThrow(
         /boom/,
       );
     });
 
     it('rejects invalid Zod payload', async () => {
-      await expect(service.book('client-1', {})).rejects.toThrow();
+      await expect(service.book(makeProfile(), {})).rejects.toThrow();
       expect(visitsRepo.create).not.toHaveBeenCalled();
     });
   });
