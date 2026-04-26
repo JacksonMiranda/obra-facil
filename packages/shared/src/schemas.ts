@@ -145,3 +145,12 @@ export const UpdateProfileSchema = z.object({
 });
 
 export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
+
+// ── Reviews ──────────────────────────────────────────────────────────────────
+
+export const CreateReviewSchema = z.object({
+  rating: z.number().int().min(1, 'Selecione uma nota para continuar.').max(5),
+  comment: z.string().max(1000, 'Comentário muito longo (máx. 1000 caracteres)').optional(),
+});
+
+export type CreateReviewInput = z.infer<typeof CreateReviewSchema>;

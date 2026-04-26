@@ -120,6 +120,7 @@ export interface Database {
             reviews: {
                 Row: {
                     id: string;
+                    work_id: string | null;
                     professional_id: string;
                     reviewer_id: string;
                     rating: number;
@@ -128,6 +129,7 @@ export interface Database {
                 };
                 Insert: {
                     id?: string;
+                    work_id?: string | null;
                     professional_id: string;
                     reviewer_id: string;
                     rating: number;
