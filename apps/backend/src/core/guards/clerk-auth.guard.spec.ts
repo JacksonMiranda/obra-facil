@@ -68,20 +68,13 @@ describe('ClerkAuthGuard', () => {
       process.env.DISABLE_CLERK_AUTH = 'true';
     });
 
-    it('returns first client profile (ORDER BY) when no header present', async () => {
-      const profile = makeProfile();
-      db.query.mockResolvedValueOnce({ rows: [profile] } as Rows<Profile>);
-
-      const { ctx, request } = makeContext({});
-      await expect(guard.canActivate(ctx)).resolves.toBe(true);
-
-      expect(db.query).toHaveBeenCalledWith(
-        expect.stringContaining("WHERE role = 'client'"),
+    it('throws 401 when no X-Dev-User-Id header is present (no fallback to first profile)', async () => {
+      const { ctx } = makeContext({});
+      await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
+        UnauthorizedException,
       );
-      expect(db.query).toHaveBeenCalledWith(
-        expect.stringContaining('ORDER BY id ASC'),
-      );
-      expect(request.profile).toEqual(profile);
+      // Must NOT query the database at all — no "first profile" fallback
+      expect(db.query).not.toHaveBeenCalled();
     });
 
     it('uses X-Dev-User-Id header when present', async () => {
@@ -121,17 +114,12 @@ describe('ClerkAuthGuard', () => {
       );
     });
 
-    it('falls back to ORDER BY when header is empty or whitespace', async () => {
-      db.query.mockResolvedValueOnce({
-        rows: [makeProfile()],
-      } as Rows<Profile>);
-
+    it('throws 401 when header is empty or whitespace (no fallback)', async () => {
       const { ctx } = makeContext({ [BYPASS_HEADER_LC]: '   ' });
-      await expect(guard.canActivate(ctx)).resolves.toBe(true);
-
-      expect(db.query).toHaveBeenCalledWith(
-        expect.stringContaining("WHERE role = 'client'"),
+      await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
+        UnauthorizedException,
       );
+      expect(db.query).not.toHaveBeenCalled();
     });
 
     it('throws 401 when header points to unknown clerk_id', async () => {
@@ -152,13 +140,12 @@ describe('ClerkAuthGuard', () => {
       await expect(guard.canActivate(ctx)).rejects.toThrow(/^Não autorizado$/);
     });
 
-    it('throws 401 when no client profile exists in seed', async () => {
-      db.query.mockResolvedValueOnce({ rows: [] } as Rows<Profile>);
-
+    it('throws 401 when no X-Dev-User-Id header — no seed needed', async () => {
       const { ctx } = makeContext({});
-      await expect(guard.canActivate(ctx)).rejects.toThrow(
-        /Bypass profile não encontrado/,
+      await expect(guard.canActivate(ctx)).rejects.toBeInstanceOf(
+        UnauthorizedException,
       );
+      expect(db.query).not.toHaveBeenCalled();
     });
   });
 

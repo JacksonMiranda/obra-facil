@@ -1,6 +1,9 @@
 import { auth as clerkAuth, currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
 
-const isBypassEnabled = process.env.NEXT_PUBLIC_DISABLE_CLERK_AUTH === 'true';
+// Never allow bypass in production builds — prevents data isolation failures.
+const isBypassEnabled =
+  process.env.NODE_ENV !== 'production' &&
+  process.env.NEXT_PUBLIC_DISABLE_CLERK_AUTH === 'true';
 
 // clerk_id of the seed profile to impersonate in bypass mode.
 // Defaults to Carlos Alberto (demo_client_001). Override via env to test multi-user flows.

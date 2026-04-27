@@ -4,6 +4,21 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import express, { Request, Response } from 'express';
 import { AppModule } from '../apps/backend/src/app.module';
 
+// Mirror the same safety guard from main.ts so that Vercel serverless
+// deployments also refuse to start with authentication disabled in production.
+function assertSafeEnv() {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.DISABLE_CLERK_AUTH === 'true'
+  ) {
+    console.error(
+      '[FATAL] DISABLE_CLERK_AUTH=true is forbidden when NODE_ENV=production.',
+    );
+    process.exit(1);
+  }
+}
+assertSafeEnv();
+
 const server = express();
 let cachedApp: any;
 

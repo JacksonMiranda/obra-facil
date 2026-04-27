@@ -11,7 +11,7 @@ RUN npm run build --workspace=@obrafacil/shared
 
 # Fallbacks mockados para o NextJS embutir no bundle (evita crash do Supabase Client)
 ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_DISABLE_CLERK_AUTH=true
+ARG NEXT_PUBLIC_DISABLE_CLERK_AUTH=false
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL

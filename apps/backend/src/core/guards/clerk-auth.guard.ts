@@ -117,23 +117,20 @@ export class ClerkAuthGuard implements CanActivate {
   private async resolveBypassProfile(request: Request): Promise<Profile> {
     const headerClerkId = this.readBypassHeader(request);
 
-    if (headerClerkId) {
-      const profile = await this.findProfileByClerkId(headerClerkId);
-      if (!profile) {
-        throw new UnauthorizedException('Não autorizado');
-      }
-      return profile;
-    }
-
-    const { rows } = await this.db.query<Profile>(
-      "SELECT * FROM profiles WHERE role = 'client' ORDER BY id ASC LIMIT 1",
-    );
-    if (!rows.length) {
+    if (!headerClerkId) {
+      // No user header provided — refuse rather than falling back to an
+      // arbitrary profile from the database, which would expose another
+      // user's private data to any unauthenticated request.
       throw new UnauthorizedException(
-        'Bypass profile não encontrado — seed do banco está vazio?',
+        'Bypass mode requer o header X-Dev-User-Id com o clerk_id do usuário.',
       );
     }
-    return rows[0];
+
+    const profile = await this.findProfileByClerkId(headerClerkId);
+    if (!profile) {
+      throw new UnauthorizedException('Não autorizado');
+    }
+    return profile;
   }
 
   private readBypassHeader(request: Request): string | null {
