@@ -277,7 +277,7 @@ export default async function HomePage({
                       )}
                     </div>
                     <div className="flex items-center gap-1 mt-1">
-                      <StarRating rating={p.rating_avg ?? 0} size="sm" count={p.total_reviews ?? 0} />
+                      <StarRating rating={p.rating_avg ?? 0} size="sm" count={p.reviews_count ?? 0} />
                     </div>
                   </div>
                 </div>
@@ -331,10 +331,12 @@ export default async function HomePage({
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-2">
-                    <StarRating rating={p.rating_avg ?? 0} size="sm" count={p.total_reviews ?? 0} />
+                    <StarRating rating={p.rating_avg ?? 0} size="sm" count={p.reviews_count ?? 0} />
                   </div>
                   <div className="mt-3 pt-3 border-t border-outline-variant/15 flex items-center justify-between">
-                    <span className="text-xs text-on-surface-variant">{p.jobs_completed ?? 0} trabalhos</span>
+                    <span className="text-xs text-on-surface-variant">
+                      {(p.jobs_completed ?? 0) === 1 ? '1 trabalho concluído' : `${p.jobs_completed ?? 0} trabalhos concluídos`}
+                    </span>
                     {p.is_verified && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">
                         <span className="material-symbols-outlined text-xs filled">verified</span>

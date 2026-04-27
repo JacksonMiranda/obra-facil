@@ -442,6 +442,8 @@ export type ProfileWithProfessional = Profile & {
 export type ProfessionalWithProfile = Professional & {
     profiles: Profile;
     services?: ProfessionalService[];
+    /** Live-computed count of reviews for this professional. */
+    reviews_count?: number;
 };
 /** Returned by computeCompleteness() — which fields are missing for publication */
 export interface ProfessionalCompletenessResult {

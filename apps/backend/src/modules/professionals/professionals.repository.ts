@@ -13,7 +13,8 @@ const COLS = `
   p.is_verified, p.latitude, p.longitude, p.created_at,
   p.visibility_status, p.display_name, p.city, p.published_at,
   pr.id AS pr_id, pr.clerk_id, pr.full_name, pr.avatar_url, pr.avatar_id,
-  pr.phone, pr.role, pr.created_at AS pr_created_at, pr.updated_at AS pr_updated_at
+  pr.phone, pr.role, pr.created_at AS pr_created_at, pr.updated_at AS pr_updated_at,
+  (SELECT COUNT(*)::int FROM reviews r_cnt WHERE r_cnt.professional_id = p.id) AS reviews_count
 `;
 
 // Services subquery — returns JSON array aggregated per professional
@@ -48,6 +49,7 @@ function mapRow(row: Record<string, unknown>): ProfessionalWithProfile {
     display_name: (row.display_name as string | null) ?? null,
     rating_avg: Number(row.rating_avg),
     jobs_completed: Number(row.jobs_completed),
+    reviews_count: Number(row.reviews_count ?? 0),
     is_verified: Boolean(row.is_verified),
     latitude: row.latitude != null ? Number(row.latitude) : null,
     longitude: row.longitude != null ? Number(row.longitude) : null,
