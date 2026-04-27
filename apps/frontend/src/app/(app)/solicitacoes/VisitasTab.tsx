@@ -29,6 +29,7 @@ export function VisitasTab({ visits }: { visits: any[] }) {
         const person = v.professionals?.profiles ?? v.client;
         const personName = person?.full_name ?? 'Usuário';
         const personAvatar = person?.avatar_url;
+        const personAvatarId = person?.avatar_id;
         const specialty = v.professionals?.specialty;
 
         const date = new Date(v.scheduled_at);
@@ -50,7 +51,7 @@ export function VisitasTab({ visits }: { visits: any[] }) {
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <Avatar src={personAvatar} name={personName} size="sm" />
+                <Avatar avatarId={personAvatarId} src={personAvatar} name={personName} size="sm" />
                 <div>
                   <p className="text-sm font-semibold text-slate-900">{personName}</p>
                   {specialty && <p className="text-xs text-slate-500">{specialty}</p>}
