@@ -524,6 +524,12 @@ export type VisitWithClient = Visit & {
 export type VisitFull = Visit & {
   professionals: ProfessionalWithProfile;
   client: Profile;
+  /** ID of the associated work (set when professional accepts the visit) */
+  work_id?: string | null;
+  /** Status of the associated work */
+  work_status?: 'scheduled' | 'active' | 'completed' | 'cancelled' | null;
+  /** True when the client has already submitted a review for the associated work */
+  review_exists?: boolean;
 };
 
 // ── Notifications ────────────────────────────────────────────────────────────

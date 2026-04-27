@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth-bypass';
 import { api } from '@/lib/api/client';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
-import { ReviewForm } from '@/components/reviews/ReviewForm';
+import { ServiceReviewSection } from '@/components/reviews/ServiceReviewSection';
 import Link from 'next/link';
 import type { ReviewWithReviewer } from '@obrafacil/shared';
 
@@ -182,68 +182,14 @@ export default async function SolicitacaoDetailPage({
           </div>
         </div>
 
-        {/* ── Review callout — prompt client to rate (completed, not yet reviewed) ── */}
-        {isCompleted && isClient && !existingReview && (
-          <div className="bg-savings/5 border border-savings/20 rounded-2xl p-4">
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-savings text-xl mt-0.5">task_alt</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Obra concluída!</p>
-                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                  O profissional finalizou o serviço. Avalie o atendimento para encerrar sua experiência.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Review section (completed works only) ───────────── */}
-        {isCompleted && isClient && (
-          <ReviewForm
-            workId={id}
-            professionalName={prof?.full_name ?? 'Profissional'}
-            existingReview={existingReview}
-          />
-        )}
-
-        {/* ── Waiting for review — professional view ──────────── */}
-        {isCompleted && !isClient && !existingReview && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-slate-400 text-xl">schedule</span>
-              <div>
-                <p className="text-sm font-semibold text-slate-700">Aguardando avaliação</p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  O cliente ainda não avaliou este serviço.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Review received — professional view ─────────────── */}
-        {isCompleted && !isClient && existingReview && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="material-symbols-outlined text-savings text-xl">star</span>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
-                Avaliação recebida
-              </p>
-            </div>
-            <div className="flex gap-1 mb-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <span key={star} className="text-2xl" style={{ color: star <= existingReview!.rating ? '#f59e0b' : '#d1d5db' }}>
-                  {star <= existingReview!.rating ? '★' : '☆'}
-                </span>
-              ))}
-            </div>
-            {existingReview.comment && (
-              <p className="text-sm text-slate-600 italic leading-relaxed">
-                &ldquo;{existingReview.comment}&rdquo;
-              </p>
-            )}
-          </div>
-        )}
+        {/* ── Review section — state-driven, works for both client and professional ── */}
+        <ServiceReviewSection
+          workId={id}
+          professionalName={prof?.full_name ?? 'Profissional'}
+          isClient={isClient}
+          isCompleted={isCompleted}
+          existingReview={existingReview}
+        />
       </div>
     </div>
   );

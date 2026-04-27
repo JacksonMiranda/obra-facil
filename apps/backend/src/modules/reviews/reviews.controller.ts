@@ -68,13 +68,25 @@ export class ReviewsController {
       throw new ConflictException('Esta obra já foi avaliada');
     }
 
-    return this.repo.create({
-      workId,
-      professionalId: work.professional_id,
-      reviewerId: account.profile.id,
-      rating: body.rating,
-      comment: body.comment,
-    });
+    try {
+      return await this.repo.create({
+        workId,
+        professionalId: work.professional_id,
+        reviewerId: account.profile.id,
+        rating: body.rating,
+        comment: body.comment,
+      });
+    } catch (err: unknown) {
+      // Catch concurrent duplicate from DB unique constraint (work_id, reviewer_id)
+      if (
+        err instanceof Error &&
+        'code' in err &&
+        (err as { code: string }).code === '23505'
+      ) {
+        throw new ConflictException('Esta obra já foi avaliada');
+      }
+      throw err;
+    }
   }
 
   /** GET /v1/works/:workId/review — get the review for a work (client or professional) */

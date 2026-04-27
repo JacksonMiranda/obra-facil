@@ -54,6 +54,12 @@ export default async function VisitaDetailPage({
     userRole = proClerkId === userId ? 'professional' : 'client';
   }
 
+  // Clients are redirected to the work detail page (/solicitacoes/[workId]), which has
+  // the full review flow. Professionals stay here to access confirm/reject/cancel actions.
+  if (userRole === 'client' && v.work_id) {
+    redirect(`/solicitacoes/${v.work_id}`);
+  }
+
   return (
     <div className="pb-24 bg-surface min-h-screen">
       <PageHeader title="Detalhes da Visita" />

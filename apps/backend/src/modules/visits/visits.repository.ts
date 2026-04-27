@@ -12,6 +12,9 @@ const VISITS_WITH_DETAIL = `
   SELECT
     v.id, v.client_id, v.professional_id, v.scheduled_at, v.status,
     v.address, v.notes, v.cancelled_by, v.created_at, v.updated_at,
+    wk.id AS work_id,
+    wk.status AS work_status,
+    (rv.id IS NOT NULL) AS review_exists,
     json_build_object(
       'id', pr.id, 'profile_id', pr.profile_id, 'specialty', pr.specialty,
       'bio', pr.bio, 'rating_avg', pr.rating_avg, 'jobs_completed', pr.jobs_completed,
@@ -32,6 +35,8 @@ const VISITS_WITH_DETAIL = `
   INNER JOIN professionals pr ON pr.id = v.professional_id
   INNER JOIN profiles pp ON pp.id = pr.profile_id
   INNER JOIN profiles cp ON cp.id = v.client_id
+  LEFT JOIN works wk ON wk.visit_id = v.id
+  LEFT JOIN reviews rv ON rv.work_id = wk.id AND rv.reviewer_id = v.client_id
 `;
 
 @Injectable()

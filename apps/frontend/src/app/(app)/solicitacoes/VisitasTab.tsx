@@ -44,7 +44,7 @@ export function VisitasTab({ visits }: { visits: any[] }) {
         return (
           <Link
             key={v.id}
-            href={`/visitas/${v.id}`}
+            href={v.work_id ? `/solicitacoes/${v.work_id}` : `/visitas/${v.id}`}
             className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 block active:scale-[0.99] transition-transform"
           >
             <div className="flex items-start justify-between mb-3">
@@ -73,6 +73,19 @@ export function VisitasTab({ visits }: { visits: any[] }) {
               <div className="flex items-center gap-1 mt-2 text-xs text-slate-400">
                 <span className="material-symbols-outlined text-sm">location_on</span>
                 <span className="truncate">{v.address}</span>
+              </div>
+            )}
+
+            {v.work_status === 'completed' && !v.review_exists && (
+              <div className="mt-2 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm text-amber-500">rate_review</span>
+                <span className="text-xs font-semibold text-amber-600">Avaliação pendente</span>
+              </div>
+            )}
+            {v.work_status === 'completed' && v.review_exists && (
+              <div className="mt-2 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm text-green-500">verified</span>
+                <span className="text-xs font-semibold text-green-600">Avaliada</span>
               </div>
             )}
           </Link>
