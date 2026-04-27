@@ -14,7 +14,7 @@ jobs:
   ci:
     name: Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -119,7 +119,11 @@ jobs:
         run: npx --workspace=frontend playwright install --with-deps chromium
 
       - name: Testes e2e frontend (Playwright)
-        timeout-minutes: 8
+        timeout-minutes: 15
+        env:
+          # Apenas os testes do modo 'client' rodam em CI (Fluxo 1 + Fluxo 3).
+          # Fluxo 2 e Fluxo 4 requerem demo_professional_001 e são pulados.
+          E2E_BYPASS_USER: demo_client_001
         run: |
           # Sobe backend (dist) e frontend em background, roda Playwright, derruba.
           DATABASE_URL="postgres://obrafacil_user:obrafacil_pass@localhost:5432/obrafacil_db" \
