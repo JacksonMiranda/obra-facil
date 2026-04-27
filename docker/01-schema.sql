@@ -54,17 +54,6 @@ create table services (
   sort_order  integer not null default 0
 );
 
-create table reviews (
-  id              uuid primary key default uuid_generate_v4(),
-  work_id         uuid references works(id) on delete cascade,
-  professional_id uuid not null references professionals(id) on delete cascade,
-  reviewer_id     uuid not null references profiles(id) on delete cascade,
-  rating          smallint not null check (rating between 1 and 5),
-  comment         text,
-  created_at      timestamptz not null default now(),
-  unique (work_id, reviewer_id)
-);
-
 create table conversations (
   id              uuid primary key default uuid_generate_v4(),
   client_id       uuid not null references profiles(id) on delete cascade,
@@ -184,6 +173,17 @@ create table visits (
   cancelled_by     uuid references profiles(id),
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
+);
+
+create table reviews (
+  id              uuid primary key default uuid_generate_v4(),
+  work_id         uuid references works(id) on delete cascade,
+  professional_id uuid not null references professionals(id) on delete cascade,
+  reviewer_id     uuid not null references profiles(id) on delete cascade,
+  rating          smallint not null check (rating between 1 and 5),
+  comment         text,
+  created_at      timestamptz not null default now(),
+  unique (work_id, reviewer_id)
 );
 
 -- retroactively add the FK and unique index for works.visit_id now that visits exists

@@ -8,7 +8,10 @@ ALTER TABLE reviews
 ALTER TABLE reviews
   DROP CONSTRAINT IF EXISTS reviews_professional_id_reviewer_id_key;
 
--- New constraint: one review per work per reviewer
+-- New constraint: one review per work per reviewer (idempotent)
+ALTER TABLE reviews
+  DROP CONSTRAINT IF EXISTS reviews_work_id_reviewer_id_key;
+
 ALTER TABLE reviews
   ADD CONSTRAINT reviews_work_id_reviewer_id_key UNIQUE (work_id, reviewer_id);
 
