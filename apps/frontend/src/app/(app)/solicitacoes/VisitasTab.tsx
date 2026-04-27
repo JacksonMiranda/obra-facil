@@ -3,6 +3,7 @@
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { VISIT_STATUS_MAP } from '@/lib/visit-status';
+import { isCancelledOrRejectedStatus, isCompletedStatus } from '@/lib/review-eligibility';
 import Link from 'next/link';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,13 +77,13 @@ export function VisitasTab({ visits }: { visits: any[] }) {
               </div>
             )}
 
-            {v.work_status === 'completed' && !v.review_exists && (
+            {isCompletedStatus(v.work_status) && !isCancelledOrRejectedStatus(v.status) && !v.review_exists && (
               <div className="mt-2 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-sm text-amber-500">rate_review</span>
                 <span className="text-xs font-semibold text-amber-600">Avaliação pendente</span>
               </div>
             )}
-            {v.work_status === 'completed' && v.review_exists && (
+            {isCompletedStatus(v.work_status) && !isCancelledOrRejectedStatus(v.status) && v.review_exists && (
               <div className="mt-2 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-sm text-green-500">verified</span>
                 <span className="text-xs font-semibold text-green-600">Avaliada</span>

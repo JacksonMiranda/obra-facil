@@ -9,12 +9,13 @@ import type {
 // ── Column list for reads from the `professionals` table + profiles JOIN ─────
 const COLS = `
   p.id, p.profile_id, p.specialty, p.bio,
-  p.rating_avg, p.jobs_completed,
+  p.rating_avg,
   p.is_verified, p.latitude, p.longitude, p.created_at,
   p.visibility_status, p.display_name, p.city, p.published_at,
   pr.id AS pr_id, pr.clerk_id, pr.full_name, pr.avatar_url, pr.avatar_id,
   pr.phone, pr.role, pr.created_at AS pr_created_at, pr.updated_at AS pr_updated_at,
-  (SELECT COUNT(*)::int FROM reviews r_cnt WHERE r_cnt.professional_id = p.id) AS reviews_count
+  (SELECT COUNT(*)::int FROM reviews r_cnt WHERE r_cnt.professional_id = p.id) AS reviews_count,
+  (SELECT COUNT(*)::int FROM works w_cnt WHERE w_cnt.professional_id = p.id AND w_cnt.status = 'completed') AS jobs_completed
 `;
 
 // Services subquery — returns JSON array aggregated per professional
@@ -192,7 +193,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
         LEFT JOIN profiles rp ON rp.id = rv.reviewer_id
         WHERE p.id = $1
         GROUP BY p.id, p.profile_id, p.specialty, p.bio,
-                 p.rating_avg, p.jobs_completed, p.is_verified,
+                 p.rating_avg, p.is_verified,
                  p.latitude, p.longitude, p.created_at,
                  pr.id, pr.clerk_id, pr.full_name, pr.avatar_url, pr.avatar_id,
                  pr.phone, pr.role, pr.created_at, pr.updated_at`,
