@@ -5,6 +5,7 @@
 import { auth, currentUser } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api/client';
+import type { AccountContext } from '@obrafacil/shared';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { StarRating } from '@/components/ui/StarRating';
 import { FAB } from '@/components/ui/FAB';
@@ -50,8 +51,9 @@ export default async function HomePage({
   // Build professional query — filters by serviceId (UUID) when selected
   const profQs = selectedServiceId ? `serviceId=${encodeURIComponent(selectedServiceId)}` : '';
 
-  const [user, profResult, servicesResult] = await Promise.all([
+  const [user, account, profResult, servicesResult] = await Promise.all([
     currentUser(),
+    api.get<AccountContext>('/v1/account/me').catch(() => null),
     api
       .get<{ professionals: any[]; total: number }>(
         `/v1/professionals${profQs ? '?' + profQs : ''}`,
@@ -68,7 +70,12 @@ export default async function HomePage({
     ? servicesResult
     : ((servicesResult as any)?.data ?? []);
 
-  const firstName = user?.firstName ?? 'você';
+  // Prefer DB profile name (profiles.full_name) — Clerk firstName is only a fallback.
+  const clerkFirstName = user?.firstName ?? null;
+  const profileFullName = account?.profile?.full_name ?? null;
+  const displayName = profileFullName ?? clerkFirstName ?? 'você';
+  // Show only first word of the display name for the greeting (e.g. "Pedro" from "Pedro Silva")
+  const firstName = displayName.trim().split(' ')[0];
 
   // Derive selected service name for display purposes
   const selectedSvc = services.find((s) => s.id === selectedServiceId);
