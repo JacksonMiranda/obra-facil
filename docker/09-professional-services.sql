@@ -145,6 +145,7 @@ SELECT
   pr.clerk_id    AS pr_clerk_id,
   pr.full_name   AS pr_full_name,
   pr.avatar_url  AS pr_avatar_url,
+  pr.avatar_id   AS pr_avatar_id,
   pr.phone       AS pr_phone,
   pr.role        AS pr_role,
   pr.created_at  AS pr_created_at,

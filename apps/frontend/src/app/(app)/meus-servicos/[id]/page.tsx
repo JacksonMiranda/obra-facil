@@ -102,6 +102,7 @@ export default async function WorkDetailPage({
             <p className="text-xs text-slate-400 uppercase tracking-wide font-medium mb-3">{personLabel}</p>
             <div className="flex items-center gap-3">
               <Avatar
+                avatarId={'avatar_id' in personToShow ? (personToShow as { avatar_id?: string | null }).avatar_id ?? undefined : undefined}
                 src={'avatar_url' in personToShow ? personToShow.avatar_url : undefined}
                 name={('full_name' in personToShow ? personToShow.full_name : undefined) ?? ''}
                 size="md"

@@ -22,13 +22,15 @@ const VISITS_WITH_DETAIL = `
       'created_at', pr.created_at,
       'profiles', json_build_object(
         'id', pp.id, 'clerk_id', pp.clerk_id, 'full_name', pp.full_name,
-        'avatar_url', pp.avatar_url, 'phone', pp.phone, 'role', pp.role,
+        'avatar_url', pp.avatar_url, 'avatar_id', pp.avatar_id,
+        'phone', pp.phone, 'role', pp.role,
         'created_at', pp.created_at, 'updated_at', pp.updated_at
       )
     ) AS professionals,
     json_build_object(
       'id', cp.id, 'clerk_id', cp.clerk_id, 'full_name', cp.full_name,
-      'avatar_url', cp.avatar_url, 'phone', cp.phone, 'role', cp.role,
+      'avatar_url', cp.avatar_url, 'avatar_id', cp.avatar_id,
+      'phone', cp.phone, 'role', cp.role,
       'created_at', cp.created_at, 'updated_at', cp.updated_at
     ) AS client
   FROM visits v

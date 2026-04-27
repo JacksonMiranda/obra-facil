@@ -110,7 +110,7 @@ export function SolicitacoesClient({ works }: { works: any[] }) {
 
                   {prof && (
                     <div className="flex items-center gap-2 mb-3">
-                      <Avatar src={prof.avatar_url} name={prof.full_name} size="sm" />
+                      <Avatar avatarId={prof.avatar_id} src={prof.avatar_url} name={prof.full_name} size="sm" />
                       <p className="text-sm font-semibold text-slate-900">{prof.full_name}</p>
                     </div>
                   )}

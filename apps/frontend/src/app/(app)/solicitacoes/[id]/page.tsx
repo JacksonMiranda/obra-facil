@@ -110,7 +110,7 @@ export default async function SolicitacaoDetailPage({
               Profissional Responsável
             </p>
             <div className="flex items-center gap-3">
-              <Avatar src={prof.avatar_url} name={prof.full_name} size="md" />
+              <Avatar avatarId={prof.avatar_id} src={prof.avatar_url} name={prof.full_name} size="md" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-900">{prof.full_name}</p>
                 <p className="text-xs text-slate-400">{w.professionals?.specialty}</p>

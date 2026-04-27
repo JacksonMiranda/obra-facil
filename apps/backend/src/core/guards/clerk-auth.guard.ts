@@ -183,7 +183,10 @@ export class ClerkAuthGuard implements CanActivate {
              THEN EXCLUDED.full_name
            ELSE profiles.full_name
          END,
-         avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
+         avatar_url = CASE
+           WHEN profiles.avatar_id IS NOT NULL THEN profiles.avatar_url
+           ELSE COALESCE(EXCLUDED.avatar_url, profiles.avatar_url)
+         END,
          updated_at = now()
        RETURNING *`,
       [clerkUserId, fullName, avatarUrl],
