@@ -1,4 +1,5 @@
-import { RefObject, Dispatch, SetStateAction } from 'react';
+'use client';
+import { RefObject, Dispatch, SetStateAction, useState } from 'react';
 import { BR_STATES } from '../useBookingFlow';
 
 interface VisitDetailsPanelProps {
@@ -48,6 +49,7 @@ export function VisitDetailsPanel({
   inputClass,
   onBook,
 }: VisitDetailsPanelProps) {
+  const [improving, setImproving] = useState(false);
   // Step 1: no date
   if (!selectedDate) {
     return (
@@ -212,6 +214,51 @@ export function VisitDetailsPanel({
             </div>
           </div>
           <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                Descrição
+              </label>
+              <button
+                type="button"
+                disabled={improving || description.trim().length < 10}
+                onClick={async () => {
+                  setImproving(true);
+                  try {
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+                    const res = await fetch(`${apiUrl}/v1/ai/improve-description`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ description }),
+                    });
+                    if (res.ok) {
+                      const json = await res.json();
+                      const improved = json?.data?.improved ?? json?.improved;
+                      if (improved) setDescription(improved);
+                    }
+                  } catch {
+                    // falha silenciosa — usuário mantém o texto original
+                  } finally {
+                    setImproving(false);
+                  }
+                }}
+                className="flex items-center gap-1 text-[10px] font-semibold text-trust bg-blue-50 hover:bg-blue-100 disabled:opacity-40 disabled:cursor-not-allowed px-2 py-1 rounded-full transition-colors"
+              >
+                {improving ? (
+                  <>
+                    <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Melhorando...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-xs" style={{ fontSize: '12px' }}>auto_awesome</span>
+                    Melhorar com IA
+                  </>
+                )}
+              </button>
+            </div>
             <textarea
               placeholder="Descreva o que precisa ser feito *"
               rows={3}
