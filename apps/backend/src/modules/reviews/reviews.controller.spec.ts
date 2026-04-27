@@ -8,11 +8,13 @@ import { ReviewsController } from './reviews.controller';
 import { ReviewsRepository } from './reviews.repository';
 import { WorksRepository } from '../works/works.repository';
 import { ProfessionalsRepository } from '../professionals/professionals.repository';
+import { VisitsRepository } from '../visits/visits.repository';
 import { ClerkAuthGuard } from '../../core/guards/clerk-auth.guard';
 import type {
   AccountContext,
   Profile,
   WorkFull,
+  VisitFull,
   ProfessionalWithProfile,
   ReviewWithReviewer,
 } from '@obrafacil/shared';
@@ -22,6 +24,7 @@ describe('ReviewsController', () => {
   let reviewsRepo: jest.Mocked<ReviewsRepository>;
   let worksRepo: jest.Mocked<WorksRepository>;
   let professionalsRepo: jest.Mocked<ProfessionalsRepository>;
+  let visitsRepo: jest.Mocked<VisitsRepository>;
 
   const mockClientProfile: Profile = {
     id: 'client-profile-id',
@@ -75,6 +78,7 @@ describe('ReviewsController', () => {
     id: 'work-id',
     client_id: 'client-profile-id',
     professional_id: 'pro-id',
+    visit_id: 'visit-id',
     title: 'Instalação Elétrica',
     status: 'completed',
     progress_pct: 100,
@@ -87,6 +91,19 @@ describe('ReviewsController', () => {
     professionals: mockProfessional,
     client: mockClientProfile,
   };
+
+  const mockCompletedVisit = {
+    id: 'visit-id',
+    status: 'completed',
+  } as unknown as VisitFull;
+  const mockCancelledVisit = {
+    id: 'visit-id',
+    status: 'cancelled',
+  } as unknown as VisitFull;
+  const mockRejectedVisit = {
+    id: 'visit-id',
+    status: 'rejected',
+  } as unknown as VisitFull;
 
   const mockReview: ReviewWithReviewer = {
     id: 'review-id',
@@ -126,6 +143,12 @@ describe('ReviewsController', () => {
             findByProfileId: jest.fn(),
           },
         },
+        {
+          provide: VisitsRepository,
+          useValue: {
+            findById: jest.fn(),
+          },
+        },
       ],
     })
       .overrideGuard(ClerkAuthGuard)
@@ -136,6 +159,7 @@ describe('ReviewsController', () => {
     reviewsRepo = module.get(ReviewsRepository);
     worksRepo = module.get(WorksRepository);
     professionalsRepo = module.get(ProfessionalsRepository);
+    visitsRepo = module.get(VisitsRepository);
   });
 
   // ── POST :workId/review ────────────────────────────────────────────────────
@@ -145,6 +169,7 @@ describe('ReviewsController', () => {
 
     it('should create a review when the client submits for a completed work', async () => {
       worksRepo.findById.mockResolvedValue(mockCompletedWork);
+      visitsRepo.findById.mockResolvedValue(mockCompletedVisit);
       professionalsRepo.findByProfileId.mockResolvedValue(null); // caller is not a professional
       reviewsRepo.findByWorkId.mockResolvedValue(null); // no existing review
       reviewsRepo.create.mockResolvedValue(
@@ -201,6 +226,24 @@ describe('ReviewsController', () => {
       ).rejects.toThrow(ConflictException);
     });
 
+    it('should throw ConflictException if the originating visit was cancelled', async () => {
+      worksRepo.findById.mockResolvedValue(mockCompletedWork);
+      visitsRepo.findById.mockResolvedValue(mockCancelledVisit);
+
+      await expect(
+        controller.createReview('work-id', createDto, mockClientAccount),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw ConflictException if the originating visit was rejected', async () => {
+      worksRepo.findById.mockResolvedValue(mockCompletedWork);
+      visitsRepo.findById.mockResolvedValue(mockRejectedVisit);
+
+      await expect(
+        controller.createReview('work-id', createDto, mockClientAccount),
+      ).rejects.toThrow(ConflictException);
+    });
+
     it('should throw ForbiddenException if the professional tries to review their own work', async () => {
       // Simulate a user who is the client of the work AND has a professional record
       // whose ID matches the work.professional_id — covers the self-review guard.
@@ -214,6 +257,7 @@ describe('ReviewsController', () => {
         actingAs: 'professional',
       };
       worksRepo.findById.mockResolvedValue(workWithProAsClient);
+      visitsRepo.findById.mockResolvedValue(mockCompletedVisit);
       professionalsRepo.findByProfileId.mockResolvedValue(mockProfessional);
       reviewsRepo.findByWorkId.mockResolvedValue(null);
 
@@ -224,6 +268,7 @@ describe('ReviewsController', () => {
 
     it('should throw ConflictException if a review already exists for this work', async () => {
       worksRepo.findById.mockResolvedValue(mockCompletedWork);
+      visitsRepo.findById.mockResolvedValue(mockCompletedVisit);
       professionalsRepo.findByProfileId.mockResolvedValue(null);
       reviewsRepo.findByWorkId.mockResolvedValue(mockReview);
 
@@ -234,6 +279,7 @@ describe('ReviewsController', () => {
 
     it('should persist the review with correct work_id, professional_id and reviewer_id', async () => {
       worksRepo.findById.mockResolvedValue(mockCompletedWork);
+      visitsRepo.findById.mockResolvedValue(mockCompletedVisit);
       professionalsRepo.findByProfileId.mockResolvedValue(null);
       reviewsRepo.findByWorkId.mockResolvedValue(null);
       reviewsRepo.create.mockResolvedValue(

@@ -80,7 +80,7 @@ export class WorksRepository implements IWorksRepository {
     await this.db.query(
       `UPDATE works
          SET status = 'cancelled'::work_status, updated_at = now()
-       WHERE visit_id = $1 AND status = 'scheduled'`,
+       WHERE visit_id = $1 AND status IN ('scheduled', 'active')`,
       [visitId],
     );
   }

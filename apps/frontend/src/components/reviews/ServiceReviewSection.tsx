@@ -2,12 +2,14 @@
 // Because ReviewForm is a Client Component, this wrapper must NOT be 'use client'.
 import { ReviewForm } from './ReviewForm';
 import type { ReviewWithReviewer } from '@obrafacil/shared';
+import { isCancelledOrRejectedStatus } from '@/lib/review-eligibility';
 
 interface Props {
   workId: string;
   professionalName: string;
   isClient: boolean;
   isCompleted: boolean;
+  visitStatus?: string | null;
   existingReview: ReviewWithReviewer | null;
 }
 
@@ -16,9 +18,12 @@ export function ServiceReviewSection({
   professionalName,
   isClient,
   isCompleted,
+  visitStatus,
   existingReview,
 }: Props) {
+  // Do not render when work is not completed or originating visit was cancelled/rejected
   if (!isCompleted) return null;
+  if (isCancelledOrRejectedStatus(visitStatus)) return null;
 
   // ── Client view ──────────────────────────────────────────────────────────
   if (isClient) {

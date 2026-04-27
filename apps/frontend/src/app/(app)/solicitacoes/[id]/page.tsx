@@ -7,6 +7,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { ServiceReviewSection } from '@/components/reviews/ServiceReviewSection';
 import Link from 'next/link';
 import type { ReviewWithReviewer } from '@obrafacil/shared';
+import { isCancelledOrRejectedStatus, isCompletedStatus } from '@/lib/review-eligibility';
 
 const STATUS_MAP: Record<string, { label: string; variant: 'ativo' | 'agendado' | 'entregue' | 'cancelado' | 'pendente' | 'a-caminho' }> = {
   active:    { label: 'Em Andamento', variant: 'ativo' },
@@ -43,19 +44,27 @@ export default async function SolicitacaoDetailPage({
   const progress = w.progress_pct ?? 0;
   const prof = w.professionals?.profiles;
   const isActive = w.status === 'active';
-  const isCompleted = w.status === 'completed';
+  const isCompleted = isCompletedStatus(w.status);
+  const isCancelledOrRejected = isCancelledOrRejectedStatus(w.status);
   const isCancelled = w.status === 'cancelled';
 
   // Determine if the viewer is the client of this work.
   // Compare Clerk userId directly to w.client.clerk_id — no extra API call needed.
   const isClient = (w.client?.clerk_id ?? '') === userId;
 
-  // Fetch existing review if work is completed (only matters for the review section)
+  // Fetch existing review and visit status only when work is completed
   let existingReview: ReviewWithReviewer | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let visitStatus: string | null = null;
   if (isCompleted) {
-    existingReview = await api
-      .get<ReviewWithReviewer>(`/v1/works/${id}/review`)
-      .catch(() => null);
+    const [review, visit] = await Promise.all([
+      api.get<ReviewWithReviewer>(`/v1/works/${id}/review`).catch(() => null),
+      w.visit_id
+        ? api.get<{ status: string }>(`/v1/visits/${w.visit_id}`).catch(() => null)
+        : Promise.resolve(null),
+    ]);
+    existingReview = review as ReviewWithReviewer | null;
+    visitStatus = (visit as any)?.status ?? null;
   }
 
   return (
@@ -183,26 +192,29 @@ export default async function SolicitacaoDetailPage({
           </div>
         </div>
 
-        {/* ── Review section — only for completed works ── */}
-        {!isCancelled && (
-        <ServiceReviewSection
-          workId={id}
-          professionalName={prof?.full_name ?? 'Profissional'}
-          isClient={isClient}
-          isCompleted={isCompleted}
-          existingReview={existingReview}
-        />
+        {/* ── Review section — only for completed works with non-cancelled visits ── */}
+        {!isCancelledOrRejected && (
+          <ServiceReviewSection
+            workId={id}
+            professionalName={prof?.full_name ?? 'Profissional'}
+            isClient={isClient}
+            isCompleted={isCompleted}
+            visitStatus={visitStatus}
+            existingReview={existingReview}
+          />
         )}
 
-        {/* ── Cancelled notice ── */}
-        {isCancelled && (
+        {/* ── Cancelled / rejected notice ── */}
+        {isCancelledOrRejected && (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
             <div className="flex items-start gap-3">
               <span className="material-symbols-outlined text-red-400 text-xl mt-0.5">cancel</span>
               <div>
-                <p className="text-sm font-semibold text-slate-900">Visita cancelada</p>
+                <p className="text-sm font-semibold text-slate-900">
+                  {isCancelled ? 'Visita cancelada' : 'Visita recusada'}
+                </p>
                 <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
-                  Esta visita foi cancelada e não pode ser avaliada.
+                  Esta visita foi {isCancelled ? 'cancelada' : 'recusada'} e não pode ser avaliada.
                 </p>
               </div>
             </div>

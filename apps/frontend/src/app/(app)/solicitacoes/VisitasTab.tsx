@@ -43,10 +43,16 @@ export function VisitasTab({ visits }: { visits: any[] }) {
           minute: '2-digit',
         });
 
+        // Cancelled/rejected visits have no active work; route to the visit detail.
+        const isCancelledOrRejected = isCancelledOrRejectedStatus(v.status);
+        const visitHref = !isCancelledOrRejected && v.work_id
+          ? `/solicitacoes/${v.work_id}`
+          : `/visitas/${v.id}`;
+
         return (
           <Link
             key={v.id}
-            href={v.work_id ? `/solicitacoes/${v.work_id}` : `/visitas/${v.id}`}
+            href={visitHref}
             className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 block active:scale-[0.99] transition-transform"
           >
             <div className="flex items-start justify-between mb-3">

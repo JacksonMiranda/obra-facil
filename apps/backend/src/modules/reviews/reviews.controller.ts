@@ -16,6 +16,7 @@ import { ZodValidationPipe } from '../../core/pipes/zod-validation.pipe';
 import { WorksRepository } from '../works/works.repository';
 import { ProfessionalsRepository } from '../professionals/professionals.repository';
 import { ReviewsRepository } from './reviews.repository';
+import { VisitsRepository } from '../visits/visits.repository';
 import { CreateReviewSchema, type CreateReviewInput } from '@obrafacil/shared';
 import type { AccountContext } from '@obrafacil/shared';
 
@@ -28,6 +29,7 @@ export class ReviewsController {
     private readonly repo: ReviewsRepository,
     private readonly worksRepo: WorksRepository,
     private readonly professionalsRepo: ProfessionalsRepository,
+    private readonly visitsRepo: VisitsRepository,
   ) {}
 
   /** POST /v1/works/:workId/review — client submits a review for a completed work */
@@ -50,6 +52,17 @@ export class ReviewsController {
       throw new ConflictException(
         'Apenas obras concluídas podem ser avaliadas',
       );
+    }
+
+    // The originating visit must not be cancelled or rejected
+    const visitId = (work as unknown as { visit_id?: string }).visit_id;
+    if (visitId) {
+      const visit = await this.visitsRepo.findById(visitId);
+      if (visit && ['cancelled', 'rejected'].includes(visit.status)) {
+        throw new ConflictException(
+          'Não é possível avaliar uma obra cuja visita foi cancelada ou recusada',
+        );
+      }
     }
 
     // Prevent the professional from reviewing their own work

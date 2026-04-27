@@ -10,5 +10,6 @@ import { AvailabilityRepository, VisitsRepository } from './visits.repository';
   imports: [ProfessionalsModule, NotificationsModule, WorksModule],
   controllers: [VisitsController],
   providers: [VisitsService, AvailabilityRepository, VisitsRepository],
+  exports: [VisitsRepository],
 })
 export class VisitsModule {}

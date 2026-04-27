@@ -6,14 +6,14 @@ import { Avatar } from '@/components/ui/Avatar';
 import Link from 'next/link';
 
 const STATUS_MAP: Record<string, { label: string; variant: 'ativo' | 'agendado' | 'entregue' | 'cancelado' | 'pendente' | 'a-caminho' }> = {
-  in_progress: { label: 'Ativo', variant: 'ativo' },
+  active:    { label: 'Ativo', variant: 'ativo' },
   scheduled: { label: 'Agendado', variant: 'agendado' },
-  completed: { label: 'Concluida', variant: 'entregue' },
+  completed: { label: 'Concluída', variant: 'entregue' },
   cancelled: { label: 'Cancelada', variant: 'cancelado' },
-  pending: { label: 'Pendente', variant: 'pendente' },
+  pending:   { label: 'Pendente', variant: 'pendente' },
 };
 
-const IN_PROGRESS_STATUSES = ['in_progress', 'scheduled', 'pending'];
+const IN_PROGRESS_STATUSES = ['active', 'scheduled', 'pending'];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function SolicitacoesClient({ works }: { works: any[] }) {
@@ -98,7 +98,7 @@ export function SolicitacoesClient({ works }: { works: any[] }) {
             const status = STATUS_MAP[w.status] ?? { label: w.status, variant: 'pendente' as const };
             const progress = w.progress_pct ?? 0;
             const prof = w.professionals?.profiles;
-            const isActive = w.status === 'in_progress';
+            const isActive = w.status === 'active';
 
             return (
               <div key={w.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
