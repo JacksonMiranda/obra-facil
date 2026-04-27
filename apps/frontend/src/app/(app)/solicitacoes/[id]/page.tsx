@@ -44,6 +44,7 @@ export default async function SolicitacaoDetailPage({
   const prof = w.professionals?.profiles;
   const isActive = w.status === 'active';
   const isCompleted = w.status === 'completed';
+  const isCancelled = w.status === 'cancelled';
 
   // Determine if the viewer is the client of this work.
   // Compare Clerk userId directly to w.client.clerk_id — no extra API call needed.
@@ -182,7 +183,8 @@ export default async function SolicitacaoDetailPage({
           </div>
         </div>
 
-        {/* ── Review section — state-driven, works for both client and professional ── */}
+        {/* ── Review section — only for completed works ── */}
+        {!isCancelled && (
         <ServiceReviewSection
           workId={id}
           professionalName={prof?.full_name ?? 'Profissional'}
@@ -190,6 +192,22 @@ export default async function SolicitacaoDetailPage({
           isCompleted={isCompleted}
           existingReview={existingReview}
         />
+        )}
+
+        {/* ── Cancelled notice ── */}
+        {isCancelled && (
+          <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-red-400 text-xl mt-0.5">cancel</span>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Visita cancelada</p>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  Esta visita foi cancelada e não pode ser avaliada.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
