@@ -29,8 +29,8 @@ export class AiController {
   async improveDescription(
     @Body(new ZodValidationPipe(ImproveDescriptionSchema))
     body: ImproveDescriptionDto,
-  ): Promise<{ data: { improved: string } }> {
+  ): Promise<{ improved: string }> {
     const improved = await this.aiService.improveDescription(body.description);
-    return { data: { improved } };
+    return { improved };
   }
 }
