@@ -72,18 +72,22 @@ WHERE p.specialty IS NOT NULL
 ON CONFLICT (professional_id, service_id)
   DO UPDATE SET visibility_status = 'active', updated_at = now();
 
--- Seed-specific backfill: specialty names don't match service names exactly,
--- so we link them manually using known IDs from seed.sql.
+-- Seed-specific backfill: only runs when seed UUIDs are present (local dev).
+-- Production professionals are handled by the fuzzy ILIKE block above.
 INSERT INTO professional_services (professional_id, service_id, visibility_status)
-VALUES
+SELECT v.professional_id, v.service_id, v.visibility_status
+FROM (VALUES
   -- Ricardo Silva (Eletricista Residencial) → Reparos elétricos
-  ('10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'active'),
+  ('10000000-0000-0000-0000-000000000001'::uuid, '20000000-0000-0000-0000-000000000001'::uuid, 'active'),
   -- José da Silva (Encanador Hidráulico) → Instalações Hidráulicas
-  ('10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'active'),
+  ('10000000-0000-0000-0000-000000000002'::uuid, '20000000-0000-0000-0000-000000000002'::uuid, 'active'),
   -- Ana Rodrigues (Pintora Residencial) → Pinturas
-  ('10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000003', 'active'),
+  ('10000000-0000-0000-0000-000000000003'::uuid, '20000000-0000-0000-0000-000000000003'::uuid, 'active'),
   -- Carlos Alberto as professional (Pedreiro e Reformas) → Pedreiro
-  ('10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000005', 'active')
+  ('10000000-0000-0000-0000-000000000004'::uuid, '20000000-0000-0000-0000-000000000005'::uuid, 'active')
+) AS v(professional_id, service_id, visibility_status)
+WHERE EXISTS (SELECT 1 FROM professionals WHERE id = v.professional_id)
+  AND EXISTS (SELECT 1 FROM services WHERE id = v.service_id)
 ON CONFLICT (professional_id, service_id)
   DO UPDATE SET visibility_status = 'active', updated_at = now();
 
