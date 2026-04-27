@@ -1,6 +1,7 @@
 'use client';
 import { RefObject, Dispatch, SetStateAction, useState } from 'react';
 import { BR_STATES } from '../useBookingFlow';
+import { useClientApi } from '@/lib/api/client-api';
 
 interface VisitDetailsPanelProps {
   // Context
@@ -50,6 +51,7 @@ export function VisitDetailsPanel({
   onBook,
 }: VisitDetailsPanelProps) {
   const [improving, setImproving] = useState(false);
+  const api = useClientApi();
   // Step 1: no date
   if (!selectedDate) {
     return (
@@ -224,17 +226,11 @@ export function VisitDetailsPanel({
                 onClick={async () => {
                   setImproving(true);
                   try {
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
-                    const res = await fetch(`${apiUrl}/v1/ai/improve-description`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ description }),
-                    });
-                    if (res.ok) {
-                      const json = await res.json();
-                      const improved = json?.data?.improved ?? json?.improved;
-                      if (improved) setDescription(improved);
-                    }
+                    const result = await api.post<{ improved: string }>(
+                      '/v1/ai/improve-description',
+                      { description },
+                    );
+                    if (result?.improved) setDescription(result.improved);
                   } catch {
                     // falha silenciosa — usuário mantém o texto original
                   } finally {
