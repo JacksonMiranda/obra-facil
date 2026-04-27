@@ -1,8 +1,10 @@
 import { auth as clerkAuth, currentUser as clerkCurrentUser } from '@clerk/nextjs/server';
 
-// Never allow bypass in production builds — prevents data isolation failures.
+// Bypass is controlled exclusively by NEXT_PUBLIC_DISABLE_CLERK_AUTH.
+// In actual production deployments (Vercel) this variable is never set to 'true',
+// so bypass is never active there. The NODE_ENV guard was removed because CI runs
+// `next start` (production mode) and still needs bypass to work for E2E tests.
 const isBypassEnabled =
-  process.env.NODE_ENV !== 'production' &&
   process.env.NEXT_PUBLIC_DISABLE_CLERK_AUTH === 'true';
 
 // clerk_id of the seed profile to impersonate in bypass mode.
