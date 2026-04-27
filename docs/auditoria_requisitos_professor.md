@@ -480,7 +480,7 @@ Ver documento completo: [`plano_correcao_requisitos_professor.md`](plano_correca
 
 | ID | Item |
 |---|---|
-| P2-01 | Exportar screenshots de protótipos ou link Stitch |
+| P2-01 | ~~Exportar screenshots de protótipos ou link Stitch~~ ✅ 14 screenshots em `docs/03-design-ux/screenshots/` (commit `fc81cd0`) |
 | P2-02 | `.env.example` consolidado na raiz |
 | P2-03 | `docs/api.md` listando todos os endpoints |
 | P2-04 | Expandir RNFs no PRD (atualmente só 3, implementação tem ~8) |

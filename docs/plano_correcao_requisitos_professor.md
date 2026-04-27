@@ -191,12 +191,12 @@ on:
 
 | Campo | Valor |
 |---|---|
-| **Status** | ⚠️ Pendente |
-| **Problema** | O roteiro de Design menciona o Google Stitch para criação de protótipos. Não há imagens de wireframes/mockups versionadas no repositório. |
+| **Status** | ✅ Concluído |
+| **Problema** | O roteiro de Design menciona o Google Stitch para criação de protótipos. Não havia imagens de wireframes/mockups versionadas no repositório. |
 | **Impacto** | Baixo — UI implementada em código substitui os protótipos |
-| **Como corrigir** | Tirar screenshots das telas principais (Home, Busca, Perfil Profissional, Agendamento, Dashboard) e salvar em `docs/03-design-ux/screenshots/` |
+| **Solução aplicada** | 14 screenshots exportados do Google Stitch (9 mobile + 5 web) via `Invoke-WebRequest` e commitados em `docs/03-design-ux/screenshots/` (commit `fc81cd0`). |
 | **Estimativa** | 30 min |
-| **Critério de aceite** | Pelo menos 5 screenshots das telas principais em `docs/03-design-ux/screenshots/` |
+| **Critério de aceite** | ✅ 14 screenshots em `docs/03-design-ux/screenshots/mobile/` e `docs/03-design-ux/screenshots/web/` |
 
 ---
 
@@ -249,7 +249,7 @@ on:
 | P1-03 | Criar `docs/modelo_dados.md` | P1 | ❌ Pendente | 45min |
 | P1-04 | Habilitar deploy automático | P1 | ⚠️ Decisão | 5min |
 | P1-05 | Atualizar stack em `spec_tech.md` | P1 | ⚠️ Pendente | 15min |
-| P2-01 | Screenshots de telas | P2 | ⚠️ Pendente | 30min |
+| P2-01 | Screenshots de telas | P2 | ✅ Concluído | — |
 | P2-02 | `.env.example` na raiz | P2 | ⚠️ Pendente | 10min |
 | P2-03 | Criar `docs/api.md` | P2 | ⚠️ Pendente | 45min |
 | P2-04 | Expandir RNFs no PRD | P2 | ⚠️ Pendente | 20min |
