@@ -25,7 +25,9 @@ export default async function PerfilPage() {
   // Prefer DB values (profiles table) over Clerk — DB is the source of truth after any edit.
   const name = account?.profile.full_name ?? user?.fullName ?? 'Usuário';
   const avatarId = account?.profile.avatar_id ?? null;
-  const avatarUrl = account?.profile.avatar_url ?? user?.imageUrl ?? null;
+  // Only fall back to Clerk imageUrl when the user has no preset avatar AND no avatar_url in DB.
+  const dbAvatarUrl = account?.profile.avatar_url ?? null;
+  const avatarUrl = dbAvatarUrl ?? (avatarId ? null : user?.imageUrl ?? null);
   const email = user?.emailAddresses?.[0]?.emailAddress ?? '';
 
   return (
