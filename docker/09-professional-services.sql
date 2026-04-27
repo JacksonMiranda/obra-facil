@@ -53,6 +53,8 @@ ON CONFLICT (professional_id, service_id)
 -- Fuzzy backfill: map common specialty text patterns to services via ILIKE.
 -- Mirrors the normalizeAndMapTerm() logic in the backend repository.
 -- Handles real production professionals whose specialty doesn't exactly match a service name.
+CREATE EXTENSION IF NOT EXISTS unaccent;
+
 INSERT INTO professional_services (professional_id, service_id, visibility_status)
 SELECT DISTINCT ON (p.id, s.id)
   p.id,
