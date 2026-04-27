@@ -18,7 +18,6 @@ export class ProfessionalsService {
       SearchProfessionalsSchema.parse(rawInput);
     const professionals = await this.repo.search({
       query: input.q,
-      service: input.service,
       serviceId: input.serviceId,
       city: input.city,
       limit: input.limit,
