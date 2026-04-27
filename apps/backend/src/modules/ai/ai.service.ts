@@ -24,7 +24,9 @@ export class AiService {
       );
     }
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = this.genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash-lite',
+    });
 
     const prompt = `Você é um assistente especializado em construção civil e reformas no Brasil.
 Reescreva a seguinte descrição de serviço de forma mais clara, objetiva e profissional para que um profissional autônomo entenda exatamente o que precisa ser feito.
