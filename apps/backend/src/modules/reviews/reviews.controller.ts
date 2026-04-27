@@ -7,7 +7,6 @@ import {
   NotFoundException,
   Param,
   Post,
-  UsePipes,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -33,10 +32,9 @@ export class ReviewsController {
 
   /** POST /v1/works/:workId/review — client submits a review for a completed work */
   @Post(':workId/review')
-  @UsePipes(new ZodValidationPipe(CreateReviewSchema))
   async createReview(
     @Param('workId') workId: string,
-    @Body() body: CreateReviewInput,
+    @Body(new ZodValidationPipe(CreateReviewSchema)) body: CreateReviewInput,
     @CurrentAccount() account: AccountContext,
   ) {
     const work = await this.worksRepo.findById(workId);
