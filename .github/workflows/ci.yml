@@ -1,6 +1,6 @@
 # CI/CD — Obra Fácil
-# Roda em todo push/PR: lint + typecheck + build + security audit
-# Deploy no Vercel é feito automaticamente pelo Vercel GitHub App (push em main → deploy)
+# Jobs paralelos: quality (lint+typecheck) | unit-tests (jest+vitest+e2e-backend)
+# Build + Playwright só depois dos dois passarem, e apenas em push (não em PRs).
 
 name: CI
 
@@ -10,33 +10,18 @@ on:
   pull_request:
     branches: [main, develop]
 
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 1 — Lint & Typecheck  (sem DB, rápido)
+# ─────────────────────────────────────────────────────────────────────────────
 jobs:
-  ci:
-    name: Lint, Typecheck, Test & Build
+  quality:
+    name: Lint & Typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    services:
-      postgres:
-        image: postgres:17-alpine
-        env:
-          POSTGRES_DB: obrafacil_db
-          POSTGRES_USER: obrafacil_user
-          POSTGRES_PASSWORD: obrafacil_pass
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U obrafacil_user -d obrafacil_db"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
+    timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -59,7 +44,6 @@ jobs:
         working-directory: apps/backend
 
       - name: Typecheck frontend
-        # shared precisa estar buildado para os tipos resolverem
         run: npx tsc --noEmit
         working-directory: apps/frontend
         env:
@@ -67,13 +51,47 @@ jobs:
           NEXT_PUBLIC_API_URL: 'http://localhost:3001/api'
           NEXT_PUBLIC_DISABLE_CLERK_AUTH: 'true'
 
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 2 — Testes unitários + e2e backend  (roda em paralelo com quality)
+# ─────────────────────────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: obrafacil_db
+          POSTGRES_USER: obrafacil_user
+          POSTGRES_PASSWORD: obrafacil_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U obrafacil_user -d obrafacil_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Compilar pacote shared
+        run: npm run build --workspace=@obrafacil/shared
+
       - name: Aplicar schema e seed no Postgres
         run: |
           PG="PGPASSWORD=obrafacil_pass psql -h localhost -U obrafacil_user -d obrafacil_db"
-          # ORDEM CRÍTICA:
-          # 1. Schema base (cria tabelas)
-          # 2. Seed DATA (insere profiles/professionals antes dos backfills)
-          # 3. Migrations que fazem backfill (precisam dos dados do seed)
           eval "$PG -f docker/01-schema.sql"
           eval "$PG -f docker/02-seed.sql"
           eval "$PG -f docker/03-account-roles.sql"
@@ -104,8 +122,55 @@ jobs:
           DATABASE_URL: postgres://obrafacil_user:obrafacil_pass@localhost:5432/obrafacil_db
           DISABLE_CLERK_AUTH: 'true'
 
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 3 — Build + Playwright  (depende de quality + unit-tests)
+#          Playwright só roda em push (não em PRs) para economizar tempo.
+# ─────────────────────────────────────────────────────────────────────────────
+  build-and-e2e:
+    name: Build & E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [quality, unit-tests]
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: obrafacil_db
+          POSTGRES_USER: obrafacil_user
+          POSTGRES_PASSWORD: obrafacil_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U obrafacil_user -d obrafacil_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Compilar pacote shared
+        run: npm run build --workspace=@obrafacil/shared
+
       - name: Build backend
         run: npm run build:backend
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: apps/frontend/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('apps/frontend/**/*.ts', 'apps/frontend/**/*.tsx', 'apps/frontend/package.json') }}
+          restore-keys: nextjs-${{ runner.os }}-
 
       - name: Build frontend
         run: npm run build:frontend
@@ -115,17 +180,46 @@ jobs:
           NEXT_PUBLIC_DISABLE_CLERK_AUTH: 'true'
           DISABLE_CLERK_AUTH: 'true'
 
+      - name: Auditoria de segurança
+        run: npm audit --audit-level=critical
+        continue-on-error: true
+
+      - name: Aplicar schema e seed no Postgres
+        if: github.event_name == 'push'
+        run: |
+          PG="PGPASSWORD=obrafacil_pass psql -h localhost -U obrafacil_user -d obrafacil_db"
+          eval "$PG -f docker/01-schema.sql"
+          eval "$PG -f docker/02-seed.sql"
+          eval "$PG -f docker/03-account-roles.sql"
+          eval "$PG -f docker/04-rls.sql"
+          eval "$PG -f docker/05-professional-visibility.sql"
+          eval "$PG -f docker/06-rejection-reason.sql"
+          eval "$PG -f docker/06-notifications.sql"
+          eval "$PG -f docker/07-fix-profile-full-name.sql"
+          eval "$PG -f docker/07-professionals-unique.sql"
+          eval "$PG -f docker/08-avatar-id.sql"
+          eval "$PG -f docker/08-visits-structured-fields.sql"
+          eval "$PG -f docker/09-reviews-work-id.sql"
+          eval "$PG -f docker/09-professional-services.sql"
+
+      - name: Cache Playwright browsers
+        if: github.event_name == 'push'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('apps/frontend/package.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+
       - name: Instalar browser do Playwright
+        if: github.event_name == 'push'
         run: npx --workspace=frontend playwright install --with-deps chromium
 
       - name: Testes e2e frontend (Playwright)
-        timeout-minutes: 15
+        if: github.event_name == 'push'
+        timeout-minutes: 12
         env:
-          # Apenas os testes do modo 'client' rodam em CI (Fluxo 1 + Fluxo 3).
-          # Fluxo 2 e Fluxo 4 requerem demo_professional_001 e são pulados.
           E2E_BYPASS_USER: demo_client_001
         run: |
-          # Sobe backend (dist) e frontend em background, roda Playwright, derruba.
           DATABASE_URL="postgres://obrafacil_user:obrafacil_pass@localhost:5432/obrafacil_db" \
             DISABLE_CLERK_AUTH=true \
             PORT=3001 \
@@ -140,7 +234,3 @@ jobs:
           npx wait-on http://localhost:3001/api/health http://localhost:3000 -t 60000
           npm run test:e2e --workspace=frontend
           kill $BACKEND_PID $FRONTEND_PID || true
-
-      - name: Auditoria de segurança
-        run: npm audit --audit-level=critical
-        continue-on-error: true
