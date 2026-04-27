@@ -74,25 +74,21 @@ export class AccountController {
 
     const profileId = account.profile.id;
 
-    // Check if professional record already exists
-    const { rows: existingPro } = await this.db.query<{ id: string }>(
-      `SELECT id FROM professionals WHERE profile_id = $1`,
-      [profileId],
+    // Atomically upsert the professionals record to prevent TOCTOU duplicates.
+    // ON CONFLICT (profile_id) guarantees idempotency even under concurrent
+    // requests — the unique index acts as the single source of truth.
+    // bio and city are preserved when not provided (COALESCE keeps existing value).
+    const { rows: upserted } = await this.db.query<{ id: string }>(
+      `INSERT INTO professionals (profile_id, specialty, bio, city)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (profile_id) DO UPDATE
+         SET specialty = EXCLUDED.specialty,
+             bio       = COALESCE(EXCLUDED.bio, professionals.bio),
+             city      = COALESCE(EXCLUDED.city, professionals.city)
+       RETURNING id`,
+      [profileId, input.specialty, input.bio ?? null, input.city ?? null],
     );
-
-    let professionalId: string;
-
-    if (existingPro.length) {
-      professionalId = existingPro[0].id;
-    } else {
-      const { rows: newPro } = await this.db.query<{ id: string }>(
-        `INSERT INTO professionals (profile_id, specialty, bio)
-         VALUES ($1, $2, $3)
-         RETURNING id`,
-        [profileId, input.specialty, input.bio ?? null],
-      );
-      professionalId = newPro[0].id;
-    }
+    const professionalId = upserted[0].id;
 
     // Upsert account_roles entry for professional role
     await this.db.query(
@@ -100,14 +96,6 @@ export class AccountController {
        VALUES ($1, 'professional', true, false)
        ON CONFLICT (profile_id, role) DO UPDATE SET is_active = true`,
       [profileId],
-    );
-
-    // Also update the professionals record if it exists but bio/specialty changed
-    await this.db.query(
-      `UPDATE professionals SET specialty = $2, bio = COALESCE($3, bio),
-          city = COALESCE($4, city)
-       WHERE id = $1`,
-      [professionalId, input.specialty, input.bio ?? null, input.city ?? null],
     );
 
     // Recompute visibility_status
@@ -224,8 +212,8 @@ export class AccountController {
     // active role (or 'client' as safe default) so the bypass guard and
     // actingAs fallback are consistent after deactivation.
     const fallbackRole: UserRole =
-      (updated.find((r) => r.role === 'client')?.role) ??
-      (updated[0]?.role) ??
+      updated.find((r) => r.role === 'client')?.role ??
+      updated[0]?.role ??
       'client';
     await this.db.query(
       `UPDATE profiles SET role = $1, updated_at = now()

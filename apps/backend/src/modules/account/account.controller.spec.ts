@@ -66,12 +66,9 @@ describe('AccountController', () => {
     };
 
     it('creates a new professionals record when none exists', async () => {
-      // no existing professional
       (db.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [] }) // SELECT id FROM professionals
-        .mockResolvedValueOnce({ rows: [{ id: 'pro-uuid' }] }) // INSERT INTO professionals
+        .mockResolvedValueOnce({ rows: [{ id: 'pro-uuid' }] }) // UPSERT professionals (INSERT path)
         .mockResolvedValueOnce({ rows: [] }) // UPSERT account_roles
-        .mockResolvedValueOnce({ rows: [] }) // UPDATE professionals (bio/specialty)
         .mockResolvedValueOnce({
           rows: [{ bio: validBody.bio, full_name: mockProfile.full_name }],
         }) // SELECT bio + full_name
@@ -90,13 +87,17 @@ describe('AccountController', () => {
       expect(result.visibility_status).toBe('active');
       expect(result.is_complete).toBe(true);
       expect(result.roles).toContain('professional');
+
+      // Verify idempotent upsert is used — must contain ON CONFLICT
+      const upsertCall = (db.query as jest.Mock).mock.calls[0] as unknown[];
+      expect((upsertCall[0] as string).toUpperCase()).toContain('ON CONFLICT');
     });
 
     it('reuses the existing professionals record on re-activation', async () => {
+      // Same upsert path regardless of whether record exists — ON CONFLICT handles both
       (db.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [{ id: 'existing-pro-uuid' }] }) // SELECT id FROM professionals
+        .mockResolvedValueOnce({ rows: [{ id: 'existing-pro-uuid' }] }) // UPSERT professionals (DO UPDATE path)
         .mockResolvedValueOnce({ rows: [] }) // UPSERT account_roles
-        .mockResolvedValueOnce({ rows: [] }) // UPDATE professionals
         .mockResolvedValueOnce({
           rows: [{ bio: validBody.bio, full_name: mockProfile.full_name }],
         })
@@ -112,12 +113,11 @@ describe('AccountController', () => {
       );
 
       expect(result.professionalId).toBe('existing-pro-uuid');
-      // Crucially: no INSERT was called, the existing record is reused
-      const insertCalls = (db.query as jest.Mock).mock.calls.filter(
-        (call: unknown[]) =>
-          (call[0] as string).trim().startsWith('INSERT INTO professionals'),
-      );
-      expect(insertCalls).toHaveLength(0);
+
+      // Verify the single upsert query is used for both create and re-activate paths
+      expect(db.query).toHaveBeenCalledTimes(6);
+      const upsertCall = (db.query as jest.Mock).mock.calls[0] as unknown[];
+      expect((upsertCall[0] as string).toUpperCase()).toContain('ON CONFLICT');
     });
 
     it('returns draft status when bio is missing', async () => {
@@ -269,12 +269,11 @@ describe('AccountController', () => {
 
       // ── reactivate ──
       (db.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [{ id: 'existing-pro-uuid' }] }) // existing professional
+        .mockResolvedValueOnce({ rows: [{ id: 'existing-pro-uuid' }] }) // UPSERT professionals (DO UPDATE path)
         .mockResolvedValueOnce({ rows: [] }) // upsert account_roles
-        .mockResolvedValueOnce({ rows: [] }) // update bio/specialty/city
         .mockResolvedValueOnce({
           rows: [{ bio, full_name: mockProfile.full_name }],
-        })
+        }) // SELECT bio + full_name for visibility recompute
         .mockResolvedValueOnce({ rows: [] }) // update visibility_status
         .mockResolvedValueOnce({ rows: [] }) // UPDATE profiles SET role = 'professional'
         .mockResolvedValueOnce({
@@ -289,12 +288,12 @@ describe('AccountController', () => {
         },
       );
 
-      // Existing record is reused (no new INSERT)
-      const insertCalls = (db.query as jest.Mock).mock.calls.filter(
-        (call: unknown[]) =>
-          (call[0] as string).trim().startsWith('INSERT INTO professionals'),
-      );
-      expect(insertCalls).toHaveLength(0);
+      // Exactly 6 queries (upsert + account_roles + select + visibility + profiles + roles)
+      expect(db.query).toHaveBeenCalledTimes(6);
+
+      // Upsert uses ON CONFLICT — guarantees idempotency
+      const upsertCall = (db.query as jest.Mock).mock.calls[0] as unknown[];
+      expect((upsertCall[0] as string).toUpperCase()).toContain('ON CONFLICT');
 
       expect(result.professionalId).toBe('existing-pro-uuid');
       expect(result.visibility_status).toBe('active');
