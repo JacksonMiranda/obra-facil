@@ -1,6 +1,10 @@
 import { notFound, redirect } from 'next/navigation';
-import { auth } from '@/lib/auth-bypass';
+import { auth, currentUser } from '@/lib/auth-bypass';
 import { api } from '@/lib/api/client';
+
+interface AccountMe {
+  profile: { full_name: string };
+}
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { AgendarClient } from './AgendarClient';
@@ -29,6 +33,13 @@ export default async function AgendarPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const currentUserProfessionalId: string | null = (myPro as any)?.id ?? null;
 
+  // Fetch client name for auto-fill in booking form
+  const [account, clerkUser] = await Promise.all([
+    api.get<AccountMe>('/v1/account/me').catch(() => null),
+    currentUser(),
+  ]);
+  const clientName = account?.profile.full_name ?? clerkUser?.firstName ?? 'Cliente';
+
   return (
     <div className="pb-24 bg-surface min-h-screen">
       <PageHeader title="Agendar Visita" />
@@ -52,6 +63,7 @@ export default async function AgendarPage({
       <AgendarClient
         professionalId={professionalId}
         professionalName={name}
+        clientName={clientName}
         currentUserProfessionalId={currentUserProfessionalId}
         professionalSpecialty={p.specialty}
       />

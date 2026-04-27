@@ -11,6 +11,7 @@ import { VisitDetailsPanel } from './components/VisitDetailsPanel';
 interface AgendarClientProps {
   professionalId: string;
   professionalName: string;
+  clientName: string;
   currentUserProfessionalId?: string | null;
   professionalSpecialty?: string;
 }
@@ -18,11 +19,12 @@ interface AgendarClientProps {
 export function AgendarClient({
   professionalId,
   professionalName,
+  clientName,
   currentUserProfessionalId,
   professionalSpecialty,
 }: AgendarClientProps) {
   const router = useRouter();
-  const flow = useBookingFlow({ professionalId, professionalName, currentUserProfessionalId, professionalSpecialty });
+  const flow = useBookingFlow({ professionalId, professionalName, clientName, currentUserProfessionalId, professionalSpecialty });
   // ── Early-exit guards ─────────────────────────────────────
   if (flow.loading) {
     return (
@@ -98,6 +100,8 @@ export function AgendarClient({
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <VisitDetailsPanel
               professionalName={professionalName}
+              clientName={clientName}
+              professionalSpecialty={professionalSpecialty ?? ''}
               selectedDate={flow.selectedDate}
               selectedTime={flow.selectedTime}
               selectedDateLabel={flow.selectedDateLabel}
@@ -107,8 +111,6 @@ export function AgendarClient({
               neighborhood={flow.neighborhood} setNeighborhood={flow.setNeighborhood}
               cityName={flow.cityName} setCityName={flow.setCityName}
               stateCode={flow.stateCode} setStateCode={flow.setStateCode}
-              requesterName={flow.requesterName} setRequesterName={flow.setRequesterName}
-              serviceType={flow.serviceType} setServiceType={flow.setServiceType}
               description={flow.description} setDescription={flow.setDescription}
               fieldErrors={flow.fieldErrors}
               booking={flow.booking}

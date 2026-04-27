@@ -15,8 +15,8 @@ interface VisitDetailsPanelProps {
   cityName: string; setCityName: Dispatch<SetStateAction<string>>;
   stateCode: string; setStateCode: Dispatch<SetStateAction<string>>;
   // Service
-  requesterName: string; setRequesterName: Dispatch<SetStateAction<string>>;
-  serviceType: string; setServiceType: Dispatch<SetStateAction<string>>;
+  clientName: string;
+  professionalSpecialty: string;
   description: string; setDescription: Dispatch<SetStateAction<string>>;
   // UI
   fieldErrors: Record<string, string>;
@@ -29,6 +29,8 @@ interface VisitDetailsPanelProps {
 
 export function VisitDetailsPanel({
   professionalName,
+  clientName,
+  professionalSpecialty,
   selectedDate,
   selectedTime,
   selectedDateLabel,
@@ -38,8 +40,6 @@ export function VisitDetailsPanel({
   neighborhood, setNeighborhood,
   cityName, setCityName,
   stateCode, setStateCode,
-  requesterName, setRequesterName,
-  serviceType, setServiceType,
   description, setDescription,
   fieldErrors,
   booking,
@@ -199,29 +199,17 @@ export function VisitDetailsPanel({
           </h3>
         </div>
         <div className="space-y-2.5">
-          <div>
-            <input
-              type="text"
-              placeholder="Seu nome completo *"
-              value={requesterName}
-              onChange={(e) => setRequesterName(e.target.value)}
-              className={inputClass('requesterName')}
-            />
-            {fieldErrors.requesterName && (
-              <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors.requesterName}</p>
-            )}
-          </div>
-          <div>
-            <input
-              type="text"
-              placeholder="Tipo de serviço *"
-              value={serviceType}
-              onChange={(e) => setServiceType(e.target.value)}
-              className={inputClass('serviceType')}
-            />
-            {fieldErrors.serviceType && (
-              <p className="text-[10px] text-red-500 mt-0.5">{fieldErrors.serviceType}</p>
-            )}
+          <div className="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2.5 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-slate-400 text-sm">handyman</span>
+              <span className="text-slate-500 text-xs">Serviço:</span>
+              <span className="font-medium text-slate-800 text-xs">{professionalSpecialty}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
+              <span className="text-slate-500 text-xs">Cliente:</span>
+              <span className="font-medium text-slate-800 text-xs">{clientName}</span>
+            </div>
           </div>
           <div>
             <textarea

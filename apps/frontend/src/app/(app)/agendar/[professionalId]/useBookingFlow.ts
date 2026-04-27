@@ -24,6 +24,7 @@ export interface AvailableDay {
 export interface BookingFlowOptions {
   professionalId: string;
   professionalName: string;
+  clientName: string;
   currentUserProfessionalId?: string | null;
   professionalSpecialty?: string;
 }
@@ -31,6 +32,7 @@ export interface BookingFlowOptions {
 export function useBookingFlow({
   professionalId,
   professionalName,
+  clientName,
   currentUserProfessionalId,
   professionalSpecialty,
 }: BookingFlowOptions) {
@@ -54,8 +56,6 @@ export function useBookingFlow({
   const [stateCode, setStateCode] = useState('');
 
   // ── Service fields ───────────────────────────────────────────
-  const [requesterName, setRequesterName] = useState('');
-  const [serviceType, setServiceType] = useState(professionalSpecialty ?? '');
   const [description, setDescription] = useState('');
 
   // ── UI state ─────────────────────────────────────────────────
@@ -130,8 +130,6 @@ export function useBookingFlow({
     if (!neighborhood.trim()) errs.neighborhood = 'Bairro obrigatório';
     if (!cityName.trim()) errs.cityName = 'Cidade obrigatória';
     if (!stateCode) errs.stateCode = 'Estado obrigatório';
-    if (!requesterName.trim()) errs.requesterName = 'Nome do solicitante obrigatório';
-    if (!serviceType.trim()) errs.serviceType = 'Tipo de serviço obrigatório';
     if (description.trim().length < 10)
       errs.description = 'Descreva o problema (mín. 10 caracteres)';
     setFieldErrors(errs);
@@ -161,8 +159,8 @@ export function useBookingFlow({
           neighborhood: neighborhood.trim(),
           cityName: cityName.trim(),
           stateCode: stateCode.toUpperCase(),
-          requesterName: requesterName.trim(),
-          serviceType: serviceType.trim(),
+          requesterName: clientName,
+          serviceType: professionalSpecialty ?? '',
           description: description.trim(),
         },
         true, // skipActingAs — booking is always a client action
@@ -212,8 +210,6 @@ export function useBookingFlow({
     cityName, setCityName,
     stateCode, setStateCode,
     // service
-    requesterName, setRequesterName,
-    serviceType, setServiceType,
     description, setDescription,
     // ui
     fieldErrors,
