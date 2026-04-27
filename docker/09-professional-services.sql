@@ -50,6 +50,29 @@ WHERE p.specialty IS NOT NULL
 ON CONFLICT (professional_id, service_id)
   DO UPDATE SET visibility_status = 'active', updated_at = now();
 
+-- Fuzzy backfill: map common specialty text patterns to services via ILIKE.
+-- Mirrors the normalizeAndMapTerm() logic in the backend repository.
+-- Handles real production professionals whose specialty doesn't exactly match a service name.
+INSERT INTO professional_services (professional_id, service_id, visibility_status)
+SELECT DISTINCT ON (p.id, s.id)
+  p.id,
+  s.id,
+  'active'
+FROM professionals p
+CROSS JOIN services s
+WHERE p.specialty IS NOT NULL
+  AND trim(p.specialty) <> ''
+  AND (
+    (s.name = 'Reparos elétricos'       AND lower(unaccent(p.specialty)) ILIKE '%eletric%')
+    OR (s.name = 'Instalações Hidráulicas' AND (lower(unaccent(p.specialty)) ILIKE '%hidraul%' OR lower(unaccent(p.specialty)) ILIKE '%encanad%'))
+    OR (s.name = 'Pinturas'               AND (lower(unaccent(p.specialty)) ILIKE '%pintur%'  OR lower(unaccent(p.specialty)) ILIKE '%pintor%'))
+    OR (s.name = 'Diaristas'              AND (lower(unaccent(p.specialty)) ILIKE '%diarista%' OR lower(unaccent(p.specialty)) ILIKE '%limpez%'))
+    OR (s.name = 'Pedreiro'               AND (lower(unaccent(p.specialty)) ILIKE '%pedreir%'  OR lower(unaccent(p.specialty)) ILIKE '%reform%'))
+    OR (s.name = 'Marceneiro'             AND (lower(unaccent(p.specialty)) ILIKE '%marceneir%' OR lower(unaccent(p.specialty)) ILIKE '%moveis%' OR lower(unaccent(p.specialty)) ILIKE '%móveis%'))
+  )
+ON CONFLICT (professional_id, service_id)
+  DO UPDATE SET visibility_status = 'active', updated_at = now();
+
 -- Seed-specific backfill: specialty names don't match service names exactly,
 -- so we link them manually using known IDs from 02-seed.sql.
 -- professional_id → 10000000-*,  service_id → 20000000-*

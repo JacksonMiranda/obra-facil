@@ -126,26 +126,30 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
            SELECT 1 FROM availability_slots av
            WHERE av.professional_id = p.id
          )
+         AND EXISTS (
+           SELECT 1 FROM professional_services ps_active
+           WHERE ps_active.professional_id = p.id
+             AND ps_active.visibility_status = 'active'
+         )
          AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $1 || '%')
          AND (
-           $6::uuid IS NULL
+           $4::uuid IS NULL
            OR EXISTS (
              SELECT 1 FROM professional_services ps_f
              WHERE ps_f.professional_id = p.id
-               AND ps_f.service_id = $6::uuid
+               AND ps_f.service_id = $4::uuid
                AND ps_f.visibility_status = 'active'
            )
          )
-         AND ($5::uuid IS NULL OR p.profile_id != $5)
+         AND ($3::uuid IS NULL OR p.profile_id != $3)
        ORDER BY p.rating_avg DESC, p.published_at DESC
-       LIMIT $3 OFFSET $4`,
+       LIMIT $2 OFFSET $5`,
       [
         queryTerm,
-        null, // unused legacy param slot
         limit ?? 10,
-        offset ?? 0,
         excludeProfileId ?? null,
         serviceId ?? null,
+        offset ?? 0,
       ],
     );
     return rows.map(mapRow);

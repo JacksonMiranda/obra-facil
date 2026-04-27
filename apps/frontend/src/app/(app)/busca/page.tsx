@@ -1,4 +1,4 @@
-// Busca de Profissionais — accepts ?q= (text) and ?serviceId= (UUID) / ?service= (legacy name)
+// Busca de Profissionais — accepts ?q= (text) and ?serviceId= (UUID)
 import { auth } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api/client';
@@ -10,28 +10,24 @@ import Link from 'next/link';
 export default async function BuscaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; service?: string; serviceId?: string }>;
+  searchParams: Promise<{ q?: string; serviceId?: string }>;
 }) {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const { q, service, serviceId } = await searchParams;
+  const { q, serviceId } = await searchParams;
 
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (serviceId) params.set('serviceId', serviceId);
-  else if (service) params.set('service', service);
   const qs = params.toString();
   const { professionals } = await api
     .get<{ professionals: any[]; total: number }>(`/v1/professionals${qs ? '?' + qs : ''}`)
     .catch(() => ({ professionals: [] as any[], total: 0 }));
 
-  const filterLabel = serviceId ? null : service;
   const title = q
     ? `Resultados para "${q}"`
-    : filterLabel
-      ? `Profissionais de ${filterLabel}`
-      : 'Todos os profissionais';
+    : 'Todos os profissionais';
 
   return (
     <div className="pb-24 md:pb-8 bg-[#f8f6f6] min-h-screen">

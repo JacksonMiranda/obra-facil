@@ -10,7 +10,6 @@ const uuidLike = zod_1.z
 // ── Professionals ────────────────────────────────────────────────────────────
 exports.SearchProfessionalsSchema = zod_1.z.object({
     q: zod_1.z.string().optional(),
-    service: zod_1.z.string().optional(),
     serviceId: uuidLike.optional(),
     city: zod_1.z.string().optional(),
     limit: zod_1.z.coerce.number().int().min(1).max(100).default(50),

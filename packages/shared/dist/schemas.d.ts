@@ -1,7 +1,6 @@
 import { z } from 'zod';
 export declare const SearchProfessionalsSchema: z.ZodObject<{
     q: z.ZodOptional<z.ZodString>;
-    service: z.ZodOptional<z.ZodString>;
     serviceId: z.ZodOptional<z.ZodString>;
     city: z.ZodOptional<z.ZodString>;
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;

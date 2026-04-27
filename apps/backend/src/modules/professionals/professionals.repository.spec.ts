@@ -131,7 +131,7 @@ describe('ProfessionalsRepository', () => {
       )[0] as string;
       // Deve usar $1 etc. para prevenir SQL injection
       expect(sql).toMatch(/\$1/);
-      expect(sql).toMatch(/\$3/);
+      expect(sql).toMatch(/\$2/);
       // O valor real não deve estar interpolado diretamente no SQL
       expect(sql).not.toContain('Ricardo');
     });
@@ -251,9 +251,10 @@ describe('ProfessionalsRepository', () => {
       const params: unknown[] = (
         (db.query as jest.Mock).mock.calls[0] as unknown[]
       )[1] as unknown[];
-      // $3 = limit, $4 = offset
-      expect(typeof params[2]).toBe('number'); // limite tem valor padrão
-      expect(params[3]).toBe(0); // offset padrão é 0
+      // params: [queryTerm, limit, excludeProfileId, serviceId, offset]
+      // $2 = limit (index 1), $5 = offset (index 4)
+      expect(typeof params[1]).toBe('number'); // limite tem valor padrão
+      expect(params[4]).toBe(0); // offset padrão é 0
     });
   });
 

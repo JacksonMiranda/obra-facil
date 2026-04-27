@@ -20,9 +20,7 @@ interface ServiceRow {
   sort_order: number;
 }
 
-// ── Map icon_name → Tailwind color classes ───────────────────────────────────
-// TODO: When professionals.service_id FK is added, filter by service_id instead
-// of relying on the text-based normalizeAndMapTerm() mapping in the repository.
+// ── Map icon_name → Tailwind color classes ─────────────────────────────────
 const SERVICE_COLORS: Record<string, { icon: string; desktop: string }> = {
   bolt:             { icon: 'bg-amber-50 text-amber-600',  desktop: 'from-amber-50 to-amber-100/60'   },
   electrical_services: { icon: 'bg-amber-50 text-amber-600', desktop: 'from-amber-50 to-amber-100/60' },
@@ -42,19 +40,15 @@ function getServiceColors(iconName: string) {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ service?: string; serviceId?: string }>;
+  searchParams: Promise<{ serviceId?: string }>;
 }) {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const { service: selectedServiceName, serviceId: selectedServiceId } = await searchParams;
+  const { serviceId: selectedServiceId } = await searchParams;
 
   // Build professional query — filters by serviceId (UUID) when selected
-  const profParams = new URLSearchParams();
-  if (selectedServiceId) profParams.set('serviceId', selectedServiceId);
-  // Legacy: fall back to name-based filter if only ?service= is present
-  else if (selectedServiceName) profParams.set('service', selectedServiceName);
-  const profQs = profParams.toString();
+  const profQs = selectedServiceId ? `serviceId=${encodeURIComponent(selectedServiceId)}` : '';
 
   const [user, profResult, servicesResult] = await Promise.all([
     currentUser(),
@@ -76,10 +70,9 @@ export default async function HomePage({
 
   const firstName = user?.firstName ?? 'você';
 
-  // Derive selected service object for display purposes
-  const selectedSvc = services.find((s) => s.id === selectedServiceId) ??
-    (selectedServiceName ? services.find((s) => s.name === selectedServiceName) : undefined);
-  const selectedService = selectedSvc?.name ?? selectedServiceName;
+  // Derive selected service name for display purposes
+  const selectedSvc = services.find((s) => s.id === selectedServiceId);
+  const selectedService = selectedSvc?.name;
 
   const proSectionTitle = selectedService
     ? `Profissionais de ${selectedService}`
@@ -148,7 +141,7 @@ export default async function HomePage({
         {/* Mobile: 2-col */}
         <div className="grid grid-cols-2 gap-3 md:hidden">
           {services.map((svc) => {
-            const isActive = selectedServiceId === svc.id || (selectedServiceName === svc.name && !selectedServiceId);
+            const isActive = selectedServiceId === svc.id;
             const colors = getServiceColors(svc.icon_name);
             // Toggle: clicking active service clears the filter
             const href = isActive ? '/' : `/?serviceId=${encodeURIComponent(svc.id)}`;
@@ -175,7 +168,7 @@ export default async function HomePage({
         {/* Desktop: 3-col bento */}
         <div className="hidden md:grid md:grid-cols-3 gap-4">
           {services.map((svc) => {
-            const isActive = selectedServiceId === svc.id || (selectedServiceName === svc.name && !selectedServiceId);
+            const isActive = selectedServiceId === svc.id;
             const colors = getServiceColors(svc.icon_name);
             const href = isActive ? '/' : `/?serviceId=${encodeURIComponent(svc.id)}`;
             return (
@@ -276,7 +269,7 @@ export default async function HomePage({
                   </div>
                 </div>
                 <Link
-                  href={`/profissional/${p.id}`}
+                  href={selectedServiceId ? `/profissional/${p.id}?serviceId=${selectedServiceId}` : `/profissional/${p.id}`}
                   className="mt-3 block text-center text-sm font-semibold text-[#ec5b13] py-2 rounded-xl border border-[#ec5b13]/20 bg-orange-50 active:scale-[0.98] transition-transform"
                 >
                   Ver Perfil
@@ -294,7 +287,7 @@ export default async function HomePage({
             return (
               <Link
                 key={p.id}
-                href={`/profissional/${p.id}`}
+                href={selectedServiceId ? `/profissional/${p.id}?serviceId=${selectedServiceId}` : `/profissional/${p.id}`}
                 className="group bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-[0px_4px_16px_rgba(0,40,142,0.04)] hover:shadow-[0px_8px_24px_rgba(0,40,142,0.1)] hover:scale-[0.99] transition-all duration-200 overflow-hidden"
               >
                 {/* Avatar hero */}

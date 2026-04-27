@@ -13,7 +13,6 @@ const uuidLike = z
 
 export const SearchProfessionalsSchema = z.object({
   q: z.string().optional(),
-  service: z.string().optional(),
   serviceId: uuidLike.optional(),
   city: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
