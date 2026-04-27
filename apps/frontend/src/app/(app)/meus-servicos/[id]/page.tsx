@@ -48,6 +48,12 @@ export default async function WorkDetailPage({
     userRole = proClerkId === userId ? 'professional' : 'client';
   }
 
+  // The client-facing work detail (with review flow) lives at /solicitacoes/:id.
+  // Redirect any client that lands here to ensure they see the correct experience.
+  if (userRole === 'client') {
+    redirect(`/solicitacoes/${id}`);
+  }
+
   const personToShow = userRole === 'professional' ? client : pro;
   const personLabel = userRole === 'professional' ? 'Cliente' : 'Profissional';
 

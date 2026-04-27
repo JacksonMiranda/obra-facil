@@ -74,7 +74,7 @@ export class WorksController {
       type: 'work_progress',
       title: 'Progresso da obra atualizado',
       message: `O profissional atualizou o progresso da obra para ${pct}%.`,
-      link: `/meus-servicos/${id}`,
+      link: `/solicitacoes/${id}`,
     });
     return result;
   }
@@ -94,7 +94,7 @@ export class WorksController {
       type: 'work_started',
       title: 'Obra iniciada!',
       message: `O profissional iniciou a obra "${work.title}".`,
-      link: `/meus-servicos/${id}`,
+      link: `/solicitacoes/${id}`,
     });
     return result;
   }
@@ -115,8 +115,9 @@ export class WorksController {
       profileId: work.client_id,
       type: 'work_completed',
       title: 'Obra concluída!',
-      message: `O profissional concluiu a obra "${work.title}".`,
-      link: `/meus-servicos/${id}`,
+      message: `O profissional concluiu o serviço. Avalie o atendimento para finalizar.`,
+      link: `/solicitacoes/${id}`,
+      metadata: { workId: id, action: 'review_required' },
     });
     return result;
   }

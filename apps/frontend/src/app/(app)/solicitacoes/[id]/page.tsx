@@ -46,7 +46,7 @@ export default async function SolicitacaoDetailPage({
   const status = STATUS_MAP[w.status] ?? { label: w.status, variant: 'pendente' as const };
   const progress = w.progress_pct ?? 0;
   const prof = w.professionals?.profiles;
-  const isActive = w.status === 'in_progress';
+  const isActive = w.status === 'active';
   const isCompleted = w.status === 'completed';
 
   // Determine if the viewer is the client of this work
@@ -185,6 +185,21 @@ export default async function SolicitacaoDetailPage({
             </div>
           </div>
         </div>
+
+        {/* ── Review callout — prompt client to rate (completed, not yet reviewed) ── */}
+        {isCompleted && isClient && !existingReview && (
+          <div className="bg-savings/5 border border-savings/20 rounded-2xl p-4">
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-savings text-xl mt-0.5">task_alt</span>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Obra concluída!</p>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  O profissional finalizou o serviço. Avalie o atendimento para encerrar sua experiência.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Review section (completed works only) ───────────── */}
         {isCompleted && isClient && (

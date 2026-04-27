@@ -22,6 +22,7 @@ describe('WorksController', () => {
   let controller: WorksController;
   let worksRepo: jest.Mocked<WorksRepository>;
   let professionalsRepo: jest.Mocked<ProfessionalsRepository>;
+  let notificationsService: jest.Mocked<NotificationsService>;
 
   const mockProfile: Profile = {
     id: 'profile-id',
@@ -110,6 +111,7 @@ describe('WorksController', () => {
     controller = module.get<WorksController>(WorksController);
     worksRepo = module.get(WorksRepository);
     professionalsRepo = module.get(ProfessionalsRepository);
+    notificationsService = module.get(NotificationsService);
   });
 
   describe('findAll', () => {
@@ -259,6 +261,14 @@ describe('WorksController', () => {
       expect(worksRepo.updateStatus).toHaveBeenCalledWith(
         'work-id',
         'completed',
+      );
+      expect(notificationsService.notify).toHaveBeenCalledWith(
+        expect.objectContaining({
+          profileId: mockWork.client_id,
+          type: 'work_completed',
+          link: `/solicitacoes/work-id`,
+          metadata: { workId: 'work-id', action: 'review_required' },
+        }),
       );
     });
 
