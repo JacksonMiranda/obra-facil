@@ -250,6 +250,12 @@ export default async function HomePage({
           {professionals.map((pro) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const p = pro as any;
+            const activeServices: { service_id: string; service_name: string; visibility_status: string }[] =
+              (p.services ?? []).filter((s: { visibility_status: string }) => s.visibility_status === 'active');
+            const displayService = (selectedServiceId
+              ? activeServices.find((s) => s.service_id === selectedServiceId)
+              : activeServices[0]) ?? activeServices[0];
+            const extraCount = activeServices.length - 1;
             return (
               <div key={p.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden p-4">
                 <div className="flex items-center gap-3">
@@ -262,7 +268,14 @@ export default async function HomePage({
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-900 truncate">{p.profiles?.full_name ?? 'Profissional'}</p>
-                    <p className="text-xs text-slate-400 truncate">{(p.services?.find((s: {visibility_status: string; service_name: string}) => s.visibility_status === 'active')?.service_name) ?? p.specialty ?? 'Especialista'}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-xs text-slate-400 truncate">{displayService?.service_name ?? p.specialty ?? 'Especialista'}</p>
+                      {extraCount > 0 && (
+                        <span className="flex-shrink-0 text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                          +{extraCount} serviços
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1 mt-1">
                       <StarRating rating={p.rating_avg ?? 0} size="sm" count={p.total_reviews ?? 0} />
                     </div>
@@ -284,6 +297,12 @@ export default async function HomePage({
           {professionals.map((pro) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const p = pro as any;
+            const activeServices: { service_id: string; service_name: string; visibility_status: string }[] =
+              (p.services ?? []).filter((s: { visibility_status: string }) => s.visibility_status === 'active');
+            const displayService = (selectedServiceId
+              ? activeServices.find((s) => s.service_id === selectedServiceId)
+              : activeServices[0]) ?? activeServices[0];
+            const extraCount = activeServices.length - 1;
             return (
               <Link
                 key={p.id}
@@ -303,7 +322,14 @@ export default async function HomePage({
                 {/* Info */}
                 <div className="p-4">
                   <p className="font-bold text-on-surface truncate">{p.profiles?.full_name ?? 'Profissional'}</p>
-                  <p className="text-sm text-on-surface-variant truncate mt-0.5">{(p.services?.find((s: {visibility_status: string; service_name: string}) => s.visibility_status === 'active')?.service_name) ?? p.specialty ?? 'Especialista'}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-sm text-on-surface-variant truncate">{displayService?.service_name ?? p.specialty ?? 'Especialista'}</p>
+                    {extraCount > 0 && (
+                      <span className="flex-shrink-0 text-[10px] font-medium text-on-surface-variant/60 bg-surface-container-high px-1.5 py-0.5 rounded-full">
+                        +{extraCount}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1.5 mt-2">
                     <StarRating rating={p.rating_avg ?? 0} size="sm" count={p.total_reviews ?? 0} />
                   </div>
