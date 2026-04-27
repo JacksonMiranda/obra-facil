@@ -50,6 +50,22 @@ WHERE p.specialty IS NOT NULL
 ON CONFLICT (professional_id, service_id)
   DO UPDATE SET visibility_status = 'active', updated_at = now();
 
+-- Seed-specific backfill: specialty names don't match service names exactly,
+-- so we link them manually using known IDs from 02-seed.sql.
+-- professional_id → 10000000-*,  service_id → 20000000-*
+INSERT INTO professional_services (professional_id, service_id, visibility_status)
+VALUES
+  -- Ricardo Silva (Eletricista Residencial) → Reparos elétricos
+  ('10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'active'),
+  -- José da Silva (Encanador Hidráulico) → Instalações Hidráulicas
+  ('10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'active'),
+  -- Ana Rodrigues (Pintora Residencial) → Pinturas
+  ('10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000003', 'active'),
+  -- Carlos Alberto as professional (Pedreiro e Reformas) → Pedreiro
+  ('10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000005', 'active')
+ON CONFLICT (professional_id, service_id)
+  DO UPDATE SET visibility_status = 'active', updated_at = now();
+
 -- Pre-check: unmatched specialties (no row inserted)
 -- SELECT p.id, p.specialty FROM professionals p
 -- WHERE NOT EXISTS (

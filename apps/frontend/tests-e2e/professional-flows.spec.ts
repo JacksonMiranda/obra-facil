@@ -179,9 +179,8 @@ test.describe('Fluxo 2: Alternância de modo cliente ↔ profissional', () => {
   test('alternância para "Cliente" não remove dados do perfil profissional', async ({ page }) => {
     await page.goto('/perfil/configuracoes');
 
-    // Guarda o nome da especialidade atual antes de mudar de modo
-    await page.waitForSelector(':text("Especialidade:")', { timeout: 5000 });
-    const specialtyText = await page.locator(':text("Especialidade:")').textContent();
+    // Aguarda perfil carregar (serviço ativo exibido como chip)
+    await expect(page.getByText(/reparos el[eé]tricos/i).first()).toBeVisible({ timeout: 5000 });
 
     // Clica no botão "Cliente" para alternar
     await page.getByRole('button', { name: /^cliente$/i }).click();
@@ -200,11 +199,8 @@ test.describe('Fluxo 2: Alternância de modo cliente ↔ profissional', () => {
     await page.goto('/perfil/configuracoes');
     await page.waitForSelector(':text("Perfil Profissional Ativo")', { timeout: 5000 });
 
-    // Especialidade ainda deve estar presente
-    await expect(page.getByText(/eletricista residencial/i)).toBeVisible();
-
-    // A especialidade não foi apagada pela alternância
-    expect(specialtyText).toBeTruthy();
+    // Serviço ativo ainda deve estar presente como chip
+    await expect(page.getByText(/reparos el[eé]tricos/i)).toBeVisible();
   });
 
   test('alternância para "Cliente" preserva visibilidade do perfil profissional no banco', async ({ page }) => {
@@ -265,7 +261,9 @@ test.describe('Fluxo 3: Busca pública de profissionais', () => {
   test('busca por especialidade "Eletricista" retorna resultado correto', async ({ page }) => {
     await page.goto('/busca?q=Eletricista');
 
-    await expect(page.getByText(/eletricista residencial/i).first()).toBeVisible({ timeout: 5000 });
+    // A busca por texto ainda funciona pois filtra por bio/nome
+    // Ricardo Silva tem "instalações elétricas" na bio
+    await expect(page.getByText(/ricardo silva/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('busca sem correspondência exibe mensagem de ausência de resultados', async ({ page }) => {
@@ -276,10 +274,11 @@ test.describe('Fluxo 3: Busca pública de profissionais', () => {
     ).toBeVisible({ timeout: 5000 });
   });
 
-  test('card do profissional exibe especialidade e avaliação', async ({ page }) => {
+  test('card do profissional exibe serviço e avaliação', async ({ page }) => {
     await page.goto('/busca?q=Ricardo');
 
-    await expect(page.getByText(/eletricista residencial/i).first()).toBeVisible({ timeout: 5000 });
+    // Após o refactor, o UI exibe chips de serviço (ex: "Reparos elétricos") em vez de specialty
+    await expect(page.getByText(/reparos el[eé]tricos/i).first()).toBeVisible({ timeout: 5000 });
     // Avaliação calculada pelo trigger: 2 reviews rating 5 → avg = 5.0 → renderizado como "5"
     // Usa regex que aceita qualquer rating numérico (ex: "5", "4.9", "5.0")
     await expect(page.getByText(/^\d([,.]\d+)?$/).first()).toBeVisible();
@@ -305,14 +304,15 @@ test.describe('Fluxo 4: Persistência dos dados do perfil profissional', () => {
 
     // Primeira carga: confirma dados
     await expect(page.getByText(/perfil profissional ativo/i)).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/eletricista residencial/i)).toBeVisible({ timeout: 5000 });
+    // Serviço ativo exibido como chip
+    await expect(page.getByText(/reparos el[eé]tricos/i)).toBeVisible({ timeout: 5000 });
 
     // Recarrega a página
     await page.reload();
 
     // Dados ainda devem estar presentes
     await expect(page.getByText(/perfil profissional ativo/i)).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/eletricista residencial/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/reparos el[eé]tricos/i)).toBeVisible({ timeout: 5000 });
   });
 
   test('bio do profissional é exibida após reload', async ({ page }) => {

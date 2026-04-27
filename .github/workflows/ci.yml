@@ -14,7 +14,7 @@ jobs:
   ci:
     name: Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -86,6 +86,7 @@ jobs:
           eval "$PG -f docker/08-avatar-id.sql"
           eval "$PG -f docker/08-visits-structured-fields.sql"
           eval "$PG -f docker/09-reviews-work-id.sql"
+          eval "$PG -f docker/09-professional-services.sql"
 
       - name: Testes unitários backend (Jest)
         run: npm test --workspace=backend
@@ -118,6 +119,7 @@ jobs:
         run: npx --workspace=frontend playwright install --with-deps chromium
 
       - name: Testes e2e frontend (Playwright)
+        timeout-minutes: 8
         run: |
           # Sobe backend (dist) e frontend em background, roda Playwright, derruba.
           DATABASE_URL="postgres://obrafacil_user:obrafacil_pass@localhost:5432/obrafacil_db" \
