@@ -100,26 +100,7 @@ Para virar profissional no frontend: setar `NEXT_PUBLIC_BYPASS_USER_CLERK_ID=dem
 
 ## RF3 — Tecnologia de fronteira (IA) — estava 0/12
 
-**Implementado:** integração **real e verificável** com **Anthropic Claude (Haiku 4.5)**.
-
-1. **Service** `apps/backend/src/modules/ai/ai.service.ts`:
-   - Usa `@anthropic-ai/sdk` oficial.
-   - Prompt sistêmico em português, especialista em materiais de construção BR.
-   - Schema de resposta: lista de itens `(name, quantity, unit, category)`, estimativa total, notas.
-   - Extração robusta de JSON (aceita fences ```json).
-   - Logs estruturados com tokens usados.
-2. **Controller** `apps/backend/src/modules/ai/ai.controller.ts`:
-   - `POST /api/v1/ai/material-quote` com body `{ description: string }`.
-   - Validação: 10 ≤ len(description) ≤ 2000.
-   - Retorna 500 com mensagem clara se `ANTHROPIC_API_KEY` não configurada.
-3. **Página frontend** `/cotacao/ia` (`apps/frontend/src/app/(app)/cotacao/ia/page.tsx`):
-   - Client component com textarea + contador de caracteres.
-   - Loading state + error handling.
-   - Renderiza resultado com itens agrupados, estimativa total, observações.
-
-**Validação prática:** `curl -X POST ... -d '{"description":"Reformar banheiro pequeno de 4m²"}'` retorna 23 materiais realistas em JSON, com notas contextuais sobre impermeabilização, dimensões etc.
-
-**Testes:** `apps/backend/src/modules/ai/ai.service.spec.ts` (5 cenários — mock do SDK, parsing, error paths).
+> ⚠️ **Atualização:** o módulo de cotação de materiais via IA (`/v1/ai/material-quote`, `apps/backend/src/modules/ai/`, `/cotacao/ia`) foi **removido do projeto** na fase final de desenvolvimento. O critério RF3 não está contemplado na versão entregue.
 
 ---
 
@@ -143,11 +124,11 @@ Para virar profissional no frontend: setar `NEXT_PUBLIC_BYPASS_USER_CLERK_ID=dem
 
 **Antes:** único teste era o placeholder "Hello World".
 
-**Agora — 68 testes passando:**
+**Agora — 63 testes passando:**
 
 | Camada | Framework | Testes | Arquivos |
 |---|---|---|---|
-| Backend unit | Jest | 49 | `clerk-auth.guard.spec.ts` (17), `orders.service.spec.ts` (5), `ai.service.spec.ts` (5), `visits.service.spec.ts` (13), `works.repository.spec.ts` (6), `app.controller.spec.ts` (3) |
+| Backend unit | Jest | 44 | `clerk-auth.guard.spec.ts` (17), `orders.service.spec.ts` (5), `visits.service.spec.ts` (13), `works.repository.spec.ts` (6), `app.controller.spec.ts` (3) |
 | Backend e2e | Jest + supertest | 6 | `orders.e2e-spec.ts` (5 isolamento), `app.e2e-spec.ts` (1 health) |
 | Frontend unit | Vitest + Testing Library | 9 | `StatusBadge.test.tsx` (4), `PedidosTabs.test.tsx` (5) |
 | Frontend e2e | Playwright | 4 | `cliente-meus-pedidos.spec.ts` (3), `profissional-dashboard.spec.ts` (1 condicional) |
@@ -196,7 +177,6 @@ docker compose up -d db
 
 # Terminal 1: backend (porta 3333)
 cd apps/backend && cp .env.example .env
-# editar .env com ANTHROPIC_API_KEY=sk-ant-... para testar IA
 DOTENV_CONFIG_PATH=apps/backend/.env node --require dotenv/config apps/backend/dist/main.js
 
 # Terminal 2: frontend (porta 3000)
@@ -213,7 +193,6 @@ npm run test:e2e --workspace=frontend      # 4 Playwright
 
 Navegar em http://localhost:3000:
 - `/pedidos` — Meus Pedidos (isolados por cliente)
-- `/cotacao/ia` — Gerar lista de materiais via Claude
 - `/profissional/dashboard` — (setar `NEXT_PUBLIC_BYPASS_USER_CLERK_ID=demo_professional_001` primeiro) — agora com botões "Iniciar obra", "Concluir", "Cancelar visita"
 
 Swagger: http://localhost:3333/api/docs
@@ -224,7 +203,6 @@ Health: http://localhost:3333/api/health
 **Backend (`app-devai-backend`):**
 - `DATABASE_URL` — pooler do Supabase
 - `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`
-- `ANTHROPIC_API_KEY` — necessária para `/v1/ai/material-quote`
 - `CORS_ORIGIN`
 - `NODE_ENV=production` (ativa o startup guard que impede `DISABLE_CLERK_AUTH=true` em prod)
 

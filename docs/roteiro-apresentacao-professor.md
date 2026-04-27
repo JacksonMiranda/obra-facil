@@ -22,7 +22,7 @@ Este roteiro guia a apresentação endereçando, item por item, a rubrica da Ent
 - Sessão 1 do browser: cliente
 - Sessão 2 (janela anônima): profissional
 
-**Faça um smoke test 15 minutos antes.** Garante que backend + frontend estão verdes, credenciais funcionam, e `ANTHROPIC_API_KEY` está ativa em produção (teste a cotação com IA).
+**Faça um smoke test 15 minutos antes.** Garante que backend + frontend estão verdes e credenciais funcionam.
 
 ---
 
@@ -76,25 +76,9 @@ Abrir https://app-devai-backend.vercel.app/api/docs:
 
 ---
 
-## 4. RF3 — Tecnologia de fronteira (IA) (3 min)
+## 4. RF3 — Tecnologia de fronteira (IA)
 
-**Observação original:** *"Nenhuma tecnologia avançada implementada."*
-
-### Demo
-1. Ainda como cliente, acessar `/cotacao/ia`
-2. Digitar: **"Reformar banheiro pequeno de 4m² com troca de piso, azulejo, louças e metais"**
-3. Clicar **Gerar lista de materiais**
-4. Aguardar ~5 segundos
-5. Mostrar a lista gerada (20+ itens realistas com quantidades, unidades e categorias)
-
-### O que dizer
-> "Integração **real** com Anthropic Claude Haiku 4.5 — não é mock. O prompt é especialista em materiais de construção civil no Brasil. Resposta validada por schema JSON, itens categorizados, observações contextuais. Tudo logado com tokens usados via Pino."
-
-### Evidências
-- `apps/backend/src/modules/ai/ai.service.ts`
-- Teste unitário com mock do SDK: `ai.service.spec.ts`
-- Swagger: `POST /v1/ai/material-quote`
-- No health check: `env: production`
+> ⚠️ **Este item foi removido do projeto.** O módulo de cotação de materiais via IA (`/cotacao/ia`) não está disponível na versão entregue. O critério RF3 não será demonstrado.
 
 ---
 
