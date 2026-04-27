@@ -42,16 +42,18 @@ function getServiceColors(iconName: string) {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ service?: string }>;
+  searchParams: Promise<{ service?: string; serviceId?: string }>;
 }) {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const { service: selectedService } = await searchParams;
+  const { service: selectedServiceName, serviceId: selectedServiceId } = await searchParams;
 
-  // Build professional query — filters by service when selected
+  // Build professional query — filters by serviceId (UUID) when selected
   const profParams = new URLSearchParams();
-  if (selectedService) profParams.set('service', selectedService);
+  if (selectedServiceId) profParams.set('serviceId', selectedServiceId);
+  // Legacy: fall back to name-based filter if only ?service= is present
+  else if (selectedServiceName) profParams.set('service', selectedServiceName);
   const profQs = profParams.toString();
 
   const [user, profResult, servicesResult] = await Promise.all([
@@ -73,6 +75,11 @@ export default async function HomePage({
     : ((servicesResult as any)?.data ?? []);
 
   const firstName = user?.firstName ?? 'você';
+
+  // Derive selected service object for display purposes
+  const selectedSvc = services.find((s) => s.id === selectedServiceId) ??
+    (selectedServiceName ? services.find((s) => s.name === selectedServiceName) : undefined);
+  const selectedService = selectedSvc?.name ?? selectedServiceName;
 
   const proSectionTitle = selectedService
     ? `Profissionais de ${selectedService}`
@@ -141,10 +148,10 @@ export default async function HomePage({
         {/* Mobile: 2-col */}
         <div className="grid grid-cols-2 gap-3 md:hidden">
           {services.map((svc) => {
-            const isActive = selectedService === svc.name;
+            const isActive = selectedServiceId === svc.id || (selectedServiceName === svc.name && !selectedServiceId);
             const colors = getServiceColors(svc.icon_name);
             // Toggle: clicking active service clears the filter
-            const href = isActive ? '/' : `/?service=${encodeURIComponent(svc.name)}`;
+            const href = isActive ? '/' : `/?serviceId=${encodeURIComponent(svc.id)}`;
             return (
               <Link
                 key={svc.id}
@@ -168,9 +175,9 @@ export default async function HomePage({
         {/* Desktop: 3-col bento */}
         <div className="hidden md:grid md:grid-cols-3 gap-4">
           {services.map((svc) => {
-            const isActive = selectedService === svc.name;
+            const isActive = selectedServiceId === svc.id || (selectedServiceName === svc.name && !selectedServiceId);
             const colors = getServiceColors(svc.icon_name);
-            const href = isActive ? '/' : `/?service=${encodeURIComponent(svc.name)}`;
+            const href = isActive ? '/' : `/?serviceId=${encodeURIComponent(svc.id)}`;
             return (
               <Link
                 key={svc.id}
@@ -262,7 +269,7 @@ export default async function HomePage({
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-900 truncate">{p.profiles?.full_name ?? 'Profissional'}</p>
-                    <p className="text-xs text-slate-400 truncate">{p.specialty ?? 'Especialista'}</p>
+                    <p className="text-xs text-slate-400 truncate">{(p.services?.find((s: {visibility_status: string; service_name: string}) => s.visibility_status === 'active')?.service_name) ?? p.specialty ?? 'Especialista'}</p>
                     <div className="flex items-center gap-1 mt-1">
                       <StarRating rating={p.rating_avg ?? 0} size="sm" count={p.total_reviews ?? 0} />
                     </div>
@@ -303,7 +310,7 @@ export default async function HomePage({
                 {/* Info */}
                 <div className="p-4">
                   <p className="font-bold text-on-surface truncate">{p.profiles?.full_name ?? 'Profissional'}</p>
-                  <p className="text-sm text-on-surface-variant truncate mt-0.5">{p.specialty ?? 'Especialista'}</p>
+                  <p className="text-sm text-on-surface-variant truncate mt-0.5">{(p.services?.find((s: {visibility_status: string; service_name: string}) => s.visibility_status === 'active')?.service_name) ?? p.specialty ?? 'Especialista'}</p>
                   <div className="flex items-center gap-1.5 mt-2">
                     <StarRating rating={p.rating_avg ?? 0} size="sm" count={p.total_reviews ?? 0} />
                   </div>

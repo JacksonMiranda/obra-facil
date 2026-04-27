@@ -177,6 +177,7 @@ export class VisitsService {
         // Booking metadata
         requesterName: input.requesterName,
         serviceType: input.serviceType,
+        serviceId: input.serviceId,
         description: input.description,
         // Legacy fallback
         address: input.address,

@@ -14,12 +14,20 @@ interface ServiceCategory {
   description: string | null;
 }
 
+interface ActiveService {
+  service_id: string;
+  service_name: string;
+  service_icon: string;
+  visibility_status: 'active' | 'inactive';
+}
+
 interface ProfessionalProfile {
   specialty: string;
   bio: string | null;
   visibility_status?: 'draft' | 'active' | 'inactive';
   is_complete?: boolean;
   missing_fields?: string[];
+  services?: ActiveService[];
 }
 
 interface Props {
@@ -34,7 +42,8 @@ export function ProfessionalActivation({ roles }: Props) {
 
   const [open, setOpen] = useState(false);
   const [services, setServices] = useState<ServiceCategory[]>([]);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  // Multi-select: Set of service IDs
+  const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set());
   const [bio, setBio] = useState('');
   const [city, setCity] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,7 +53,7 @@ export function ProfessionalActivation({ roles }: Props) {
   const [editing, setEditing] = useState(false);
   const [currentProfile, setCurrentProfile] = useState<ProfessionalProfile | null>(null);
   const [editBio, setEditBio] = useState('');
-  const [editServiceId, setEditServiceId] = useState<string | null>(null);
+  const [editServiceIds, setEditServiceIds] = useState<Set<string>>(new Set());
   const [success, setSuccess] = useState<string | null>(null);
   const [draftWarning, setDraftWarning] = useState<{ missing: string[] } | null>(null);
 
@@ -65,35 +74,39 @@ export function ProfessionalActivation({ roles }: Props) {
       .then((pro) => {
         setCurrentProfile(pro);
         setEditBio(pro.bio ?? '');
+        // Pre-select currently active services
+        const activeIds = new Set(
+          (pro.services ?? [])
+            .filter((s) => s.visibility_status === 'active')
+            .map((s) => s.service_id),
+        );
+        setEditServiceIds(activeIds);
       })
       .catch(() => setCurrentProfile(null));
 
-    // Check if the professional has configured availability
     api.get<unknown[]>('/v1/availability')
       .then((slots) => setHasAvailability(Array.isArray(slots) && slots.length > 0))
       .catch(() => setHasAvailability(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isProfessional]);
 
-  // When services load and we have a current profile, pre-select the matching service
-  useEffect(() => {
-    if (currentProfile && services.length > 0 && !editServiceId) {
-      const match = services.find((s) => s.name === currentProfile.specialty);
-      if (match) setEditServiceId(match.id);
-    }
-  }, [currentProfile, services, editServiceId]);
+  function toggleService(id: string, current: Set<string>, setter: (s: Set<string>) => void) {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setter(next);
+  }
 
   async function handleActivate(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedServiceId) {
-      setError('Selecione uma especialidade');
+    if (selectedServiceIds.size === 0) {
+      setError('Selecione ao menos uma especialidade');
       return;
     }
     if (bio.trim().length > 0 && bio.trim().length < 10) {
       setError('A bio deve ter no mínimo 10 caracteres');
       return;
     }
-    const selected = services.find((s) => s.id === selectedServiceId);
     setLoading(true);
     setError(null);
     try {
@@ -102,12 +115,11 @@ export function ProfessionalActivation({ roles }: Props) {
         is_complete: boolean;
         missing_fields: string[];
       }>('/v1/account/roles/professional/activate', {
-        specialty: selected?.name ?? '',
+        serviceIds: Array.from(selectedServiceIds),
         bio: bio.trim() || undefined,
         city: city.trim() || undefined,
       }, true);
 
-      // Auto-switch to professional context immediately after activation
       persistActingAs('professional');
       setRole('professional');
       await api.patch('/v1/account/acting-as', { role: 'professional' }).catch(() => null);
@@ -116,7 +128,6 @@ export function ProfessionalActivation({ roles }: Props) {
         setDraftWarning({ missing: result.missing_fields });
       }
 
-      // Prompt user to configure availability
       setShowAvailabilityPrompt(true);
       router.refresh();
     } catch (err) {
@@ -151,9 +162,8 @@ export function ProfessionalActivation({ roles }: Props) {
     setError(null);
     setSuccess(null);
     try {
-      const selectedSvc = services.find((s) => s.id === editServiceId);
       const updated = await api.put<ProfessionalProfile>('/v1/professionals/me', {
-        specialty: selectedSvc?.name,
+        serviceIds: Array.from(editServiceIds),
         bio: editBio.trim() || undefined,
       });
       setCurrentProfile(updated);
@@ -172,6 +182,10 @@ export function ProfessionalActivation({ roles }: Props) {
       setLoading(false);
     }
   }
+
+  const activeServices = (currentProfile?.services ?? []).filter(
+    (s) => s.visibility_status === 'active',
+  );
 
   return (
     <div className="mt-6">
@@ -201,7 +215,7 @@ export function ProfessionalActivation({ roles }: Props) {
         </div>
       )}
 
-      {/* No-availability warning (shown when professional has no slots) */}
+      {/* No-availability warning */}
       {isProfessional && hasAvailability === false && !showAvailabilityPrompt && (
         <div className="mb-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2">
           <span className="material-symbols-outlined text-amber-500 text-lg mt-0.5">warning</span>
@@ -248,12 +262,23 @@ export function ProfessionalActivation({ roles }: Props) {
                 </div>
                 {currentProfile && !editing && (
                   <div className="mt-1 space-y-0.5">
-                    <p className="text-xs text-slate-500">
-                      <span className="font-medium">Especialidade:</span>{' '}
-                      {currentProfile.specialty}
-                    </p>
+                    {activeServices.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {activeServices.map((s) => (
+                          <span
+                            key={s.service_id}
+                            className="inline-flex items-center gap-1 text-[10px] font-medium text-trust bg-trust/5 border border-trust/20 px-2 py-0.5 rounded-full"
+                          >
+                            <span className="material-symbols-outlined text-[12px]">{s.service_icon}</span>
+                            {s.service_name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400">Nenhuma especialidade ativa</p>
+                    )}
                     {currentProfile.bio && (
-                      <p className="text-xs text-slate-400 line-clamp-2">
+                      <p className="text-xs text-slate-400 line-clamp-2 mt-1">
                         {currentProfile.bio}
                       </p>
                     )}
@@ -280,7 +305,7 @@ export function ProfessionalActivation({ roles }: Props) {
                   <span className="font-medium">
                     {draftWarning.missing.map((f) => {
                       if (f === 'bio') return 'Descrição (mín. 10 caracteres)';
-                      if (f === 'specialty') return 'Especialidade';
+                      if (f === 'services') return 'Especialidade';
                       if (f === 'full_name') return 'Nome completo';
                       return f;
                     }).join(', ')}
@@ -300,29 +325,42 @@ export function ProfessionalActivation({ roles }: Props) {
               <form onSubmit={handleSaveProfile} className="mt-4 space-y-3 border-t border-slate-50 pt-4">
                 <div>
                   <label className="text-xs text-slate-500 font-medium">
-                    Especialidade
+                    Especialidades <span className="text-slate-300">(selecione uma ou mais)</span>
                   </label>
                   <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {services.map((svc) => (
-                      <button
-                        key={svc.id}
-                        type="button"
-                        onClick={() => setEditServiceId(svc.id)}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${
-                          editServiceId === svc.id
-                            ? 'border-trust bg-trust/5 ring-1 ring-trust/20'
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-xl text-trust">
-                          {svc.icon_name}
-                        </span>
-                        <span className="text-xs font-medium text-slate-700 leading-tight">
-                          {svc.name}
-                        </span>
-                      </button>
-                    ))}
+                    {services.map((svc) => {
+                      const checked = editServiceIds.has(svc.id);
+                      return (
+                        <button
+                          key={svc.id}
+                          type="button"
+                          onClick={() => toggleService(svc.id, editServiceIds, setEditServiceIds)}
+                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center relative ${
+                            checked
+                              ? 'border-trust bg-trust/5 ring-1 ring-trust/20'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
+                          }`}
+                        >
+                          {checked && (
+                            <span className="absolute top-1.5 right-1.5 material-symbols-outlined text-[14px] text-trust">
+                              check_circle
+                            </span>
+                          )}
+                          <span className="material-symbols-outlined text-xl text-trust">
+                            {svc.icon_name}
+                          </span>
+                          <span className="text-xs font-medium text-slate-700 leading-tight">
+                            {svc.name}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
+                  {editServiceIds.size === 0 && (
+                    <p className="mt-1.5 text-xs text-amber-600">
+                      Sem especialidades selecionadas — seu perfil ficará oculto das buscas.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -347,8 +385,12 @@ export function ProfessionalActivation({ roles }: Props) {
                       setError(null);
                       if (currentProfile) {
                         setEditBio(currentProfile.bio ?? '');
-                        const match = services.find((s) => s.name === currentProfile.specialty);
-                        setEditServiceId(match?.id ?? null);
+                        const activeIds = new Set(
+                          (currentProfile.services ?? [])
+                            .filter((s) => s.visibility_status === 'active')
+                            .map((s) => s.service_id),
+                        );
+                        setEditServiceIds(activeIds);
                       }
                     }}
                     className="flex-1 text-sm text-slate-500 py-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
@@ -405,28 +447,37 @@ export function ProfessionalActivation({ roles }: Props) {
                 <div className="mt-4 space-y-3">
                   <div>
                     <label className="text-xs text-slate-500 font-medium">
-                      Especialidade <span className="text-red-400">*</span>
+                      Especialidades <span className="text-red-400">*</span>{' '}
+                      <span className="text-slate-300">(selecione uma ou mais)</span>
                     </label>
                     <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {services.map((svc) => (
-                        <button
-                          key={svc.id}
-                          type="button"
-                          onClick={() => setSelectedServiceId(svc.id)}
-                          className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center ${
-                            selectedServiceId === svc.id
-                              ? 'border-trust bg-trust/5 ring-1 ring-trust/20'
-                              : 'border-slate-200 hover:border-slate-300 bg-white'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-xl text-trust">
-                            {svc.icon_name}
-                          </span>
-                          <span className="text-xs font-medium text-slate-700 leading-tight">
-                            {svc.name}
-                          </span>
-                        </button>
-                      ))}
+                      {services.map((svc) => {
+                        const checked = selectedServiceIds.has(svc.id);
+                        return (
+                          <button
+                            key={svc.id}
+                            type="button"
+                            onClick={() => toggleService(svc.id, selectedServiceIds, setSelectedServiceIds)}
+                            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all text-center relative ${
+                              checked
+                                ? 'border-trust bg-trust/5 ring-1 ring-trust/20'
+                                : 'border-slate-200 hover:border-slate-300 bg-white'
+                            }`}
+                          >
+                            {checked && (
+                              <span className="absolute top-1.5 right-1.5 material-symbols-outlined text-[14px] text-trust">
+                                check_circle
+                              </span>
+                            )}
+                            <span className="material-symbols-outlined text-xl text-trust">
+                              {svc.icon_name}
+                            </span>
+                            <span className="text-xs font-medium text-slate-700 leading-tight">
+                              {svc.name}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                     {services.length === 0 && (
                       <p className="mt-2 text-xs text-slate-400">Carregando especialidades...</p>
@@ -481,3 +532,4 @@ export function ProfessionalActivation({ roles }: Props) {
     </div>
   );
 }
+

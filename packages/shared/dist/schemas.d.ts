@@ -2,6 +2,7 @@ import { z } from 'zod';
 export declare const SearchProfessionalsSchema: z.ZodObject<{
     q: z.ZodOptional<z.ZodString>;
     service: z.ZodOptional<z.ZodString>;
+    serviceId: z.ZodOptional<z.ZodString>;
     city: z.ZodOptional<z.ZodString>;
     limit: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
     offset: z.ZodDefault<z.ZodCoercedNumber<unknown>>;
@@ -12,7 +13,7 @@ export type SearchProfessionalsInput = z.infer<typeof SearchProfessionalsSchema>
  * bio is required and must meet the minimum length for publication.
  */
 export declare const ActivateProfessionalSchema: z.ZodObject<{
-    specialty: z.ZodString;
+    serviceIds: z.ZodArray<z.ZodString>;
     bio: z.ZodString;
     city: z.ZodOptional<z.ZodString>;
     display_name: z.ZodOptional<z.ZodString>;
@@ -23,7 +24,7 @@ export type ActivateProfessionalInput = z.infer<typeof ActivateProfessionalSchem
  * If bio is provided it must still meet the minimum length.
  */
 export declare const UpdateProfessionalSchema: z.ZodObject<{
-    specialty: z.ZodOptional<z.ZodString>;
+    serviceIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
     bio: z.ZodOptional<z.ZodString>;
     city: z.ZodOptional<z.ZodString>;
     display_name: z.ZodOptional<z.ZodString>;
@@ -75,6 +76,7 @@ export declare const BookVisitSchema: z.ZodObject<{
     stateCode: z.ZodString;
     requesterName: z.ZodString;
     serviceType: z.ZodString;
+    serviceId: z.ZodOptional<z.ZodString>;
     description: z.ZodString;
     address: z.ZodOptional<z.ZodString>;
     notes: z.ZodOptional<z.ZodString>;

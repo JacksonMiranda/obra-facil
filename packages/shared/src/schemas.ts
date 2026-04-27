@@ -6,6 +6,7 @@ import { MIN_BIO_LENGTH } from './visibility';
 export const SearchProfessionalsSchema = z.object({
   q: z.string().optional(),
   service: z.string().optional(),
+  serviceId: z.string().uuid().optional(),
   city: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
@@ -18,7 +19,7 @@ export type SearchProfessionalsInput = z.infer<typeof SearchProfessionalsSchema>
  * bio is required and must meet the minimum length for publication.
  */
 export const ActivateProfessionalSchema = z.object({
-  specialty: z.string().min(2).max(100),
+  serviceIds: z.array(z.string().uuid('ID de serviço inválido')).min(1, 'Selecione ao menos um serviço'),
   bio: z
     .string()
     .min(MIN_BIO_LENGTH, `Bio deve ter no mínimo ${MIN_BIO_LENGTH} caracteres`)
@@ -34,7 +35,7 @@ export type ActivateProfessionalInput = z.infer<typeof ActivateProfessionalSchem
  * If bio is provided it must still meet the minimum length.
  */
 export const UpdateProfessionalSchema = z.object({
-  specialty: z.string().min(2).max(100).optional(),
+  serviceIds: z.array(z.string().uuid('ID de serviço inválido')).min(1, 'Selecione ao menos um serviço').optional(),
   bio: z
     .string()
     .min(MIN_BIO_LENGTH, `Bio deve ter no mínimo ${MIN_BIO_LENGTH} caracteres`)
@@ -122,6 +123,7 @@ export const BookVisitSchema = z.object({
   // Booking metadata
   requesterName: z.string().min(1, 'Nome do solicitante obrigatório').max(100),
   serviceType: z.string().min(1, 'Tipo de serviço obrigatório').max(100),
+  serviceId: z.string().uuid('ID de serviço inválido').optional(),
   description: z.string().min(10, 'Descreva o problema (mín. 10 caracteres)').max(1000),
   // Deprecated — kept for backward compatibility
   address: z.string().optional(),

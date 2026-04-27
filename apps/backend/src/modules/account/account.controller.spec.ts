@@ -61,19 +61,28 @@ describe('AccountController', () => {
 
   describe('activateProfessionalRole', () => {
     const validBody = {
-      specialty: 'Marceneiro',
+      serviceIds: ['a1b2c3d4-e5f6-4789-8000-000000000001'],
       bio: 'Mais de 10 anos de experiência em marcenaria',
     };
 
     it('creates a new professionals record when none exists', async () => {
       (db.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [{ id: 'pro-uuid' }] }) // UPSERT professionals (INSERT path)
+        .mockResolvedValueOnce({ rows: [{ id: 'pro-uuid' }] }) // UPSERT professionals
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE ps inactive
+        .mockResolvedValueOnce({ rows: [] }) // UPSERT professional_services
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE specialty snapshot
         .mockResolvedValueOnce({ rows: [] }) // UPSERT account_roles
         .mockResolvedValueOnce({
-          rows: [{ bio: validBody.bio, full_name: mockProfile.full_name }],
-        }) // SELECT bio + full_name
+          rows: [
+            {
+              bio: validBody.bio,
+              full_name: mockProfile.full_name,
+              active_service_count: '1',
+            },
+          ],
+        }) // SELECT bio + full_name + count
         .mockResolvedValueOnce({ rows: [] }) // UPDATE visibility_status
-        .mockResolvedValueOnce({ rows: [] }) // UPDATE profiles SET role = 'professional'
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE profiles role
         .mockResolvedValueOnce({
           rows: [{ role: 'client' }, { role: 'professional' }],
         }); // SELECT roles
@@ -94,15 +103,23 @@ describe('AccountController', () => {
     });
 
     it('reuses the existing professionals record on re-activation', async () => {
-      // Same upsert path regardless of whether record exists — ON CONFLICT handles both
       (db.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [{ id: 'existing-pro-uuid' }] }) // UPSERT professionals (DO UPDATE path)
+        .mockResolvedValueOnce({ rows: [{ id: 'existing-pro-uuid' }] }) // UPSERT professionals
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE ps inactive
+        .mockResolvedValueOnce({ rows: [] }) // UPSERT professional_services
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE specialty snapshot
         .mockResolvedValueOnce({ rows: [] }) // UPSERT account_roles
         .mockResolvedValueOnce({
-          rows: [{ bio: validBody.bio, full_name: mockProfile.full_name }],
+          rows: [
+            {
+              bio: validBody.bio,
+              full_name: mockProfile.full_name,
+              active_service_count: '1',
+            },
+          ],
         })
         .mockResolvedValueOnce({ rows: [] }) // UPDATE visibility_status
-        .mockResolvedValueOnce({ rows: [] }) // UPDATE profiles SET role = 'professional'
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE profiles role
         .mockResolvedValueOnce({
           rows: [{ role: 'client' }, { role: 'professional' }],
         });
@@ -115,36 +132,26 @@ describe('AccountController', () => {
       expect(result.professionalId).toBe('existing-pro-uuid');
 
       // Verify the single upsert query is used for both create and re-activate paths
-      expect(db.query).toHaveBeenCalledTimes(6);
+      expect(db.query).toHaveBeenCalledTimes(9);
       const upsertCall = (db.query as jest.Mock).mock.calls[0] as unknown[];
       expect((upsertCall[0] as string).toUpperCase()).toContain('ON CONFLICT');
     });
 
-    it('returns draft status when bio is missing', async () => {
-      const bodyNoBio = { specialty: 'Marceneiro', bio: 'curto' };
-
-      (db.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [] })
-        .mockResolvedValueOnce({ rows: [{ id: 'pro-uuid' }] })
-        .mockResolvedValueOnce({ rows: [] })
-        .mockResolvedValueOnce({ rows: [] })
-        .mockResolvedValueOnce({
-          rows: [{ bio: 'curto', full_name: mockProfile.full_name }],
-        })
-        .mockResolvedValueOnce({ rows: [] })
-        .mockResolvedValueOnce({
-          rows: [{ role: 'client' }, { role: 'professional' }],
-        });
+    it('returns draft status when bio is too short', async () => {
+      const bodyShortBio = {
+        serviceIds: ['a1b2c3d4-e5f6-4789-8000-000000000001'],
+        bio: 'curto',
+      };
 
       await expect(
-        controller.activateProfessionalRole(mockClientAccount, bodyNoBio),
+        controller.activateProfessionalRole(mockClientAccount, bodyShortBio),
       ).rejects.toThrow(); // Zod validation: bio must be >= MIN_BIO_LENGTH
     });
 
-    it('throws Zod error when specialty is missing', async () => {
+    it('throws Zod error when serviceIds is missing', async () => {
       await expect(
         controller.activateProfessionalRole(mockClientAccount, {
-          bio: 'Some bio text here',
+          bio: 'Some bio text here that is long enough',
         }),
       ).rejects.toThrow();
     });
@@ -250,7 +257,7 @@ describe('AccountController', () => {
   describe('deactivate then reactivate preserves professional data', () => {
     it('re-activation reuses existing professional record', async () => {
       const bio = 'Marceneiro com 10 anos de experiência em reformas.';
-      const specialty = 'Marceneiro';
+      const serviceId = 'a1b2c3d4-e5f6-4789-8000-000000000001';
 
       // ── deactivate ──
       (db.query as jest.Mock)
@@ -269,13 +276,22 @@ describe('AccountController', () => {
 
       // ── reactivate ──
       (db.query as jest.Mock)
-        .mockResolvedValueOnce({ rows: [{ id: 'existing-pro-uuid' }] }) // UPSERT professionals (DO UPDATE path)
-        .mockResolvedValueOnce({ rows: [] }) // upsert account_roles
+        .mockResolvedValueOnce({ rows: [{ id: 'existing-pro-uuid' }] }) // UPSERT professionals
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE ps inactive
+        .mockResolvedValueOnce({ rows: [] }) // UPSERT professional_services
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE specialty snapshot
+        .mockResolvedValueOnce({ rows: [] }) // UPSERT account_roles
         .mockResolvedValueOnce({
-          rows: [{ bio, full_name: mockProfile.full_name }],
-        }) // SELECT bio + full_name for visibility recompute
+          rows: [
+            {
+              bio,
+              full_name: mockProfile.full_name,
+              active_service_count: '1',
+            },
+          ],
+        }) // SELECT bio + full_name + count
         .mockResolvedValueOnce({ rows: [] }) // update visibility_status
-        .mockResolvedValueOnce({ rows: [] }) // UPDATE profiles SET role = 'professional'
+        .mockResolvedValueOnce({ rows: [] }) // UPDATE profiles SET role
         .mockResolvedValueOnce({
           rows: [{ role: 'client' }, { role: 'professional' }],
         });
@@ -283,13 +299,13 @@ describe('AccountController', () => {
       const result = await controller.activateProfessionalRole(
         mockClientAccount,
         {
-          specialty,
+          serviceIds: [serviceId],
           bio,
         },
       );
 
-      // Exactly 6 queries (upsert + account_roles + select + visibility + profiles + roles)
-      expect(db.query).toHaveBeenCalledTimes(6);
+      // Exactly 9 queries
+      expect(db.query).toHaveBeenCalledTimes(9);
 
       // Upsert uses ON CONFLICT — guarantees idempotency
       const upsertCall = (db.query as jest.Mock).mock.calls[0] as unknown[];

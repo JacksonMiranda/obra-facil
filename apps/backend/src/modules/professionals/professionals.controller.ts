@@ -56,7 +56,9 @@ export class ProfessionalsController {
     }
 
     const completeness = computeCompleteness({
-      specialty: pro.specialty,
+      activeServiceCount:
+        pro.services?.filter((s) => s.visibility_status === 'active').length ??
+        0,
       bio: pro.bio,
       full_name: pro.profiles.full_name,
     });
@@ -152,10 +154,6 @@ export class ProfessionalsController {
     const values: unknown[] = [];
     let idx = 1;
 
-    if (input.specialty !== undefined) {
-      setClauses.push(`specialty = $${idx++}`);
-      values.push(input.specialty);
-    }
     if (input.bio !== undefined) {
       setClauses.push(`bio = $${idx++}`);
       values.push(input.bio);
@@ -169,11 +167,47 @@ export class ProfessionalsController {
       values.push(input.display_name);
     }
 
+    // Sync professional_services if serviceIds provided
+    if (input.serviceIds !== undefined) {
+      await this.db.query(
+        `UPDATE professional_services
+            SET visibility_status = 'inactive', updated_at = now()
+          WHERE professional_id = $1
+            AND service_id != ALL($2::uuid[])
+            AND visibility_status = 'active'`,
+        [pro.id, input.serviceIds],
+      );
+      for (const serviceId of input.serviceIds) {
+        await this.db.query(
+          `INSERT INTO professional_services (professional_id, service_id, visibility_status)
+           VALUES ($1, $2, 'active')
+           ON CONFLICT (professional_id, service_id)
+             DO UPDATE SET visibility_status = 'active', updated_at = now()`,
+          [pro.id, serviceId],
+        );
+      }
+      // Update specialty snapshot
+      await this.db.query(
+        `UPDATE professionals p
+            SET specialty = s.name
+           FROM services s
+          WHERE s.id = $1
+            AND p.id = $2`,
+        [input.serviceIds[0], pro.id],
+      );
+    }
+
     // Recompute visibility_status based on merged data after patch
-    const mergedSpecialty = input.specialty ?? pro.specialty;
+    const activeServiceCount = await this.db
+      .query<{ cnt: string }>(
+        `SELECT count(*)::int AS cnt FROM professional_services
+          WHERE professional_id = $1 AND visibility_status = 'active'`,
+        [pro.id],
+      )
+      .then((r) => Number(r.rows[0]?.cnt ?? 0));
     const mergedBio = input.bio ?? pro.bio;
     const completeness = computeCompleteness({
-      specialty: mergedSpecialty,
+      activeServiceCount,
       bio: mergedBio,
       full_name: pro.profiles.full_name,
     });
@@ -198,7 +232,9 @@ export class ProfessionalsController {
 
     const updated = await this.repo.findByProfileId(account.profile.id);
     const finalCompleteness = computeCompleteness({
-      specialty: updated?.specialty,
+      activeServiceCount:
+        updated?.services?.filter((s) => s.visibility_status === 'active')
+          .length ?? 0,
       bio: updated?.bio,
       full_name: updated?.profiles.full_name,
     });

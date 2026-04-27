@@ -27,6 +27,7 @@ export interface BookingFlowOptions {
   clientName: string;
   currentUserProfessionalId?: string | null;
   professionalSpecialty?: string;
+  professionalServices?: Array<{ service_id: string; service_name: string; service_icon: string; visibility_status: string }>;
 }
 
 export function useBookingFlow({
@@ -35,6 +36,7 @@ export function useBookingFlow({
   clientName,
   currentUserProfessionalId,
   professionalSpecialty,
+  professionalServices = [],
 }: BookingFlowOptions) {
   const router = useRouter();
   const api = useClientApi();
@@ -160,7 +162,8 @@ export function useBookingFlow({
           cityName: cityName.trim(),
           stateCode: stateCode.toUpperCase(),
           requesterName: clientName,
-          serviceType: professionalSpecialty ?? '',
+          serviceType: professionalSpecialty ?? (professionalServices.find((s) => s.visibility_status === 'active')?.service_name ?? ''),
+          serviceId: professionalServices.find((s) => s.visibility_status === 'active')?.service_id,
           description: description.trim(),
         },
         true, // skipActingAs — booking is always a client action

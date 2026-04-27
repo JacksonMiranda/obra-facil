@@ -427,11 +427,21 @@ export type Store = Database['public']['Tables']['stores']['Row'];
 export type Order = Database['public']['Tables']['orders']['Row'];
 export type Work = Database['public']['Tables']['works']['Row'];
 export type Review = Database['public']['Tables']['reviews']['Row'];
+/** A service offered by a professional (from professional_services join table). */
+export interface ProfessionalService {
+    id: string;
+    professional_id: string;
+    service_id: string;
+    service_name: string;
+    service_icon: string;
+    visibility_status: 'active' | 'inactive';
+}
 export type ProfileWithProfessional = Profile & {
     professionals: Professional | null;
 };
 export type ProfessionalWithProfile = Professional & {
     profiles: Profile;
+    services?: ProfessionalService[];
 };
 /** Returned by computeCompleteness() — which fields are missing for publication */
 export interface ProfessionalCompletenessResult {

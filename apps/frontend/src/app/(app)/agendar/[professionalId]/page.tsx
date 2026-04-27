@@ -56,7 +56,9 @@ export default async function AgendarPage({
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-900">{name}</p>
-          <p className="text-xs text-slate-500">{p.specialty}</p>
+        <p className="text-xs text-slate-500">
+          {(p.services?.filter((s: {visibility_status: string}) => s.visibility_status === 'active').map((s: {service_name: string}) => s.service_name).join(' · ')) || p.specialty}
+        </p>
         </div>
       </div>
 
@@ -66,6 +68,7 @@ export default async function AgendarPage({
         clientName={clientName}
         currentUserProfessionalId={currentUserProfessionalId}
         professionalSpecialty={p.specialty}
+        professionalServices={p.services ?? []}
       />
     </div>
   );

@@ -175,9 +175,9 @@ describe('VisitsService', () => {
     it('translates unique-constraint (double booking) to Conflict', async () => {
       const err = Object.assign(new Error('duplicate'), { code: '23505' });
       visitsRepo.create.mockRejectedValue(err);
-      await expect(service.book(makeProfile(), validInput)).rejects.toBeInstanceOf(
-        ConflictException,
-      );
+      await expect(
+        service.book(makeProfile(), validInput),
+      ).rejects.toBeInstanceOf(ConflictException);
     });
 
     it('rethrows non-constraint errors', async () => {

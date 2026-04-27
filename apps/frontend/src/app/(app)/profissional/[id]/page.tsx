@@ -54,8 +54,14 @@ export default async function ProfissionalPage({
             </div>
 
             <h1 className="text-xl font-bold text-slate-900 mt-3 text-center">{profile?.full_name}</h1>
-            {p.specialty && (
-              <p className="text-sm text-slate-500 uppercase tracking-wide mt-0.5 text-center">{p.specialty}</p>
+            {(p.services?.filter((s: {visibility_status: string}) => s.visibility_status === 'active').length > 0
+              ? p.services.filter((s: {visibility_status: string}) => s.visibility_status === 'active').map((s: {service_name: string}) => s.service_name).join(', ')
+              : p.specialty) && (
+              <p className="text-sm text-slate-500 uppercase tracking-wide mt-0.5 text-center">
+                {p.services?.filter((s: {visibility_status: string}) => s.visibility_status === 'active').length > 0
+                  ? p.services.filter((s: {visibility_status: string}) => s.visibility_status === 'active').map((s: {service_name: string}) => s.service_name).join(' · ')
+                  : p.specialty}
+              </p>
             )}
             {p.is_verified && (
               <div className="flex items-center gap-1.5 mt-2 bg-emerald-50 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full">
@@ -92,12 +98,25 @@ export default async function ProfissionalPage({
           {/* ── Reviews section ─────────────────────────────────── */}
           <ReviewsSection reviews={allReviews} totalReviews={totalReviews} />
 
-          {/* ── Specialty chip ──────────────────────────────────── */}
-          {p.specialty && (
+          {/* ── Services chips ────────────────────────────────────── */}
+          {((p.services?.filter((s: {visibility_status: string}) => s.visibility_status === 'active')?.length ?? 0) > 0 || p.specialty) && (
             <div className="px-4 md:px-0 mt-5">
-              <h2 className="text-sm font-semibold text-slate-900 mb-2">Especialidade</h2>
+              <h2 className="text-sm font-semibold text-slate-900 mb-2">Especialidades</h2>
               <div className="flex flex-wrap gap-2">
-                <span className="text-xs font-medium text-[#1E40AF] bg-blue-50 px-3 py-1.5 rounded-full">{p.specialty}</span>
+                {(p.services?.filter((s: {visibility_status: string}) => s.visibility_status === 'active')?.length ?? 0) > 0
+                  ? p.services
+                      .filter((s: {visibility_status: string}) => s.visibility_status === 'active')
+                      .map((s: {service_id: string; service_name: string; service_icon: string}) => (
+                        <span
+                          key={s.service_id}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1E40AF] bg-blue-50 px-3 py-1.5 rounded-full"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">{s.service_icon}</span>
+                          {s.service_name}
+                        </span>
+                      ))
+                  : <span className="text-xs font-medium text-[#1E40AF] bg-blue-50 px-3 py-1.5 rounded-full">{p.specialty}</span>
+                }
               </div>
             </div>
           )}

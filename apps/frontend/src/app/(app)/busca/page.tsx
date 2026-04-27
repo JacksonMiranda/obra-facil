@@ -1,4 +1,4 @@
-// Busca de Profissionais — accepts ?q= (text) and ?service= (category)
+// Busca de Profissionais — accepts ?q= (text) and ?serviceId= (UUID) / ?service= (legacy name)
 import { auth } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
 import { api } from '@/lib/api/client';
@@ -10,25 +10,27 @@ import Link from 'next/link';
 export default async function BuscaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; service?: string }>;
+  searchParams: Promise<{ q?: string; service?: string; serviceId?: string }>;
 }) {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const { q, service } = await searchParams;
+  const { q, service, serviceId } = await searchParams;
 
   const params = new URLSearchParams();
   if (q) params.set('q', q);
-  if (service) params.set('service', service);
+  if (serviceId) params.set('serviceId', serviceId);
+  else if (service) params.set('service', service);
   const qs = params.toString();
   const { professionals } = await api
     .get<{ professionals: any[]; total: number }>(`/v1/professionals${qs ? '?' + qs : ''}`)
     .catch(() => ({ professionals: [] as any[], total: 0 }));
 
+  const filterLabel = serviceId ? null : service;
   const title = q
     ? `Resultados para "${q}"`
-    : service
-      ? `Profissionais de ${service}`
+    : filterLabel
+      ? `Profissionais de ${filterLabel}`
       : 'Todos os profissionais';
 
   return (
@@ -72,7 +74,9 @@ export default async function BuscaPage({
                   <p className="text-sm font-bold text-slate-900 truncate">
                     {p.profiles?.full_name ?? 'Profissional'}
                   </p>
-                  <p className="text-xs text-slate-400 truncate">{p.specialty}</p>
+                  <p className="text-xs text-slate-400 truncate">
+                    {(p.services?.find((s: {visibility_status: string; service_name: string}) => s.visibility_status === 'active')?.service_name) ?? p.specialty ?? 'Profissional'}
+                  </p>
                   <div className="flex items-center gap-1 mt-1">
                     <StarRating rating={p.rating_avg ?? 0} size="sm" />
                     <span className="text-xs font-bold text-slate-700">{p.rating_avg ?? 0}</span>

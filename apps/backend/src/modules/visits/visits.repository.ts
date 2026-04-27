@@ -171,6 +171,7 @@ export class VisitsRepository implements IVisitsRepository {
     stateCode,
     requesterName,
     serviceType,
+    serviceId,
     description,
     address,
     notes,
@@ -186,6 +187,7 @@ export class VisitsRepository implements IVisitsRepository {
     stateCode?: string;
     requesterName?: string;
     serviceType?: string;
+    serviceId?: string;
     description?: string;
     address?: string;
     notes?: string;
@@ -194,10 +196,10 @@ export class VisitsRepository implements IVisitsRepository {
       `INSERT INTO visits (
          client_id, professional_id, scheduled_at, status,
          street, street_number, complement, neighborhood, city_name, state_code,
-         requester_name, service_type, description,
+         requester_name, service_type, service_id, description,
          address, notes
        )
-       VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       VALUES ($1, $2, $3, 'pending', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        RETURNING *`,
       [
         clientId,
@@ -211,6 +213,7 @@ export class VisitsRepository implements IVisitsRepository {
         stateCode ?? null,
         requesterName ?? null,
         serviceType ?? null,
+        serviceId ?? null,
         description ?? null,
         address ?? null,
         notes ?? null,

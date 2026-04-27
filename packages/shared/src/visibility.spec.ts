@@ -9,7 +9,7 @@ import {
 describe('computeCompleteness', () => {
   it('returns complete=true when all required fields are present', () => {
     const result = computeCompleteness({
-      specialty: 'Eletricista',
+      activeServiceCount: 1,
       bio: 'Profissional com 10 anos de experiência em instalações residenciais.',
       full_name: 'João Silva',
     });
@@ -17,29 +17,28 @@ describe('computeCompleteness', () => {
     expect(result.missing).toHaveLength(0);
   });
 
-  it('returns missing=["specialty"] when specialty is empty', () => {
+  it('returns missing=["services"] when activeServiceCount is 0', () => {
     const result = computeCompleteness({
-      specialty: '',
-      bio: 'Profissional experiente',
+      activeServiceCount: 0,
+      bio: 'Profissional experiente com vasta experiência',
       full_name: 'João Silva',
     });
     expect(result.complete).toBe(false);
-    expect(result.missing).toContain('specialty');
+    expect(result.missing).toContain('services');
   });
 
-  it('returns missing=["specialty"] when specialty is null', () => {
+  it('returns missing=["services"] when activeServiceCount is undefined', () => {
     const result = computeCompleteness({
-      specialty: null,
-      bio: 'Profissional experiente',
+      bio: 'Profissional experiente com vasta experiência',
       full_name: 'João Silva',
     });
-    expect(result.missing).toContain('specialty');
+    expect(result.missing).toContain('services');
   });
 
   it('returns missing=["bio"] when bio is shorter than MIN_BIO_LENGTH', () => {
     const shortBio = 'a'.repeat(MIN_BIO_LENGTH - 1);
     const result = computeCompleteness({
-      specialty: 'Eletricista',
+      activeServiceCount: 1,
       bio: shortBio,
       full_name: 'João Silva',
     });
@@ -49,7 +48,7 @@ describe('computeCompleteness', () => {
 
   it('returns missing=["bio"] when bio is null', () => {
     const result = computeCompleteness({
-      specialty: 'Eletricista',
+      activeServiceCount: 1,
       bio: null,
       full_name: 'João Silva',
     });
@@ -59,7 +58,7 @@ describe('computeCompleteness', () => {
   it('accepts bio exactly at MIN_BIO_LENGTH', () => {
     const bio = 'a'.repeat(MIN_BIO_LENGTH);
     const result = computeCompleteness({
-      specialty: 'Eletricista',
+      activeServiceCount: 2,
       bio,
       full_name: 'João Silva',
     });
@@ -69,8 +68,8 @@ describe('computeCompleteness', () => {
 
   it('returns missing=["full_name"] when full_name is empty', () => {
     const result = computeCompleteness({
-      specialty: 'Eletricista',
-      bio: 'Profissional experiente',
+      activeServiceCount: 1,
+      bio: 'Profissional experiente com vasta experiência',
       full_name: '',
     });
     expect(result.missing).toContain('full_name');
@@ -78,12 +77,12 @@ describe('computeCompleteness', () => {
 
   it('returns multiple missing fields when several are invalid', () => {
     const result = computeCompleteness({
-      specialty: null,
+      activeServiceCount: 0,
       bio: null,
       full_name: null,
     });
     expect(result.complete).toBe(false);
-    expect(result.missing).toContain('specialty');
+    expect(result.missing).toContain('services');
     expect(result.missing).toContain('bio');
     expect(result.missing).toContain('full_name');
   });
@@ -109,7 +108,7 @@ describe('deriveVisibilityStatus', () => {
 describe('isProfessionalPubliclyVisible', () => {
   const completeActive = {
     visibility_status: 'active' as const,
-    specialty: 'Eletricista',
+    activeServiceCount: 1,
     bio: 'Profissional com 10 anos de experiência',
     full_name: 'João Silva',
     roleIsActive: true,
@@ -135,8 +134,8 @@ describe('isProfessionalPubliclyVisible', () => {
     expect(isProfessionalPubliclyVisible({ ...completeActive, bio: 'curta' })).toBe(false);
   });
 
-  it('returns false when specialty is empty', () => {
-    expect(isProfessionalPubliclyVisible({ ...completeActive, specialty: '' })).toBe(false);
+  it('returns false when activeServiceCount is 0', () => {
+    expect(isProfessionalPubliclyVisible({ ...completeActive, activeServiceCount: 0 })).toBe(false);
   });
 
   it('returns false when full_name is empty', () => {

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import type {
   IProfessionalsRepository,
+  ProfessionalService,
   ProfessionalWithProfile,
 } from '@obrafacil/shared';
 
@@ -13,6 +14,28 @@ const COLS = `
   p.visibility_status, p.display_name, p.city, p.published_at,
   pr.id AS pr_id, pr.clerk_id, pr.full_name, pr.avatar_url, pr.avatar_id,
   pr.phone, pr.role, pr.created_at AS pr_created_at, pr.updated_at AS pr_updated_at
+`;
+
+// Services subquery — returns JSON array aggregated per professional
+const SERVICES_AGG = `
+  COALESCE(
+    (
+      SELECT json_agg(
+        json_build_object(
+          'id', ps.id,
+          'professional_id', ps.professional_id,
+          'service_id', ps.service_id,
+          'service_name', sv.name,
+          'service_icon', sv.icon_name,
+          'visibility_status', ps.visibility_status
+        ) ORDER BY sv.sort_order, sv.name
+      )
+      FROM professional_services ps
+      INNER JOIN services sv ON sv.id = ps.service_id
+      WHERE ps.professional_id = p.id
+    ),
+    '[]'
+  ) AS services
 `;
 
 function mapRow(row: Record<string, unknown>): ProfessionalWithProfile {
@@ -43,6 +66,9 @@ function mapRow(row: Record<string, unknown>): ProfessionalWithProfile {
       created_at: String(row.pr_created_at),
       updated_at: String(row.pr_updated_at),
     },
+    services: Array.isArray(row.services)
+      ? (row.services as ProfessionalService[])
+      : ((row.services as ProfessionalService[] | null) ?? []),
   };
 }
 
@@ -54,14 +80,14 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
 
   async search({
     query,
-    service,
+    serviceId,
     city: _city,
     limit = 20,
     offset = 0,
     excludeProfileId,
   }: {
     query?: string;
-    service?: string;
+    serviceId?: string;
     city?: string;
     limit?: number;
     offset?: number;
@@ -86,13 +112,9 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     };
 
     const queryTerm = normalizeAndMapTerm(query);
-    const serviceTerm = normalizeAndMapTerm(service);
-    // Raw (non-normalized) service name for direct match against specialties
-    // stored as the literal service category (e.g. "Instalações Hidráulicas").
-    const serviceRaw = service ?? null;
 
     const { rows } = await this.db.query(
-      `SELECT ${COLS}
+      `SELECT ${COLS}, ${SERVICES_AGG}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        INNER JOIN account_roles ar
@@ -105,18 +127,25 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
            WHERE av.professional_id = p.id
          )
          AND ($1::text IS NULL OR pr.full_name ILIKE '%' || $1 || '%' OR p.bio ILIKE '%' || $1 || '%' OR p.specialty ILIKE '%' || $1 || '%')
-         AND ($2::text IS NULL OR p.specialty ILIKE '%' || $2 || '%' OR p.bio ILIKE '%' || $2 || '%'
-              OR ($6::text IS NOT NULL AND p.specialty ILIKE '%' || $6 || '%'))
+         AND (
+           $6::uuid IS NULL
+           OR EXISTS (
+             SELECT 1 FROM professional_services ps_f
+             WHERE ps_f.professional_id = p.id
+               AND ps_f.service_id = $6::uuid
+               AND ps_f.visibility_status = 'active'
+           )
+         )
          AND ($5::uuid IS NULL OR p.profile_id != $5)
        ORDER BY p.rating_avg DESC, p.published_at DESC
        LIMIT $3 OFFSET $4`,
       [
         queryTerm,
-        serviceTerm,
+        null, // unused legacy param slot
         limit ?? 10,
         offset ?? 0,
         excludeProfileId ?? null,
-        serviceRaw,
+        serviceId ?? null,
       ],
     );
     return rows.map(mapRow);
@@ -125,7 +154,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
   /** Public detail. */
   async findById(id: string): Promise<ProfessionalWithProfile | null> {
     const { rows } = await this.db.query(
-      `SELECT ${COLS}
+      `SELECT ${COLS}, ${SERVICES_AGG}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE p.id = $1`,
@@ -140,6 +169,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
   ): Promise<(ProfessionalWithProfile & { reviews: unknown[] }) | null> {
     const { rows } = await this.db.query(
       `SELECT ${COLS},
+          ${SERVICES_AGG},
           COALESCE(
             json_agg(
               json_build_object(
@@ -171,7 +201,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     clerkId: string,
   ): Promise<ProfessionalWithProfile | null> {
     const { rows } = await this.db.query(
-      `SELECT ${COLS}
+      `SELECT ${COLS}, ${SERVICES_AGG}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE pr.clerk_id = $1`,
@@ -184,7 +214,7 @@ export class ProfessionalsRepository implements IProfessionalsRepository {
     profileId: string,
   ): Promise<ProfessionalWithProfile | null> {
     const { rows } = await this.db.query(
-      `SELECT ${COLS}
+      `SELECT ${COLS}, ${SERVICES_AGG}
        FROM professionals p
        INNER JOIN profiles pr ON pr.id = p.profile_id
        WHERE p.profile_id = $1`,

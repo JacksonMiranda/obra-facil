@@ -14,6 +14,7 @@ interface AgendarClientProps {
   clientName: string;
   currentUserProfessionalId?: string | null;
   professionalSpecialty?: string;
+  professionalServices?: Array<{ service_id: string; service_name: string; service_icon: string; visibility_status: string }>;
 }
 
 export function AgendarClient({
@@ -22,9 +23,10 @@ export function AgendarClient({
   clientName,
   currentUserProfessionalId,
   professionalSpecialty,
+  professionalServices = [],
 }: AgendarClientProps) {
   const router = useRouter();
-  const flow = useBookingFlow({ professionalId, professionalName, clientName, currentUserProfessionalId, professionalSpecialty });
+  const flow = useBookingFlow({ professionalId, professionalName, clientName, currentUserProfessionalId, professionalSpecialty, professionalServices });
   // ── Early-exit guards ─────────────────────────────────────
   if (flow.loading) {
     return (

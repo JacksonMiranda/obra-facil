@@ -121,7 +121,7 @@ describe('ProfessionalsRepository', () => {
       expect(sql).toContain("p.visibility_status = 'active'");
     });
 
-    it('usa parâmetros posicionais ($1, $2, $3, $4) — sem interpolação de string', async () => {
+    it('usa parâmetros posicionais ($1, $3, $4) — sem interpolação de string', async () => {
       (db.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
 
       await repo.search({ query: 'Ricardo', limit: 20, offset: 0 });
@@ -129,9 +129,9 @@ describe('ProfessionalsRepository', () => {
       const sql: string = (
         (db.query as jest.Mock).mock.calls[0] as unknown[]
       )[0] as string;
-      // Deve usar $1, $2 etc. para prevenir SQL injection
+      // Deve usar $1 etc. para prevenir SQL injection
       expect(sql).toMatch(/\$1/);
-      expect(sql).toMatch(/\$2/);
+      expect(sql).toMatch(/\$3/);
       // O valor real não deve estar interpolado diretamente no SQL
       expect(sql).not.toContain('Ricardo');
     });
@@ -159,37 +159,34 @@ describe('ProfessionalsRepository', () => {
     });
   });
 
-  // ── search — mapeamento de termos de serviço ──────────────────────────────
+  // ── search — filtro por serviceId ─────────────────────────────────────────
 
-  describe('search — normalização de categorias de serviço', () => {
-    async function captureServiceParam(service: string): Promise<unknown> {
+  describe('search — filtro por serviceId', () => {
+    const SERVICE_UUID = 'a1b2c3d4-e5f6-4789-8000-000000000001';
+
+    it('passa serviceId como parâmetro quando fornecido', async () => {
       (db.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
-      await repo.search({ service });
+
+      await repo.search({ serviceId: SERVICE_UUID });
+
       const params: unknown[] = (
         (db.query as jest.Mock).mock.calls[0] as unknown[]
       )[1] as unknown[];
-      return params[1]; // $2 = mappedService
-    }
-
-    it.each([
-      // Terms with accent (é) match the repository condition: s.includes('elétric')
-      ['elétrico', 'eletric'],
-      ['Reparos elétricos', 'eletric'],
-      ['hidráulica', 'encanad'],
-      ['encanador', 'encanad'],
-      ['pintura', 'pint'],
-      ['pedreiro', 'pedreir'],
-      ['Marceneiro', 'marceneir'],
-      ['diarista', 'diarista'],
-    ])('mapeia "%s" para "%s"', async (input, expected) => {
-      const result = await captureServiceParam(input);
-      expect(result).toBe(expected);
+      // serviceId should appear in params array
+      expect(params).toContain(SERVICE_UUID);
     });
 
-    it('preserva o termo original quando não há mapeamento conhecido', async () => {
-      const result = await captureServiceParam('serralheiro');
-      // Nenhuma das chaves de mapeamento corresponde → usa o valor original
-      expect(result).toBe('serralheiro');
+    it('passa null para serviceId quando não fornecido', async () => {
+      (db.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
+
+      await repo.search({});
+
+      const params: unknown[] = (
+        (db.query as jest.Mock).mock.calls[0] as unknown[]
+      )[1] as unknown[];
+      // When no serviceId, the slot should be null
+      const hasNull = params.some((p) => p === null);
+      expect(hasNull).toBe(true);
     });
   });
 

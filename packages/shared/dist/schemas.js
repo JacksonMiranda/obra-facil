@@ -7,6 +7,7 @@ const visibility_1 = require("./visibility");
 exports.SearchProfessionalsSchema = zod_1.z.object({
     q: zod_1.z.string().optional(),
     service: zod_1.z.string().optional(),
+    serviceId: zod_1.z.string().uuid().optional(),
     city: zod_1.z.string().optional(),
     limit: zod_1.z.coerce.number().int().min(1).max(100).default(50),
     offset: zod_1.z.coerce.number().int().min(0).default(0),
@@ -16,7 +17,7 @@ exports.SearchProfessionalsSchema = zod_1.z.object({
  * bio is required and must meet the minimum length for publication.
  */
 exports.ActivateProfessionalSchema = zod_1.z.object({
-    specialty: zod_1.z.string().min(2).max(100),
+    serviceIds: zod_1.z.array(zod_1.z.string().uuid('ID de serviço inválido')).min(1, 'Selecione ao menos um serviço'),
     bio: zod_1.z
         .string()
         .min(visibility_1.MIN_BIO_LENGTH, `Bio deve ter no mínimo ${visibility_1.MIN_BIO_LENGTH} caracteres`)
@@ -29,7 +30,7 @@ exports.ActivateProfessionalSchema = zod_1.z.object({
  * If bio is provided it must still meet the minimum length.
  */
 exports.UpdateProfessionalSchema = zod_1.z.object({
-    specialty: zod_1.z.string().min(2).max(100).optional(),
+    serviceIds: zod_1.z.array(zod_1.z.string().uuid('ID de serviço inválido')).min(1, 'Selecione ao menos um serviço').optional(),
     bio: zod_1.z
         .string()
         .min(visibility_1.MIN_BIO_LENGTH, `Bio deve ter no mínimo ${visibility_1.MIN_BIO_LENGTH} caracteres`)
@@ -87,6 +88,7 @@ exports.BookVisitSchema = zod_1.z.object({
     // Booking metadata
     requesterName: zod_1.z.string().min(1, 'Nome do solicitante obrigatório').max(100),
     serviceType: zod_1.z.string().min(1, 'Tipo de serviço obrigatório').max(100),
+    serviceId: zod_1.z.string().uuid('ID de serviço inválido').optional(),
     description: zod_1.z.string().min(10, 'Descreva o problema (mín. 10 caracteres)').max(1000),
     // Deprecated — kept for backward compatibility
     address: zod_1.z.string().optional(),

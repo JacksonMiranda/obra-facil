@@ -49,13 +49,13 @@ export class AccountController {
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['specialty'],
+      required: ['serviceIds', 'bio'],
       properties: {
-        specialty: {
-          type: 'string',
-          example: 'Eletricista',
-          minLength: 2,
-          maxLength: 100,
+        serviceIds: {
+          type: 'array',
+          items: { type: 'string', format: 'uuid' },
+          minItems: 1,
+          example: ['<uuid>'],
         },
         bio: {
           type: 'string',
@@ -74,23 +74,49 @@ export class AccountController {
 
     const profileId = account.profile.id;
 
-    // Atomically upsert the professionals record to prevent TOCTOU duplicates.
-    // ON CONFLICT (profile_id) guarantees idempotency even under concurrent
-    // requests — the unique index acts as the single source of truth.
-    // bio and city are preserved when not provided (COALESCE keeps existing value).
+    // 1. Atomically upsert the professionals record.
+    // specialty is preserved as a legacy snapshot (first selected service name).
     const { rows: upserted } = await this.db.query<{ id: string }>(
       `INSERT INTO professionals (profile_id, specialty, bio, city)
-       VALUES ($1, $2, $3, $4)
+       VALUES ($1, '', $2, $3)
        ON CONFLICT (profile_id) DO UPDATE
-         SET specialty = EXCLUDED.specialty,
-             bio       = COALESCE(EXCLUDED.bio, professionals.bio),
-             city      = COALESCE(EXCLUDED.city, professionals.city)
+         SET bio  = COALESCE(EXCLUDED.bio, professionals.bio),
+             city = COALESCE(EXCLUDED.city, professionals.city)
        RETURNING id`,
-      [profileId, input.specialty, input.bio ?? null, input.city ?? null],
+      [profileId, input.bio ?? null, input.city ?? null],
     );
     const professionalId = upserted[0].id;
 
-    // Upsert account_roles entry for professional role
+    // 2. Sync professional_services: upsert selected as active, deactivate rest.
+    await this.db.query(
+      `UPDATE professional_services
+          SET visibility_status = 'inactive', updated_at = now()
+        WHERE professional_id = $1
+          AND service_id != ALL($2::uuid[])
+          AND visibility_status = 'active'`,
+      [professionalId, input.serviceIds],
+    );
+    for (const serviceId of input.serviceIds) {
+      await this.db.query(
+        `INSERT INTO professional_services (professional_id, service_id, visibility_status)
+         VALUES ($1, $2, 'active')
+         ON CONFLICT (professional_id, service_id)
+           DO UPDATE SET visibility_status = 'active', updated_at = now()`,
+        [professionalId, serviceId],
+      );
+    }
+
+    // 3. Update specialty snapshot from first selected service name.
+    await this.db.query(
+      `UPDATE professionals p
+          SET specialty = s.name
+         FROM services s
+        WHERE s.id = $1
+          AND p.id = $2`,
+      [input.serviceIds[0], professionalId],
+    );
+
+    // 4. Upsert account_roles entry for professional role.
     await this.db.query(
       `INSERT INTO account_roles (profile_id, role, is_active, is_primary)
        VALUES ($1, 'professional', true, false)
@@ -98,19 +124,23 @@ export class AccountController {
       [profileId],
     );
 
-    // Recompute visibility_status
+    // 5. Recompute visibility_status.
     const { rows: proRow } = await this.db.query<{
       bio: string | null;
       full_name: string;
+      active_service_count: string;
     }>(
-      `SELECT p.bio, pr.full_name
+      `SELECT p.bio, pr.full_name,
+              (SELECT count(*)::int FROM professional_services ps
+                WHERE ps.professional_id = p.id
+                  AND ps.visibility_status = 'active') AS active_service_count
          FROM professionals p
          INNER JOIN profiles pr ON pr.id = p.profile_id
         WHERE p.id = $1`,
       [professionalId],
     );
     const completeness = computeCompleteness({
-      specialty: input.specialty,
+      activeServiceCount: Number(proRow[0]?.active_service_count ?? 0),
       bio: proRow[0]?.bio ?? null,
       full_name: proRow[0]?.full_name ?? null,
     });
@@ -122,8 +152,7 @@ export class AccountController {
       [professionalId, visibilityStatus],
     );
 
-    // Auto-switch the profile's active role to 'professional' so the frontend
-    // immediately reflects the correct type without requiring a manual switch.
+    // 6. Auto-switch the profile's active role to 'professional'.
     await this.db.query(
       `UPDATE profiles SET role = 'professional', updated_at = now() WHERE id = $1`,
       [profileId],
@@ -338,15 +367,18 @@ export class AccountController {
     ) {
       const { rows: proRows } = await this.db.query<{
         id: string;
-        specialty: string;
         bio: string | null;
-      }>(`SELECT id, specialty, bio FROM professionals WHERE profile_id = $1`, [
-        profileId,
-      ]);
+        active_service_count: string;
+      }>(
+        `SELECT p.id, p.bio,
+           (SELECT COUNT(*) FROM professional_services ps WHERE ps.professional_id = p.id AND ps.visibility_status = 'active')::text AS active_service_count
+         FROM professionals p WHERE p.profile_id = $1`,
+        [profileId],
+      );
       if (proRows.length) {
         const pro = proRows[0];
         const completeness = computeCompleteness({
-          specialty: pro.specialty,
+          activeServiceCount: parseInt(pro.active_service_count, 10),
           bio: pro.bio,
           full_name: input.full_name.trim(),
         });

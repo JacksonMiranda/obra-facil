@@ -2,14 +2,14 @@
  * Professional eligibility — single source of truth.
  *
  * These functions mirror the SQL predicate in the `professionals_public` view
- * (docker/05-professional-visibility.sql). Any change here must also be
+ * (docker/09-professional-services.sql). Any change here must also be
  * reflected in that view and vice-versa.
  *
  * Rule:
  *  1. account_roles(role='professional', is_active=true) must exist  →
  *     caller must pass `roleIsActive: true`
  *  2. professionals.visibility_status === 'active'
- *  3. specialty is non-empty
+ *  3. at least one active service in professional_services
  *  4. bio is non-empty (≥ MIN_BIO_LENGTH chars after trim)
  *  5. full_name (from profiles) is non-empty
  */
@@ -20,7 +20,7 @@ import type { ProfessionalCompletenessResult, ProfessionalVisibilityStatus } fro
 export const MIN_BIO_LENGTH = 10;
 
 export interface CompletenessInput {
-  specialty?: string | null;
+  activeServiceCount?: number;
   bio?: string | null;
   full_name?: string | null;
 }
@@ -33,8 +33,8 @@ export interface CompletenessInput {
 export function computeCompleteness(p: CompletenessInput): ProfessionalCompletenessResult {
   const missing: string[] = [];
 
-  if (!p.specialty || p.specialty.trim() === '') {
-    missing.push('specialty');
+  if (!p.activeServiceCount || p.activeServiceCount < 1) {
+    missing.push('services');
   }
   if (!p.bio || p.bio.trim().length < MIN_BIO_LENGTH) {
     missing.push('bio');
@@ -70,7 +70,7 @@ export function deriveVisibilityStatus(
  */
 export function isProfessionalPubliclyVisible(p: {
   visibility_status: ProfessionalVisibilityStatus;
-  specialty?: string | null;
+  activeServiceCount?: number;
   bio?: string | null;
   full_name?: string | null;
   roleIsActive?: boolean;
