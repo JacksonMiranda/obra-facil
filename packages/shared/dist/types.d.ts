@@ -476,6 +476,15 @@ export type WorkWithProfessional = Work & {
 export type WorkFull = Work & {
     professionals: ProfessionalWithProfile;
     client: Profile;
+    address?: {
+        street?: string | null;
+        street_number?: string | null;
+        complement?: string | null;
+        neighborhood?: string | null;
+        city_name?: string | null;
+        state_code?: string | null;
+        address?: string | null;
+    } | null;
 };
 export type AvailabilitySlot = Database['public']['Tables']['availability_slots']['Row'];
 export type Visit = Database['public']['Tables']['visits']['Row'];

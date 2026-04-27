@@ -21,11 +21,21 @@ const WORKS_WITH_FULL = `
       'id', cp.id, 'clerk_id', cp.clerk_id, 'full_name', cp.full_name,
       'avatar_url', cp.avatar_url, 'phone', cp.phone, 'role', cp.role,
       'created_at', cp.created_at, 'updated_at', cp.updated_at
-    ) AS client
+    ) AS client,
+    CASE WHEN v.id IS NOT NULL THEN json_build_object(
+      'street',        v.street,
+      'street_number', v.street_number,
+      'complement',    v.complement,
+      'neighborhood',  v.neighborhood,
+      'city_name',     v.city_name,
+      'state_code',    v.state_code,
+      'address',       v.address
+    ) ELSE NULL END AS address
   FROM works w
   INNER JOIN professionals pr ON pr.id = w.professional_id
   INNER JOIN profiles pp ON pp.id = pr.profile_id
   INNER JOIN profiles cp ON cp.id = w.client_id
+  LEFT JOIN visits v ON v.id = w.visit_id
 `;
 
 @Injectable()

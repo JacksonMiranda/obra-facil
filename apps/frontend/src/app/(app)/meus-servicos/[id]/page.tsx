@@ -123,6 +123,37 @@ export default async function WorkDetailPage({
           </div>
         )}
 
+        {/* Address */}
+        {w.address && (w.address.street || w.address.address) && (
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+            <p className="text-xs text-slate-400 uppercase tracking-wide font-medium mb-3">Endereço da Obra</p>
+            <div className="flex items-start gap-3">
+              <span className="material-symbols-outlined text-slate-400 mt-0.5">location_on</span>
+              <div className="flex-1 min-w-0 space-y-0.5">
+                {w.address.street ? (
+                  <>
+                    <p className="text-sm font-medium text-slate-900">
+                      {w.address.street}{w.address.street_number ? `, ${w.address.street_number}` : ''}
+                    </p>
+                    {w.address.complement && (
+                      <p className="text-xs text-slate-500">{w.address.complement}</p>
+                    )}
+                    {(w.address.neighborhood || w.address.city_name) && (
+                      <p className="text-xs text-slate-500">
+                        {[w.address.neighborhood, w.address.city_name, w.address.state_code]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-700">{w.address.address}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Dates */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-3">
           <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">Datas</p>
