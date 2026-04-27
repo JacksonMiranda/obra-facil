@@ -1,12 +1,20 @@
 import { z } from 'zod';
 import { MIN_BIO_LENGTH } from './visibility';
 
+// Permissive UUID regex — accepts any version/variant (including v0 used in seeds)
+const uuidLike = z
+  .string()
+  .regex(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    'ID de serviço inválido',
+  );
+
 // ── Professionals ────────────────────────────────────────────────────────────
 
 export const SearchProfessionalsSchema = z.object({
   q: z.string().optional(),
   service: z.string().optional(),
-  serviceId: z.string().uuid().optional(),
+  serviceId: uuidLike.optional(),
   city: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
@@ -19,7 +27,7 @@ export type SearchProfessionalsInput = z.infer<typeof SearchProfessionalsSchema>
  * bio is required and must meet the minimum length for publication.
  */
 export const ActivateProfessionalSchema = z.object({
-  serviceIds: z.array(z.string().uuid('ID de serviço inválido')).min(1, 'Selecione ao menos um serviço'),
+  serviceIds: z.array(uuidLike).min(1, 'Selecione ao menos um serviço'),
   bio: z
     .string()
     .min(MIN_BIO_LENGTH, `Bio deve ter no mínimo ${MIN_BIO_LENGTH} caracteres`)
@@ -35,7 +43,7 @@ export type ActivateProfessionalInput = z.infer<typeof ActivateProfessionalSchem
  * If bio is provided it must still meet the minimum length.
  */
 export const UpdateProfessionalSchema = z.object({
-  serviceIds: z.array(z.string().uuid('ID de serviço inválido')).min(1, 'Selecione ao menos um serviço').optional(),
+  serviceIds: z.array(uuidLike).min(1, 'Selecione ao menos um serviço').optional(),
   bio: z
     .string()
     .min(MIN_BIO_LENGTH, `Bio deve ter no mínimo ${MIN_BIO_LENGTH} caracteres`)
@@ -48,12 +56,6 @@ export const UpdateProfessionalSchema = z.object({
 export type UpdateProfessionalInput = z.infer<typeof UpdateProfessionalSchema>;
 
 // ── Conversations ────────────────────────────────────────────────────────────
-
-// Accept any 8-4-4-4-12 UUID format (including non-RFC-4122 demo seed values)
-const uuidLike = z.string().regex(
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
-  'Invalid UUID format',
-);
 
 export const OpenConversationSchema = z.object({
   professionalProfileId: uuidLike,
@@ -123,7 +125,7 @@ export const BookVisitSchema = z.object({
   // Booking metadata
   requesterName: z.string().min(1, 'Nome do solicitante obrigatório').max(100),
   serviceType: z.string().min(1, 'Tipo de serviço obrigatório').max(100),
-  serviceId: z.string().uuid('ID de serviço inválido').optional(),
+  serviceId: uuidLike.optional(),
   description: z.string().min(10, 'Descreva o problema (mín. 10 caracteres)').max(1000),
   // Deprecated — kept for backward compatibility
   address: z.string().optional(),

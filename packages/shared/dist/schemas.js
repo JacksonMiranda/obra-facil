@@ -3,11 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateReviewSchema = exports.UpdateProfileSchema = exports.RejectVisitSchema = exports.BookVisitSchema = exports.SetAvailabilitySchema = exports.CreateOrderSchema = exports.AddMaterialItemSchema = exports.CreateMaterialListSchema = exports.SendMessageSchema = exports.OpenConversationSchema = exports.UpdateProfessionalSchema = exports.ActivateProfessionalSchema = exports.SearchProfessionalsSchema = void 0;
 const zod_1 = require("zod");
 const visibility_1 = require("./visibility");
+// Permissive UUID regex — accepts any version/variant (including v0 used in seeds)
+const uuidLike = zod_1.z
+    .string()
+    .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'ID de serviço inválido');
 // ── Professionals ────────────────────────────────────────────────────────────
 exports.SearchProfessionalsSchema = zod_1.z.object({
     q: zod_1.z.string().optional(),
     service: zod_1.z.string().optional(),
-    serviceId: zod_1.z.string().uuid().optional(),
+    serviceId: uuidLike.optional(),
     city: zod_1.z.string().optional(),
     limit: zod_1.z.coerce.number().int().min(1).max(100).default(50),
     offset: zod_1.z.coerce.number().int().min(0).default(0),
@@ -17,7 +21,7 @@ exports.SearchProfessionalsSchema = zod_1.z.object({
  * bio is required and must meet the minimum length for publication.
  */
 exports.ActivateProfessionalSchema = zod_1.z.object({
-    serviceIds: zod_1.z.array(zod_1.z.string().uuid('ID de serviço inválido')).min(1, 'Selecione ao menos um serviço'),
+    serviceIds: zod_1.z.array(uuidLike).min(1, 'Selecione ao menos um serviço'),
     bio: zod_1.z
         .string()
         .min(visibility_1.MIN_BIO_LENGTH, `Bio deve ter no mínimo ${visibility_1.MIN_BIO_LENGTH} caracteres`)
@@ -30,7 +34,7 @@ exports.ActivateProfessionalSchema = zod_1.z.object({
  * If bio is provided it must still meet the minimum length.
  */
 exports.UpdateProfessionalSchema = zod_1.z.object({
-    serviceIds: zod_1.z.array(zod_1.z.string().uuid('ID de serviço inválido')).min(1, 'Selecione ao menos um serviço').optional(),
+    serviceIds: zod_1.z.array(uuidLike).min(1, 'Selecione ao menos um serviço').optional(),
     bio: zod_1.z
         .string()
         .min(visibility_1.MIN_BIO_LENGTH, `Bio deve ter no mínimo ${visibility_1.MIN_BIO_LENGTH} caracteres`)
@@ -40,8 +44,6 @@ exports.UpdateProfessionalSchema = zod_1.z.object({
     display_name: zod_1.z.string().max(100).optional(),
 });
 // ── Conversations ────────────────────────────────────────────────────────────
-// Accept any 8-4-4-4-12 UUID format (including non-RFC-4122 demo seed values)
-const uuidLike = zod_1.z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, 'Invalid UUID format');
 exports.OpenConversationSchema = zod_1.z.object({
     professionalProfileId: uuidLike,
 });
@@ -88,7 +90,7 @@ exports.BookVisitSchema = zod_1.z.object({
     // Booking metadata
     requesterName: zod_1.z.string().min(1, 'Nome do solicitante obrigatório').max(100),
     serviceType: zod_1.z.string().min(1, 'Tipo de serviço obrigatório').max(100),
-    serviceId: zod_1.z.string().uuid('ID de serviço inválido').optional(),
+    serviceId: uuidLike.optional(),
     description: zod_1.z.string().min(10, 'Descreva o problema (mín. 10 caracteres)').max(1000),
     // Deprecated — kept for backward compatibility
     address: zod_1.z.string().optional(),
