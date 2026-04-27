@@ -113,7 +113,7 @@ export default async function WorkDetailPage({
                 {'phone' in personToShow && personToShow.phone && (
                   <p className="text-xs text-slate-500 mt-0.5">{personToShow.phone}</p>
                 )}
-                {userRole === 'client' && w.professionals?.specialty && (
+                {w.professionals?.specialty && (
                   <p className="text-xs text-slate-500 mt-0.5">{w.professionals.specialty}</p>
                 )}
               </div>
