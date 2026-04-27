@@ -6,14 +6,14 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { ReviewForm } from '@/components/reviews/ReviewForm';
 import Link from 'next/link';
-import type { AccountContext, ReviewWithReviewer } from '@obrafacil/shared';
+import type { ReviewWithReviewer } from '@obrafacil/shared';
 
 const STATUS_MAP: Record<string, { label: string; variant: 'ativo' | 'agendado' | 'entregue' | 'cancelado' | 'pendente' | 'a-caminho' }> = {
-  in_progress: { label: 'Em Andamento', variant: 'ativo' },
+  active:    { label: 'Em Andamento', variant: 'ativo' },
   scheduled: { label: 'Agendada', variant: 'agendado' },
   completed: { label: 'Concluída', variant: 'entregue' },
   cancelled: { label: 'Cancelada', variant: 'cancelado' },
-  pending: { label: 'Pendente', variant: 'pendente' },
+  pending:   { label: 'Pendente', variant: 'pendente' },
 };
 
 export default async function SolicitacaoDetailPage({
@@ -26,15 +26,11 @@ export default async function SolicitacaoDetailPage({
 
   const { id } = await params;
 
-  // Fetch work and account in parallel
+  // Fetch work (account/me is no longer needed — isClient is derived from Clerk userId)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let work: any = null;
-  let account: AccountContext | null = null;
   try {
-    [work, account] = await Promise.all([
-      api.get(`/v1/works/${id}`),
-      api.get<AccountContext>('/v1/account/me').catch(() => null),
-    ]);
+    work = await api.get(`/v1/works/${id}`);
   } catch {
     notFound();
   }
@@ -49,9 +45,9 @@ export default async function SolicitacaoDetailPage({
   const isActive = w.status === 'active';
   const isCompleted = w.status === 'completed';
 
-  // Determine if the viewer is the client of this work
-  const viewerProfileId = account?.profile?.id ?? null;
-  const isClient = viewerProfileId === w.client_id;
+  // Determine if the viewer is the client of this work.
+  // Compare Clerk userId directly to w.client.clerk_id — no extra API call needed.
+  const isClient = (w.client?.clerk_id ?? '') === userId;
 
   // Fetch existing review if work is completed (only matters for the review section)
   let existingReview: ReviewWithReviewer | null = null;
