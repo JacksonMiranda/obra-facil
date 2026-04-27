@@ -52,6 +52,14 @@ const PROFESSIONAL_PROFILE = {
   visibility_status: 'active',
   is_complete: true,
   missing_fields: [],
+  services: [
+    {
+      service_id: 'svc-1',
+      service_name: 'Marceneiro',
+      service_icon: 'handyman',
+      visibility_status: 'active',
+    },
+  ],
 };
 
 beforeEach(() => {
