@@ -6,7 +6,7 @@
 ![CI](https://github.com/lexcesar/obra-facil/actions/workflows/ci.yml/badge.svg)
 ![Tech](https://img.shields.io/badge/Stack-Next.js%20%7C%20NestJS%20%7C%20PostgreSQL-green)
 
-O **Obra Fácil** é um marketplace inovador que conecta proprietários de imóveis a profissionais autônomos da construção civil. Diferente de soluções genéricas, integramos a contratação do serviço com a cotação de materiais em lojas parceiras, resolvendo a fragmentação do mercado de reformas.
+O **Obra Fácil** é um marketplace que conecta proprietários de imóveis a profissionais autônomos da construção civil, centralizando a busca, o agendamento e o acompanhamento de serviços de reforma em um único lugar.
 
 ---
 
@@ -17,8 +17,7 @@ Proprietários de residências frequentemente enfrentam falta de confiança, or�
 - 🔍 **Busca Inteligente:** Encontre Pedreiros, Eletricistas e Pintores por geolocalização.
 - ⭐ **Portfólio & Avaliações:** Visualize fotos de trabalhos anteriores e notas de outros clientes.
 - 📅 **Agendamento Integrado:** Reserve visitas técnicas diretamente pelo app.
-- 🛒 **Módulo de Materiais:** Cote materiais necessários para o serviço em lojas próximas.
-- 📄 **Orçamentos Transparentes:** Receba propostas claras de serviço e material em um só lugar.
+- � **Notificações:** Receba alertas sobre mudanças de status nos seus atendimentos diretamente no app.
 
 ---
 
@@ -39,11 +38,9 @@ Proprietários de residências frequentemente enfrentam falta de confiança, or�
 
 O projeto segue padrões rigorosos de engenharia de software para garantir escalabilidade e manutenção:
 
-- **Segurança (RNF-02):** Autenticação via Clerk com RBAC baseado em metadados.
-- **Interoperabilidade (RNF-03):** API RESTful documentada via Swagger/OpenAPI.
-- **Observabilidade (RNF-04):** Logs estruturados com Pino e correlação de Request IDs.
-- **Manutenibilidade (RNF-05):** Suíte de testes com Jest (Backend) e Vitest/Playwright (Frontend).
-- **Portabilidade (RNF-06):** Ambiente totalmente conteinerizado com Docker.
+- **Desempenho (RNF-01):** Tempo de resposta inferior a 2 segundos para 95% das requisições.
+- **Manutenibilidade (RNF-02):** Arquitetura limpa com separação de responsabilidades (Clean Architecture) e cobertura de testes com Jest, Vitest e Playwright.
+- **Acessibilidade (RNF-03):** Interface com alto contraste, botões de toque amplo e fluxos simplificados, projetada para usuários acima de 45 anos.
 
 ---
 
@@ -78,7 +75,12 @@ Para rodar o projeto localmente, você precisará do **Node.js 20+** e **Docker*
    npm install
    ```
 
-3. **Inicie o ambiente de desenvolvimento:**
+3. **Build do pacote compartilhado:**
+   ```bash
+   npm run build --workspace=@obrafacil/shared
+   ```
+
+4. **Inicie o ambiente de desenvolvimento:**
    ```bash
    npm run docker:up
    ```
