@@ -31,7 +31,7 @@ Este documento estabelece a base tecnológica, decisões arquiteturais e padrõe
 - **Runtime**: Node.js (se TS).
 - **Framework**: Fastify/Express ou NestJS (visando estrutura MVC/Modular).
 - **Persistência**: Bancos de dados relacionais e em memória.
-- **ORM**: Prisma (se adotado Node/TS devido a forte tipagem e produtividade de schema) ou equivalente nativo.
+- **Acesso ao banco**: `pg` (node-postgres) diretamente via `DatabaseService` — sem ORM. Queries SQL parametrizadas (`$1, $2, ...`) para evitar SQL injection.
 
 ### Stack de Desenvolvimento
 - **IDE**: VS Code ou Cursor com extensões de linters (ESLint, Prettier).
@@ -42,8 +42,8 @@ Este documento estabelece a base tecnológica, decisões arquiteturais e padrõe
 
 ### Integrações
 - **Persistência**: PostgreSQL via nuvem gerenciada (RDS ou similar) + Redis para sessões e mensagens pré-persistidas de chat.
-- **Deployment**: AWS (ECS, S3, RDS) ou Google Cloud (Cloud Run).
-- **Segurança (autenticação e autorização)**: Firebase Auth ou Supabase Auth.
+- **Deployment**: Vercel (frontend via Next.js preset; backend via função serverless em `api/index.ts`).
+- **Segurança (autenticação e autorização)**: Clerk — Bearer token validado no backend via `ClerkAuthGuard`.
 - **Observabilidade**: Datadog ou Sentry (Logging & APM).
 - **Gateway de Pagamento**: Stripe Connect ou Pagar.me para gerenciar multitenancy, split de pagamento do material e comissão do profissional numa única cobrança de cartão.
 

@@ -69,7 +69,7 @@ A plataforma deve suportar picos de uso sem lentidão (tempo de carregamento inf
 As regras de negócio do *take-rate* financeiro devem estar altamente desacopladas na camada de infraestrutura/pagamento para facilitar auditorias (Clean Architecture).
 
 ### RNF-03 - Acessibilidade
-UI com alto contraste text/back e facilidade de cliques devido ao perfil etário (+45).
+A interface deve ser fácil de usar para pessoas acima de 45 anos. Isso inclui textos legíveis com alto contraste entre letra e fundo, botões grandes e bem espaçados, e navegação simples com poucos passos para concluir tarefas.
 
 ---
 

@@ -120,9 +120,9 @@ export function ProfessionalActivation({ roles }: Props) {
         city: city.trim() || undefined,
       }, true);
 
+      await api.patch('/v1/account/acting-as', { role: 'professional' }).catch(() => null);
       persistActingAs('professional');
       setRole('professional');
-      await api.patch('/v1/account/acting-as', { role: 'professional' }).catch(() => null);
 
       if (!result.is_complete) {
         setDraftWarning({ missing: result.missing_fields });

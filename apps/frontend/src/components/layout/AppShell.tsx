@@ -18,11 +18,14 @@ interface AppShellProps {
   userName?: string;
   avatarId?: string;
   avatarUrl?: string;
+  actingAs?: UserRole;
 }
 
-export async function AppShell({ children, userName, avatarId, avatarUrl }: AppShellProps) {
+export async function AppShell({ children, userName, avatarId, avatarUrl, actingAs: accountActingAs }: AppShellProps) {
   const cookieStore = await cookies();
-  const raw = cookieStore.get(ACTING_AS_COOKIE)?.value as UserRole | undefined;
+  const cookieRaw = cookieStore.get(ACTING_AS_COOKIE)?.value as UserRole | undefined;
+  // Prefer account.actingAs from DB over the session cookie (which clears on logout)
+  const raw = accountActingAs ?? cookieRaw;
   const actingAs: UserRole = raw && VALID_ROLES.includes(raw) ? raw : 'client';
 
   return (
