@@ -201,6 +201,7 @@ jobs:
           eval "$PG -f docker/08-visits-structured-fields.sql"
           eval "$PG -f docker/09-reviews-work-id.sql"
           eval "$PG -f docker/09-professional-services.sql"
+          eval "$PG -f docker/10-fix-jobs-completed-trigger.sql"
 
       - name: Cache Playwright browsers
         if: github.event_name == 'push'

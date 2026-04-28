@@ -302,6 +302,7 @@ export interface Database {
                     id: string;
                     client_id: string;
                     professional_id: string;
+                    visit_id: string | null;
                     title: string;
                     status: WorkStatus;
                     progress_pct: number;
@@ -316,6 +317,7 @@ export interface Database {
                     id?: string;
                     client_id: string;
                     professional_id: string;
+                    visit_id?: string | null;
                     title: string;
                     status?: WorkStatus;
                     progress_pct?: number;
