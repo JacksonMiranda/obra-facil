@@ -49,6 +49,9 @@ Thumbs.db
 .agent/
 .copilot/
 
+# ─── Clerk keyless dev mode ──────────────────────────────────────────────────
+**/.clerk/
+
 # ─── NestJS / Jest ────────────────────────────────────────────────────────────
 coverage/
 **/coverage/
