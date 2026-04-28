@@ -1,6 +1,7 @@
 import { AppShell } from '@/components/layout/AppShell';
 import { currentUser } from '@/lib/auth-bypass';
 import { api } from '@/lib/api/client';
+import { normalizeActingAs } from '@/lib/normalize-role';
 import type { AccountContext } from '@obrafacil/shared';
 
 // All authenticated app routes share this layout with BottomNav (mobile) + SideNav/TopBar (desktop).
@@ -21,8 +22,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const dbAvatarUrl = account?.profile.avatar_url ?? undefined;
   const avatarUrl = dbAvatarUrl ?? (avatarId ? undefined : user?.imageUrl ?? undefined);
 
+  // Normalise actingAs against the user's active roles so a stale profiles.role
+  // can never cause the UI to render the wrong menu. When account is unavailable
+  // (network error) we pass undefined and AppShell falls back to the cookie.
+  const actingAs = account
+    ? normalizeActingAs(account.actingAs, account.roles)
+    : undefined;
+
   return (
-    <AppShell userName={userName} avatarId={avatarId} avatarUrl={avatarUrl} actingAs={account?.actingAs}>
+    <AppShell userName={userName} avatarId={avatarId} avatarUrl={avatarUrl} actingAs={actingAs}>
       {children}
     </AppShell>
   );

@@ -81,11 +81,26 @@ export class ClerkAuthGuard implements CanActivate {
     if (requestedRole && effectiveRoles.includes(requestedRole)) {
       actingAs = requestedRole;
     } else {
-      // Default: primary role (or first active role).
-      // If the requested role is not active (e.g. stale cookie), fall back
-      // silently rather than throwing 403 — the cookie will be corrected
-      // by the client on the next role switch.
-      actingAs = profile.role;
+      // Default: use profile.role if it is still an active role; otherwise
+      // fall back to the first active role (or 'client' as safe default).
+      // This prevents a stale profiles.role (e.g. 'professional' after the
+      // professional role was deactivated) from granting undue access.
+      actingAs = effectiveRoles.includes(profile.role)
+        ? profile.role
+        : (effectiveRoles[0] ?? 'client');
+    }
+
+    // Auto-correct profiles.role if it has drifted from the resolved value.
+    // Fire-and-forget: does not affect this request's latency.
+    if (actingAs !== profile.role) {
+      this.db
+        .query(
+          'UPDATE profiles SET role = $1, updated_at = now() WHERE id = $2',
+          [actingAs, profile.id],
+        )
+        .catch(() => {
+          // Non-critical — will be corrected on the next successful request.
+        });
     }
 
     return { profile, roles: effectiveRoles, actingAs };

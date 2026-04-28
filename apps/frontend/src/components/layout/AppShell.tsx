@@ -24,7 +24,11 @@ interface AppShellProps {
 export async function AppShell({ children, userName, avatarId, avatarUrl, actingAs: accountActingAs }: AppShellProps) {
   const cookieStore = await cookies();
   const cookieRaw = cookieStore.get(ACTING_AS_COOKIE)?.value as UserRole | undefined;
-  // Prefer account.actingAs from DB over the session cookie (which clears on logout)
+  // Source of truth priority:
+  // 1. accountActingAs — backend value already normalised against active roles in layout.tsx
+  //    (only undefined when the /account/me call failed entirely)
+  // 2. cookieRaw       — last known good value; used only as a fallback when backend is down
+  // 3. 'client'        — safe default; any user without a known role is treated as client
   const raw = accountActingAs ?? cookieRaw;
   const actingAs: UserRole = raw && VALID_ROLES.includes(raw) ? raw : 'client';
 

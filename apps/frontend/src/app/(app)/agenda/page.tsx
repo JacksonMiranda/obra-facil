@@ -12,7 +12,17 @@ export default async function AgendaPage() {
   if (!userId) redirect('/sign-in');
 
   const cookieStore = await cookies();
-  const actingAs = (cookieStore.get(ACTING_AS_COOKIE)?.value ?? 'professional') as UserRole;
+  const actingAs = (cookieStore.get(ACTING_AS_COOKIE)?.value ?? 'client') as UserRole;
+
+  if (actingAs !== 'professional') {
+    return (
+      <div className="px-4 py-8 text-center">
+        <p className="text-slate-500">
+          Agenda disponível apenas para profissionais
+        </p>
+      </div>
+    );
+  }
 
   const visits = await api.get<VisitFull[]>('/v1/visits').catch(() => []);
 
