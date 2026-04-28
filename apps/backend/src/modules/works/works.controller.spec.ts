@@ -64,6 +64,7 @@ describe('WorksController', () => {
     id: 'work-id',
     client_id: 'profile-id',
     professional_id: 'prof-id',
+    visit_id: null,
     title: 'Test Work',
     status: 'active',
     progress_pct: 50,
