@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { api } from '@/lib/api/client';
 import Link from 'next/link';
 import { VisitActions, WorkActions } from './WorkActions';
+import { getAccount } from '@/lib/get-account';
+import { isProfessionalMode } from '@/lib/professional-access';
 
 type Dashboard = {
   profile: { id: string; full_name: string; avatar_url: string | null };
@@ -40,6 +42,29 @@ type Dashboard = {
 export default async function ProfissionalDashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
+
+  // Guard: check role from authoritative backend source (same pattern as /agenda and /meus-servicos).
+  // This is evaluated BEFORE the dashboard API call so the restriction message is always shown
+  // to non-professional users, regardless of cookie state.
+  const account = await getAccount();
+  if (!isProfessionalMode(account)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center bg-surface">
+        <span className="material-symbols-outlined text-5xl text-slate-200 mb-3">
+          lock
+        </span>
+        <p className="text-sm font-semibold text-slate-700">
+          Dashboard disponível apenas para profissionais
+        </p>
+        <Link
+          href="/"
+          className="mt-6 text-xs font-semibold text-trust bg-blue-50 px-4 py-2 rounded-full"
+        >
+          Voltar
+        </Link>
+      </div>
+    );
+  }
 
   let data: Dashboard | null = null;
   let errorMsg: string | null = null;
