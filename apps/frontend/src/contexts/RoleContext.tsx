@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { UserRole } from '@obrafacil/shared';
 import { setActingAs } from '@/lib/acting-as';
 
@@ -21,6 +21,15 @@ interface RoleProviderProps {
 
 export function RoleProvider({ initialRole, children }: RoleProviderProps) {
   const [actingAs, setActingAsState] = useState<UserRole>(initialRole);
+
+  // Sync the cookie with the backend-resolved role on every page load.
+  // This ensures that Server Components on subsequent navigations (which read
+  // the cookie to send the X-Acting-As header) always see the current role,
+  // even when the user never explicitly switched roles via RoleSelector.
+  useEffect(() => {
+    setActingAs(initialRole);
+    setActingAsState(initialRole);
+  }, [initialRole]);
 
   function setRole(role: UserRole) {
     setActingAs(role);

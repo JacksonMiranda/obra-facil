@@ -1,20 +1,21 @@
 import { auth } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { api } from '@/lib/api/client';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { AgendaClient } from './AgendaClient';
-import type { VisitFull, UserRole } from '@obrafacil/shared';
-import { ACTING_AS_COOKIE } from '@/lib/acting-as';
+import type { VisitFull } from '@obrafacil/shared';
+import { getAccount } from '@/lib/get-account';
+import { isProfessionalMode } from '@/lib/professional-access';
 
 export default async function AgendaPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const cookieStore = await cookies();
-  const actingAs = (cookieStore.get(ACTING_AS_COOKIE)?.value ?? 'client') as UserRole;
+  // getAccount() is deduplicated via React.cache() — the same AccountContext
+  // fetched by layout.tsx is reused here with no extra HTTP request.
+  const account = await getAccount();
 
-  if (actingAs !== 'professional') {
+  if (!isProfessionalMode(account)) {
     return (
       <div className="px-4 py-8 text-center">
         <p className="text-slate-500">
@@ -29,7 +30,7 @@ export default async function AgendaPage() {
   return (
     <div className="pb-24 bg-surface min-h-screen">
       <PageHeader title="Agenda" />
-      <AgendaClient visits={visits} actingAs={actingAs} />
+      <AgendaClient visits={visits} actingAs={account!.actingAs} />
     </div>
   );
 }

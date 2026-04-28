@@ -1,11 +1,11 @@
 import { auth } from '@/lib/auth-bypass';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { api } from '@/lib/api/client';
 import { PageHeader } from '@/components/ui/PageHeader';
 import type { WorkFull, UserRole } from '@obrafacil/shared';
-import { ACTING_AS_COOKIE } from '@/lib/acting-as';
+import { getAccount } from '@/lib/get-account';
+import { isProfessionalMode } from '@/lib/professional-access';
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   scheduled: { label: 'Agendada', color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -18,10 +18,11 @@ export default async function MeusServicosPage() {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const cookieStore = await cookies();
-  const actingAs = (cookieStore.get(ACTING_AS_COOKIE)?.value ?? 'client') as UserRole;
+  // getAccount() is deduplicated via React.cache() — the same AccountContext
+  // fetched by layout.tsx is reused here with no extra HTTP request.
+  const account = await getAccount();
 
-  if (actingAs !== 'professional') {
+  if (!isProfessionalMode(account)) {
     return (
       <div className="px-4 py-8 text-center">
         <p className="text-slate-500">
@@ -32,6 +33,9 @@ export default async function MeusServicosPage() {
   }
 
   const works = await api.get<WorkFull[]>('/v1/works').catch(() => []);
+  // account is guaranteed non-null here: isProfessionalMode(null) returns false,
+  // so null would have been caught by the guard above.
+  const actingAs = account!.actingAs;
 
   const active = works.filter((w) => w.status === 'active');
   const scheduled = works.filter((w) => w.status === 'scheduled');

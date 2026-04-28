@@ -1,14 +1,15 @@
 import { AppShell } from '@/components/layout/AppShell';
 import { currentUser } from '@/lib/auth-bypass';
-import { api } from '@/lib/api/client';
 import { normalizeActingAs } from '@/lib/normalize-role';
-import type { AccountContext } from '@obrafacil/shared';
+import { getAccount } from '@/lib/get-account';
 
 // All authenticated app routes share this layout with BottomNav (mobile) + SideNav/TopBar (desktop).
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  // getAccount() is wrapped in React.cache() so page components (agenda, meus-servicos, etc.)
+  // that also call getAccount() within the same render pass reuse this result — no extra HTTP requests.
   const [user, account] = await Promise.all([
     currentUser().catch(() => null),
-    api.get<AccountContext>('/v1/account/me').catch(() => null),
+    getAccount(),
   ]);
 
   // Prefer DB profile data (profiles.full_name / profiles.avatar_url) over Clerk values.
